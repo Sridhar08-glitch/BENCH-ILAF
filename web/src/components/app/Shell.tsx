@@ -25,9 +25,11 @@ import { GuideRoot } from "@/components/guide/GuideRoot";
 import { PwaRoot } from "@/components/app/PwaRoot";
 import { clearOfflineData } from "@/lib/pwa/store";
 import { HelpMenu } from "@/components/guide/HelpMenu";
+import { LeadBell } from "./LeadBell";
 import { ChatLauncher } from "@/components/support/ChatLauncher";
 import { CountrySelect } from "./CountrySelect";
 import { useSignOutGuard } from "./SignOutGuard";
+import { useStaffShortcut } from "./useStaffShortcut";
 import { NEW_COMPANY_EVENT } from "@/lib/guide/api";
 
 interface NavItem {
@@ -107,6 +109,8 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const designUnread = useQuery({ queryKey: ["design-requests-summary", current.id], queryFn: () => designsApi.summary(current.id), enabled: isManager && isCompany, refetchInterval: 60000 }).data;
   const designBadge = (designUnread?.unread ?? 0) + (designUnread?.in_review ?? 0);
   const moreRef = useRef<HTMLDivElement>(null);
+  // Only a person with a staff role gets the shortcut; for everyone else this stays empty and nothing shows.
+  const staff = useStaffShortcut();
 
   useEffect(() => setMore(false), [pathname]);
 
@@ -177,6 +181,15 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             <Link className="btn sm block" href="/app/billing">{t("shell.seePlans")}</Link>
           </div>
         )}
+        {staff && (
+          <nav className="nav" aria-label={t("shell.staffLink")}>
+            <Link href={staff.href} data-testid="staff-link">
+              <Icon name="shield" />
+              {t("shell.staffLink")}
+              <small style={{ marginInlineStart: "auto", color: "var(--muted)", fontWeight: 500 }}>{t(staff.roleKey)}</small>
+            </Link>
+          </nav>
+        )}
         <div className="who">
           <Avatar name={user.full_name} url={user.photo_url} />
           <div>
@@ -213,6 +226,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </select>
           </div>
           <LanguageSwitcher signedIn className="langpick top-lang" />
+          <LeadBell />
           <HelpMenu />
           {isManager && !sub.live && <Link className="pill warn" href="/app/billing">{sub.status === "expired" ? t("shell.pillEnded") : t("shell.pillNone")}</Link>}
         </header>
@@ -254,6 +268,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           {moreItems.map((n) => (
             <Link key={n.href} href={n.href}><Icon name={n.icon} />{t(n.label)}</Link>
           ))}
+          {staff && <Link href={staff.href} data-testid="staff-link-more"><Icon name="shield" />{t("shell.staffLink")} · {t(staff.roleKey)}</Link>}
           <button type="button" onClick={signOut}><Icon name="logout" className="flip-rtl" />{t("shell.signOut")}</button>
         </div>
       )}

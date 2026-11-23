@@ -132,3 +132,15 @@ class WebhookDelivery(models.Model):
             models.Index(fields=["status", "next_attempt_at"]),
             models.Index(fields=["endpoint", "-created_at"]),
         ]
+
+
+class LeadSeen(models.Model):
+    """When a person last looked at the new-contacts bell of a workspace, so the unread count is personal."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="+")
+    workspace = models.ForeignKey("workspaces.Workspace", on_delete=models.CASCADE, related_name="+")
+    seen_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "workspace"], name="one_lead_seen_per_person_and_workspace")]

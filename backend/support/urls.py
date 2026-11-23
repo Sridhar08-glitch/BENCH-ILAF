@@ -1,5 +1,6 @@
 from django.urls import path
 
+from . import alerts
 from . import staff_views as s
 from . import views as v
 
@@ -26,6 +27,7 @@ urlpatterns = [
     path("support/chat/<uuid:chat_id>/end", v.ChatEndView.as_view()),
     path("support/chat/<uuid:chat_id>/files/<uuid:file_id>/download", v.ChatAttachmentView.as_view()),
     # staff
+    path("staff/support/alerts", alerts.AlertsView.as_view()),
     path("staff/support/tickets", s.TicketsView.as_view()),
     path("staff/support/tickets.csv", s.TicketsCsvView.as_view()),
     path("staff/support/tickets/bulk", s.BulkView.as_view()),

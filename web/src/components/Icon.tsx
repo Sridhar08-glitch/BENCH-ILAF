@@ -47,6 +47,7 @@ const PATHS: Record<string, string> = {
   trash: "M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6",
   upload: "M12 15V4M7.5 8.5 12 4l4.5 4.5M5 20h14",
   lock: "M7 11V8a5 5 0 0 1 10 0v3M6 11h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z",
+  shield: "M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6zM9 12l2.2 2.2L15.5 10",
   alert: "M12 3 2 20h20zM12 10v4M12 17.5v.1",
   x2: "M6 6l12 12M18 6 6 18",
   arrow: "M7 17 17 7M8 7h9v9",

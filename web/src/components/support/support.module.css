@@ -22,6 +22,11 @@
 
 /* chat widget */
 .launcher { position: fixed; inset-block-end: 16px; inset-inline-end: 16px; z-index: 60; display: inline-flex; gap: 8px; align-items: center; padding: 12px 18px; border-radius: 999px; border: 0; background: var(--accent); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 6px 24px rgba(16, 17, 20, .22); }
+/* Where the phone bar sits at the bottom (900px and under) the launcher rides above it so the last bar button stays tappable; the open More panel hides it. */
+@media (max-width: 900px) {
+  body:has(:global(.bar)) .launcher { inset-block-end: calc(88px + env(safe-area-inset-bottom, 0px)); inset-inline-end: calc(12px + env(safe-area-inset-right, 0px)); }
+  body:has(:global(.morepanel)) .launcher { display: none; }
+}
 .launcher:focus-visible, .panelbtn:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 .chat { position: fixed; inset-block-end: 16px; inset-inline-end: 16px; z-index: 61; inline-size: min(380px, calc(100vw - 32px)); max-block-size: min(620px, calc(100vh - 32px)); display: grid; grid-template-rows: auto 1fr auto; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(16, 17, 20, .28); overflow: hidden; }
 .chat[hidden] { display: none; }

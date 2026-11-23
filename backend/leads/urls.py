@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, webhook_views
+from . import bell_views, views, webhook_views
 
 urlpatterns = [
     path("workspaces/<uuid:workspace_id>/leads", views.WorkspaceLeadsView.as_view()),
@@ -8,6 +8,8 @@ urlpatterns = [
     path("workspaces/<uuid:workspace_id>/leads/bulk", views.LeadBulkView.as_view()),
     path("workspaces/<uuid:workspace_id>/lead-assignees", views.LeadAssigneesView.as_view()),
     path("workspaces/<uuid:workspace_id>/lead-settings", views.LeadSettingsView.as_view()),
+    path("workspaces/<uuid:workspace_id>/lead-bell", bell_views.LeadBellView.as_view()),
+    path("workspaces/<uuid:workspace_id>/lead-bell/seen", bell_views.LeadBellSeenView.as_view()),
     path("leads/<uuid:lead_id>", views.LeadDetailView.as_view()),
     path("leads/<uuid:lead_id>/notes", views.LeadNotesView.as_view()),
     path("workspaces/<uuid:workspace_id>/webhooks", webhook_views.WebhookListView.as_view()),

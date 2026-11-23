@@ -699,6 +699,6 @@ DYNAMIC = [
     'operations/rules.py:214 ApiError(...)',
     'privacy/services.py:153 ApiError(...)',
     'publicapi/auth.py:52 ApiError(...)',
-    'wallet/passes.py:32 ApiError(...)',
+    'wallet/passes.py:33 ApiError(...)',
     'workspaces/views.py:267 ApiError(...)',
 ]
