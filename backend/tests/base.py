@@ -7,7 +7,9 @@ from types import SimpleNamespace
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
+from django.core.signals import request_finished
 from django.test import TestCase, override_settings
+from django.db import close_old_connections
 from PIL import Image
 from rest_framework.test import APIClient
 
@@ -39,6 +41,19 @@ def png_upload(size=(1200, 900), color=(200, 60, 20), name="photo.png", fmt="PNG
     Image.new(mode, size, color).save(buffer, format=fmt)
     content_type = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}.get(fmt, "image/png")
     return SimpleUploadedFile(name, buffer.getvalue(), content_type=content_type)
+
+
+def close_response(response):
+    """Close a streamed response the way the test client does for normal ones.
+
+    Closing sends request_finished, and close_old_connections then shuts the connection when it
+    sits inside the test's transaction, which breaks every later test in the class on PostgreSQL.
+    """
+    request_finished.disconnect(close_old_connections)
+    try:
+        response.close()
+    finally:
+        request_finished.connect(close_old_connections)
 
 
 @override_settings(

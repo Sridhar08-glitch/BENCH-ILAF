@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from ilaf.logfilters import MaskSecrets, mask
 from workspaces.models import Member
 
-from .base import API, ApiTestCase
+from .base import API, ApiTestCase, close_response
 from .ops_base import OpsTestCase
 
 
@@ -60,7 +60,7 @@ class DownloadBodyTokenTests(ApiTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res["Cache-Control"], "no-store")
         b"".join(res.streaming_content)
-        res.close()
+        close_response(res)
         self.assertEqual(anon.post(f"{API}privacy/download/check", {"token": token}, format="json").status_code, 410)  # single use
 
     def test_bad_or_missing_body_token(self):

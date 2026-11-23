@@ -20,7 +20,7 @@ from privacy.models import DataRequest
 from privacy import services
 from workspaces.models import Member, Workspace
 
-from .base import API, ApiTestCase, png_upload
+from .base import API, ApiTestCase, close_response, png_upload
 
 
 class PrivacyBase(ApiTestCase):
@@ -207,7 +207,7 @@ class ExportTests(PrivacyBase):
         self.assertEqual(dr.file_name, "")
         # A downloaded export is removed on the next run too.
         self.export(alice)
-        self.download(self.token_from_mail()).close()  # an open file cannot be deleted on Windows
+        close_response(self.download(self.token_from_mail()))  # an open file cannot be deleted on Windows
         name = DataRequest.objects.get(status="completed").file_name
         call_command("cleanup_data_exports", verbosity=0)
         self.assertFalse(storage.exists(name))
