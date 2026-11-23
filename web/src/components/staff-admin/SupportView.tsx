@@ -90,7 +90,7 @@ export function SupportBanner() {
     await qc.invalidateQueries({ queryKey: ["support-session"] });
   }
   return (
-    <div role="status" style={{ background: "var(--orange)", color: "var(--ink)", padding: "8px 18px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", fontSize: 13, fontWeight: 600 }}>
+    <div role="status" style={{ background: "var(--orange)", color: "var(--ink)", padding: "10px 14px", borderRadius: "var(--r-sm)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", fontSize: 13, fontWeight: 600 }}>
       <span>Support view · read-only · logged</span>
       <span>{s.company_name}</span>
       <span aria-label="Time left">{fmtClock(left)} left</span>

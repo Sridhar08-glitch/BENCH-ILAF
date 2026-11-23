@@ -346,12 +346,23 @@ export function settle(root: HTMLElement, o: Options = {}) {
   fitFaces(root);
 }
 
+/** How long the longest opening animation (with its delays) takes; afterwards the stage gets "still" and the card sits flat. */
+export const OPENING_MS = 4500;
+/** How long the flip lasts; the card keeps its perspective for this long after a tap. */
+export const FLIP_MS = 900;
+
 /** Start the opening animation (again). Without this class the card is fully visible and still. */
 export function replay(root: HTMLElement) {
   const stage = root.querySelector<HTMLElement>(".stg");
   const page = root.querySelector<HTMLElement>(".pg");
   [stage, page].forEach((x) => x?.classList.remove("go"));
+  stage?.classList.remove("still");
   void stage?.offsetWidth;
   stage?.classList.add("go");
   page?.classList.add("go");
+}
+
+/** The opening animation is over: the stage drops its perspective so the card is drawn flat and sharp. */
+export function settleStage(root: HTMLElement) {
+  root.querySelector<HTMLElement>(".stg")?.classList.add("still");
 }

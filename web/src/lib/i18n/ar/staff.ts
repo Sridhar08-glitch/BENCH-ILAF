@@ -4,6 +4,9 @@ import type { staff as en } from "../en/staff";
 export const staff: Messages<typeof en> = {
   "staff.strip": "للفريق فقط - الإجراءات مسجّلة",
   "staff.menu": "قائمة الفريق",
+  "staff.area": "لوحة الفريق",
+  "staff.sidebar": "الشريط الجانبي للفريق",
+  "staff.more": "المزيد",
   "staff.loading": "جارٍ التحميل...",
   "staff.cannotLoad": "تعذّر فتح لوحة الفريق",
   "staff.notFound": "تعذّر العثور على هذه الصفحة.",

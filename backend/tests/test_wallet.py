@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from pathlib import Path
 
 from django.test import SimpleTestCase, override_settings
 from rest_framework.test import APIClient
@@ -161,6 +162,8 @@ class WalletEndpointTests(ApiTestCase):
         res = owner.client.patch(f"{API}workspaces/{ws}", {"brand": {"colours": {"primary": "#0B3D91", "accent": "#FFC21A", "mode": "brand"}, "palette": palette}}, format="json")
         self.assertEqual(res.status_code, 200, res.content)
         card = self.published_card(owner, ws=ws)
+        res = owner.client.patch(f"{API}cards/{card['id']}", {"design": {"colour": 4}}, format="json")
+        self.assertEqual(res.status_code, 200, res.content)
         res = owner.client.get(self.url(card))
         obj = decode(res.data["save_url"])[1]["payload"]["genericObjects"][0]
         self.assertEqual(obj["hexBackgroundColor"], "#0B3D91")
@@ -173,8 +176,47 @@ class WalletEndpointTests(ApiTestCase):
         self.alice.client.post(f"{API}cards/{card['id']}/photo", {"file": png_upload()}, format="multipart")
         res = self.alice.client.get(self.url(card))
         obj = decode(res.data["save_url"])[1]["payload"]["genericObjects"][0]
-        self.assertNotIn("logo", obj)
+        self.assertEqual(obj["logo"]["sourceUri"]["uri"], "https://web.test/brand/icon-512.png")
         self.assertTrue(any("https" in w for w in res.data["warnings"]), res.data["warnings"])
+
+    def test_no_banner_picture_and_a_logo_is_always_present(self):
+        card = self.published_card(self.alice)
+        res = self.alice.client.get(self.url(card))
+        obj = decode(res.data["save_url"])[1]["payload"]["genericObjects"][0]
+        self.assertNotIn("heroImage", obj)
+        self.assertEqual(obj["logo"]["sourceUri"]["uri"], "https://web.test/brand/icon-512.png")
+
+    def test_the_pass_colour_follows_the_cards_own_colour_set(self):
+        table = passes._colour_table()
+        card = self.published_card(self.alice)
+        for face, colour in ((14, 0), (14, 1), (44, 2), (250, 3)):
+            res = self.alice.client.patch(f"{API}cards/{card['id']}", {"design": {"face": face, "colour": colour}}, format="json")
+            self.assertEqual(res.status_code, 200, res.content)
+            res = self.alice.client.get(self.url(card))
+            obj = decode(res.data["save_url"])[1]["payload"]["genericObjects"][0]
+            wanted = passes.safe_background(table["palettes"][table["faces"][face - 1][colour]]["bg"])
+            self.assertEqual(obj["hexBackgroundColor"], wanted, (face, colour))
+
+    def test_the_colour_table_matches_the_web_library(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("build_wallet_colours", Path(__file__).resolve().parent.parent / "scripts" / "build_wallet_colours.py")
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        if not builder.META.exists():
+            self.skipTest("the web app is not next to the backend")
+        self.assertEqual(passes._colour_table(), builder.read_table(), "run: python scripts/build_wallet_colours.py")
+
+    def test_links_do_not_repeat_the_website_and_address_boxes(self):
+        card = self.published_card(self.alice, address="West Bay, Doha")
+        self.alice.client.patch(f"{API}cards/{card['id']}", {"items": [
+            {"kind": "Website", "value": "https://studio.com", "label": "", "on": True},
+            {"kind": "Location", "value": "https://maps.example.com/x", "label": "", "on": True},
+            {"kind": "LinkedIn", "value": "https://linkedin.com/in/alice", "label": "", "on": True},
+        ]}, format="json")
+        res = self.alice.client.get(self.url(card))
+        obj = decode(res.data["save_url"])[1]["payload"]["genericObjects"][0]
+        uris = [u["uri"] for u in obj["linksModuleData"]["uris"]]
+        self.assertEqual(uris, [f"https://web.test/c/{card['public_code']}", "https://linkedin.com/in/alice"])
 
     def test_big_cards_are_trimmed_to_a_short_link(self):
         card = self.published_card(self.alice, address="1 Long Street " * 8)

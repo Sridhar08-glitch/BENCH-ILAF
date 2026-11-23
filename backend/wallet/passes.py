@@ -15,6 +15,7 @@ from django.conf import settings
 from cards.services import public_url
 from ilaf import rsa
 from ilaf.branding import HEX_RE, contrast_ratio
+from ilaf.design import COMPANY_COLOUR
 from ilaf.errors import ApiError
 from ilaf.items import item_href
 from ilaf.utils import file_url
@@ -83,11 +84,32 @@ def safe_background(colour, fallback=None):
     return fallback.upper()
 
 
+_colours = {}
+
+
+def _colour_table():
+    """The card colour table copied from the web design library (see scripts/build_wallet_colours.py)."""
+    if not _colours:
+        _colours.update(json.loads((Path(__file__).parent / "card_colours.json").read_text(encoding="utf-8")))
+    return _colours
+
+
 def card_background(card):
+    """The pass takes the card's own colour: the company colour for colourway 4, otherwise the colour set of the
+    face. A card without a usable face (a custom face, an unknown number) keeps the BENCH black."""
     workspace = card.workspace
-    palette = (workspace.brand or {}).get("palette") if workspace.kind == "company" else None
-    if isinstance(palette, dict):
-        return safe_background(palette.get("bg"))
+    design = card.design if isinstance(card.design, dict) else {}
+    company = (workspace.brand or {}).get("palette") if workspace.kind == "company" else None
+    colour = design.get("colour")
+    if colour == COMPANY_COLOUR and isinstance(company, dict):
+        return safe_background(company.get("bg"))
+    table = _colour_table()
+    face = design.get("face")
+    if not design.get("custom_face") and isinstance(face, int) and isinstance(colour, int) \
+            and 1 <= face <= len(table["faces"]) and 0 <= colour < 4:
+        return safe_background(table["palettes"][table["faces"][face - 1][colour]]["bg"])
+    if isinstance(company, dict) and colour is None:
+        return safe_background(company.get("bg"))
     return safe_background(settings.BRAND_BLACK)
 
 
@@ -136,12 +158,13 @@ def build_object(card, request=None, level=0):
 
     logo = _https(request, workspace.logo or workspace.symbol, warnings, "company logo") if workspace.kind == "company" else None
     logo = logo or _https(request, card.photo, warnings, "card photo")
+    if not logo:
+        # Without a picture Google draws a grey circle with the first letter, so the BENCH mark stands in.
+        mark = f"{settings.WEB_BASE_URL}/brand/icon-512.png"
+        if mark.startswith("https://") and "localhost" not in mark:
+            logo = mark
     if logo:
         obj["logo"] = {"sourceUri": {"uri": logo}, "contentDescription": _localized(company or card.name or "Logo")}
-    if level < 2:
-        hero = _https(request, card.cover or (workspace.background if workspace.kind == "company" else None), warnings, "cover picture")
-        if hero:
-            obj["heroImage"] = {"sourceUri": {"uri": hero}, "contentDescription": _localized(card.name or "Card")}
 
     modules, links = [], []
     items = [i for i in card.items.all() if i.on and (i.value or "").strip()]
@@ -158,8 +181,12 @@ def build_object(card, request=None, level=0):
         modules.append({"id": "address", "header": "Address", "body": card.address[:120]})
     obj["textModulesData"] = modules[:MAX_TEXT_MODULES]
     if level < 1:
+        shown_site = item_href(websites[0].kind, websites[0].value) if websites else None
         for item in items:
             href = item_href(item.kind, item.value)
+            # The detail boxes already show the first website and the address, so the link list skips them.
+            if href == shown_site or (item.kind == "Location" and card.address):
+                continue
             if href.startswith(("https://", "http://")) and len(links) < MAX_LINKS:
                 links.append({"uri": href, "description": (item.label or item.kind)[:40], "id": f"l{len(links) + 1}"})
         links.insert(0, {"uri": url, "description": "Open my card", "id": "card"})

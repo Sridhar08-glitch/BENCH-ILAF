@@ -5,7 +5,7 @@
 // behaviour to it: flip, tabs, link taps, Save contact, the opening animation and long-name fitting.
 // It never imports the engine, so the public page does not ship it.
 import { useCallback, useEffect, useLayoutEffect, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
-import { enhance, replay, settle } from "@/lib/library/enhance";
+import { enhance, FLIP_MS, OPENING_MS, replay, settle, settleStage } from "@/lib/library/enhance";
 import { MEETING_FORM_HREF } from "@/lib/card/meeting";
 
 export type TabGroup = "c" | "s" | "w";
@@ -52,7 +52,10 @@ export function CardBehaviour({ children, kinds, tabs, getTab, onSave, onMeeting
 
   useEffect(() => {
     const root = ref.current;
-    if (root && play) replay(root);
+    if (!root || !play) return;
+    replay(root);
+    const id = window.setTimeout(() => settleStage(root), OPENING_MS);
+    return () => window.clearTimeout(id);
   }, [play, playKey]);
 
   // Wide fonts load late; fit the names again once they are in.
@@ -61,9 +64,16 @@ export function CardBehaviour({ children, kinds, tabs, getTab, onSave, onMeeting
     if (root && document.fonts?.ready) document.fonts.ready.then(() => settle(root, { measure: !inert }));
   }, [contentKey, inert]);
 
+  const turnTimer = useRef<number>(0);
+  useEffect(() => () => window.clearTimeout(turnTimer.current), []);
+
   const flip = useCallback((card: Element) => {
     flipRef.current = !card.classList.contains("flipped");
+    // The perspective only lasts while the card turns (see globals.css), so a card at rest is drawn flat and sharp.
+    card.classList.add("turning");
     card.classList.toggle("flipped", flipRef.current);
+    window.clearTimeout(turnTimer.current);
+    turnTimer.current = window.setTimeout(() => card.classList.remove("turning"), FLIP_MS);
   }, []);
 
   const onClick = (e: MouseEvent<HTMLDivElement>) => {

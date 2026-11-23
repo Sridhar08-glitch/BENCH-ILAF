@@ -2,6 +2,9 @@
 export const staff = {
   "staff.strip": "Staff only - actions are logged",
   "staff.menu": "Staff menu",
+  "staff.area": "Staff area",
+  "staff.sidebar": "Staff sidebar",
+  "staff.more": "More",
   "staff.loading": "Loading...",
   "staff.cannotLoad": "The staff area could not be opened",
   "staff.notFound": "This page could not be found.",
