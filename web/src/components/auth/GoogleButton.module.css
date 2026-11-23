@@ -1,0 +1,4 @@
+.wrap { display: flex; flex-direction: column; gap: 14px; }
+.host { display: flex; justify-content: center; min-height: 44px; }
+.or { display: flex; align-items: center; gap: 12px; color: var(--faint); font-size: 12px; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }

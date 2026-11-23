@@ -1,0 +1,18 @@
+# Allow list for the Django admin (/admin/). Reading is not logged in the Django admin, so keep the people who can reach it few.
+# Put these lines inside the `location /admin/ { ... }` block of bench-api.conf, ABOVE the proxy include, and replace the
+# placeholder addresses with the office address(es) or the VPN address range. Anyone else gets 403 before Django sees the request.
+#
+#     location /admin/ {
+#         allow 203.0.113.10;        # office (placeholder, replace)
+#         allow 198.51.100.0/24;     # VPN range (placeholder, replace)
+#         allow 127.0.0.1;           # the server itself
+#         deny all;
+#
+#         limit_req zone=bench_auth burst=20 nodelay;
+#         include /etc/nginx/snippets/bench-proxy.conf;
+#         ...
+#     }
+#
+# Behind Cloudflare or another proxy nginx sees the proxy's address, not the visitor's: then restrict at that layer instead
+# (or use the real_ip module with the proxy's published ranges) and test from an address that is NOT on the list.
+# After a change:  sudo nginx -t && sudo systemctl reload nginx

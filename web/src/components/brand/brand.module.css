@@ -1,0 +1,89 @@
+/* The company brand page as a guided flow: stepper, one step at a time, logo, colours, artwork, the design picker and the summary.
+   Colours and sizes come from the app tokens in globals.css. */
+.sub { display: flex; flex-direction: column; gap: 10px; padding-block-start: 12px; border-block-start: 1px solid var(--line-soft); }
+.sub:first-child { border-block-start: 0; padding-block-start: 0; }
+.sub h3 { margin: 0; font-size: 13px; font-weight: 700; }
+.note { font-size: 12.5px; color: var(--mute); line-height: 1.45; }
+.fld { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lab { font-size: 12px; font-weight: 700; color: var(--mute); }
+.lab b { color: var(--ink); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.wrapseg { flex-wrap: wrap; }
+.wrapseg button { flex: 1 1 auto; }
+
+/* picture slots (logo, symbol, uploaded artwork) */
+.slot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.thumb { flex: none; width: 112px; height: 56px; border-radius: var(--r); border: 1px dashed var(--line); display: grid; place-items: center; overflow: hidden;
+  background: conic-gradient(#f1f1f1 25%, #fff 0 50%, #f1f1f1 0 75%, #fff 0) 0 0 / 12px 12px; }
+.thumb img { max-width: 100%; max-height: 100%; display: block; object-fit: contain; }
+.thumb small { font-size: 11px; color: var(--faint); }
+.dark { background: #26262b; }
+
+/* colours */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 420px) { .cols { grid-template-columns: 1fr; } }
+.cin { display: flex; gap: 6px; align-items: center; }
+.cin input[type="color"] { flex: none; width: 40px; height: 40px; padding: 2px; border: 1px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; }
+.cin input[type="text"] { font-family: ui-monospace, Consolas, monospace; text-transform: uppercase; min-width: 0; }
+.palette { display: flex; border-radius: var(--r-sm); overflow: hidden; height: 30px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .14); }
+.palette i { flex: 1; }
+.checks { display: flex; flex-direction: column; gap: 6px; }
+.check { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
+
+/* the way the brand appears */
+.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.mode { text-align: start; display: flex; flex-direction: column; gap: 3px; background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; font: inherit; color: var(--ink); cursor: pointer; min-width: 0; }
+.mode b { font-size: 13px; }
+.mode span { font-size: 12px; color: var(--mute); line-height: 1.35; }
+.mode[aria-pressed="true"] { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+
+.samples { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sample { position: relative; border: 1px solid var(--line); border-radius: var(--r); padding: 0; height: 74px; overflow: hidden; cursor: pointer; background-size: cover; background-position: center; font: inherit; }
+.sample span { position: absolute; inset-inline: 0; inset-block-end: 0; background: rgba(0, 0, 0, .62); color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 6px; text-align: start; }
+.sample[aria-pressed="true"] { outline: 2.5px solid var(--blue); outline-offset: 1px; }
+.tplgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.tpl { border: 1px solid var(--line); border-radius: var(--r); background: #fff; padding: 6px; display: flex; flex-direction: column; gap: 5px; font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); text-align: start; cursor: pointer; }
+.tpl img { width: 100%; aspect-ratio: 7 / 4; object-fit: cover; border-radius: var(--r-sm); display: block; }
+.tpl[aria-pressed="true"] { outline: 2.5px solid var(--blue); outline-offset: 1px; }
+.zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.zone { border: 1px solid var(--line); border-radius: var(--r); background: #fff; padding: 6px; display: flex; flex-direction: column; gap: 4px; font: inherit; font-size: 12px; color: var(--ink); cursor: pointer; align-items: flex-start; }
+.zone svg { width: 100%; height: auto; display: block; }
+.zone[aria-pressed="true"] { outline: 2.5px solid var(--blue); outline-offset: 1px; }
+.range { width: 100%; accent-color: var(--blue); }
+.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.steps li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+.steps li i { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-bg); color: var(--accent-ink); font-style: normal; font-weight: 700; display: grid; place-items: center; font-size: 12px; }
+.steps small { display: block; color: var(--mute); font-size: 12px; }
+
+/* live preview */
+.people { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.people button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.people button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* the stepper */
+.stepper { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 8px; }
+.stepitem { flex: 0 1 auto; min-width: 0; }
+.stepbtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: none; border: 0; border-radius: var(--pill); padding-block: 6px; padding-inline: 6px 10px; font: inherit; font-weight: 600; font-size: 13px; color: var(--mute); cursor: pointer; min-width: 0; }
+.stepbtn:hover { background: var(--surface-2); color: var(--ink); }
+.stepbtn[aria-current="step"] { background: var(--ink); color: #fff; }
+.stepdot { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--surface-2); color: var(--mute); box-shadow: inset 0 0 0 1px var(--line); }
+.stepdot svg { width: 14px; height: 14px; }
+.stepbtn[aria-current="step"] .stepdot { background: var(--accent); color: var(--ink); box-shadow: none; }
+.stepdone .stepdot { background: var(--green); color: #052e22; box-shadow: none; }
+.steplab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) { .stepitem { flex: 1 1 0; } .stepbtn { padding: 6px 4px; } .steplab { display: none; } .stepbtn[aria-current="step"] .steplab { display: inline; } .stepitem:has(.stepbtn[aria-current="step"]) { flex: 3 1 0; } }
+@media (max-width: 430px) { .stepbtn[aria-current="step"] .steplab { font-size: 12px; } .stepbtn { padding-inline: 4px; } }
+
+.stephead { display: flex; flex-direction: column; gap: 2px; padding-block-end: 12px; border-block-end: 1px solid var(--line-soft); }
+.steptitle { font-size: 20px; letter-spacing: -.03em; font-weight: 800; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); position: sticky; inset-block-end: 12px; z-index: 5; }
+.nav .hint { flex: 1; text-align: center; }
+@media (max-width: 900px) { .nav { inset-block-end: 84px; } .nav .hint { display: none; } .nav { justify-content: space-between; } }
+
+/* the summary of every choice */
+.summary { margin: 0; display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.summary > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; padding: 10px 14px; border-block-start: 1px solid var(--line-soft); font-size: 13px; }
+.summary > div:first-child { border-block-start: 0; }
+.summary dt { color: var(--mute); font-weight: 600; }
+.summary dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .summary > div { grid-template-columns: 1fr; gap: 2px; } }

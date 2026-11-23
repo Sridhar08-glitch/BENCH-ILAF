@@ -1,0 +1,274 @@
+name: CI
+
+# Runs on every pull request and on pushes to main. A nightly run (03:00 UTC) adds the full browser suite.
+# Secrets: none are needed. Every job uses throw-away values and local services.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      full_e2e:
+        description: "Run the full browser suite, not only the smoke tests"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ------------------------------------------------------------------ backend
+  backend:
+    name: Backend (Python ${{ matrix.python }}, ${{ matrix.db }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11"]
+        db: [sqlite, postgres]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bench
+          POSTGRES_PASSWORD: bench
+          POSTGRES_DB: bench
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bench -d bench"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pip-audit
+
+      - name: Database for this run
+        run: |
+          if [ "${{ matrix.db }}" = "postgres" ]; then
+            echo "DATABASE_URL=postgres://bench:bench@localhost:5432/bench" >> "$GITHUB_ENV"
+          else
+            echo "DATABASE_URL=sqlite:///${{ runner.temp }}/ci.sqlite3" >> "$GITHUB_ENV"
+          fi
+
+      - name: Deployment checks with the production-like settings
+        run: |
+          python ../deploy/ci/load_env.py >> "$GITHUB_ENV.prod"
+          set -a
+          while IFS= read -r line; do export "$line"; done < "$GITHUB_ENV.prod"
+          set +a
+          python ../deploy/ci/check_deploy.py
+
+      - name: Models and migrations agree
+        env:
+          DEBUG: "true"
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Migrate a fresh PostgreSQL database and load the plans
+        if: matrix.db == 'postgres'
+        env:
+          DEBUG: "true"
+        run: |
+          python manage.py migrate --noinput
+          python manage.py seed_plans
+
+      - name: Tests (parallel)
+        env:
+          DEBUG: "true"
+        run: python manage.py test --parallel --noinput
+
+      - name: Dependency audit (known vulnerabilities in requirements)
+        run: pip-audit -r requirements.txt --progress-spinner off
+
+  # ------------------------------------------------------------------ web
+  web:
+    name: Web (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.ci.example/api/v1
+          API_URL: https://api.ci.example/api/v1
+          NEXT_PUBLIC_WEB_URL: https://app.ci.example
+          NEXT_PUBLIC_PUBLIC_HOST: cards.ci.example
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
+      - name: Dependency audit (production packages, high and critical only)
+        run: npm audit --omit=dev --audit-level=high
+
+  # ------------------------------------------------------------------ browser tests
+  e2e:
+    name: Browser tests (${{ github.event_name == 'schedule' && 'full' || (inputs.full_e2e && 'full' || 'smoke') }})
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ github.event_name == 'schedule' && 90 || 30 }}
+    needs: [backend, web]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bench
+          POSTGRES_PASSWORD: bench
+          POSTGRES_DB: bench
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bench -d bench"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      API_PORT: "8100"
+      WEB_PORT: "3100"
+      E2E_API_URL: http://localhost:8100/api/v1
+      E2E_WEB_URL: http://localhost:3100
+      E2E_MAIL_DIR: ${{ github.workspace }}/mail
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install backend and web
+        run: |
+          pip install -r backend/requirements.txt
+          cd web && npm ci
+
+      - name: Start the API (development activation, mail written to files, no rate limits)
+        working-directory: backend
+        env:
+          DEBUG: "true"
+          SECRET_KEY: ci-e2e-secret-key-0123456789abcdef0123456789abcdef
+          DATABASE_URL: postgres://bench:bench@localhost:5432/bench
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          CORS_ALLOWED_ORIGINS: http://localhost:3100
+          CSRF_TRUSTED_ORIGINS: http://localhost:3100
+          CARDS_DEV_ACTIVATE: "true"
+          WEBHOOK_ALLOW_PRIVATE_TARGETS: "true"
+          ALLOW_LOCAL_THROTTLE_CACHE: "true"
+          EMAIL_FILE_PATH: ${{ github.workspace }}/mail
+          THROTTLE_RATES_JSON: '{"auth_login":"100000/min","auth_register":"100000/min","auth_forgot":"100000/min","auth_reset":"100000/min","invite_accept":"100000/min","public_read":"100000/min","public_event":"100000/min","public_lead":"100000/min","slug_check":"100000/min","public_directory":"100000/min","resolve_link":"100000/min","data_download":"100000/min","support_public":"100000/hour","user_read":"100000/min","user_write":"100000/min","user_heavy":"100000/min","user_sensitive":"100000/min","user_create":"100000/hour"}'
+        run: |
+          mkdir -p "$E2E_MAIL_DIR"
+          python manage.py migrate --noinput
+          python manage.py seed_plans
+          nohup python manage.py runserver 8100 --noreload > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 40); do curl -fs http://localhost:8100/health/ && break || sleep 2; done
+
+      - name: Build and start the website
+        working-directory: web
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8100/api/v1
+          API_URL: http://localhost:8100/api/v1
+          NEXT_PUBLIC_WEB_URL: http://localhost:3100
+          NEXT_PUBLIC_PUBLIC_HOST: localhost:3100
+          INSECURE_COOKIES: "1"
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          npm run build
+          nohup npx next start -p 3100 > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 40); do curl -fs -o /dev/null http://localhost:3100/login && break || sleep 2; done
+
+      - name: Install the test browser
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the browser tests
+        working-directory: web
+        env:
+          CI: "true"
+          E2E_FULL: ${{ github.event_name == 'schedule' || inputs.full_e2e }}
+        run: |
+          if [ "$E2E_FULL" = "true" ]; then npx playwright test; else npx playwright test --grep @smoke; fi
+
+      - name: Keep the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts-${{ github.run_id }}
+          path: |
+            web/e2e/artifacts/report
+            web/e2e/artifacts/results
+            web/e2e/artifacts/junit.xml
+            web/e2e/artifacts/a11y-report.json
+            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/web.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ------------------------------------------------------------------ dependency review
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
+  # ------------------------------------------------------------------ deployment scripts
+  shell:
+    name: Deployment scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax of the deploy kit
+        run: |
+          for f in deploy/*.sh deploy/cron/* ; do
+            [ -f "$f" ] || continue
+            head -1 "$f" | grep -q "sh" || continue
+            bash -n "$f" && echo "ok $f"
+          done
+      - name: nginx and systemd files are present
+        run: ls deploy/nginx deploy/systemd

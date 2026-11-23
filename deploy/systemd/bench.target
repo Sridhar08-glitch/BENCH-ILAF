@@ -1,0 +1,6 @@
+[Unit]
+Description=BENCH (API and web app)
+Wants=bench-api.service bench-web.service
+
+[Install]
+WantedBy=multi-user.target

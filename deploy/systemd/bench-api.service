@@ -1,0 +1,35 @@
+[Unit]
+Description=BENCH API (Gunicorn, Django)
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+PartOf=bench.target
+
+[Service]
+User=bench
+Group=bench
+WorkingDirectory=/srv/bench/app/backend
+Environment=PYTHONUNBUFFERED=1
+Environment=DJANGO_SETTINGS_MODULE=ilaf.settings
+# Settings (secrets, database, addresses) come from /srv/bench/app/backend/.env, read by settings.py.
+# 3 workers x 4 threads = 12 requests at once; a worker restarts itself after about 1000 requests (clears slow leaks).
+# 127.0.0.1 only: the outside world reaches it through nginx. Port 8101 is not used by the other app on this server (8001-8003).
+ExecStart=/srv/bench/app/backend/.venv/bin/gunicorn ilaf.wsgi:application \
+    --bind 127.0.0.1:8101 \
+    --workers 3 --worker-class gthread --threads 4 \
+    --max-requests 1000 --max-requests-jitter 100 \
+    --timeout 60 --graceful-timeout 30 \
+    --error-logfile -
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+MemoryMax=1500M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/bench
+# Errors go to the journal:  journalctl -u bench-api -n 100
+
+[Install]
+WantedBy=bench.target

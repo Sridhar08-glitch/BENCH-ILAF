@@ -1,0 +1,19 @@
+# Secrets and machine-specific files never go into the repository.
+.env
+.env.*
+!.env.example
+!env.production.example
+!env.web.production.example
+*.pem
+*.key
+*.sqlite3
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.next/
+.next.prev/
+backend/media/
+backend/staticfiles/
+backend/private_exports/
+backend/private_files/

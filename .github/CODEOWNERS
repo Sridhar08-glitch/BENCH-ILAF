@@ -1,0 +1,8 @@
+# Placeholder: replace @YOUR-GITHUB-USER with the real GitHub user or team once the repository exists.
+# Every change needs a review from the owner of the part it touches.
+*                       @YOUR-GITHUB-USER
+/backend/billing/       @YOUR-GITHUB-USER
+/backend/accounts/      @YOUR-GITHUB-USER
+/backend/privacy/       @YOUR-GITHUB-USER
+/deploy/                @YOUR-GITHUB-USER
+/.github/               @YOUR-GITHUB-USER

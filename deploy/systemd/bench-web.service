@@ -1,0 +1,29 @@
+[Unit]
+Description=BENCH web app (Next.js)
+After=network.target bench-api.service
+Wants=bench-api.service
+PartOf=bench.target
+
+[Service]
+User=bench
+Group=bench
+WorkingDirectory=/srv/bench/app/web
+# NODE_ENV=production makes the sign-in cookies Secure. API_URL and the other settings are read from
+# /srv/bench/app/web/.env.production (Next loads it by itself). NEXT_PUBLIC_* values were baked in at build time.
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+# 127.0.0.1 only: nginx is the public entrance. Port 3101 is the web app's own (the demo on a laptop uses 3500, Hope's apps use other ports).
+ExecStart=/usr/bin/node /srv/bench/app/web/node_modules/next/dist/bin/next start -p 3101 -H 127.0.0.1
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+MemoryMax=1G
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# Next writes its page cache under .next/cache while running.
+ReadWritePaths=/srv/bench
+
+[Install]
+WantedBy=bench.target

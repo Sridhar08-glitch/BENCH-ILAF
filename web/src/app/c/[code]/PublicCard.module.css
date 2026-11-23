@@ -1,0 +1,34 @@
+/* The public page frame around the card. The whole window is one page in the card's own colour; the card is a single
+   centred column the width of a phone page, with no box, frame or shadow around it. */
+/* decorative parts of some layouts reach past the screen edge: never let them make the page scroll sideways */
+.wrap { overflow-x: clip; min-height: 100dvh; background: var(--pgbg); color: var(--pgfg); font-family: var(--font-jakarta), system-ui, sans-serif; }
+.col { max-width: 440px; margin-inline: auto; background: var(--pgbg); display: flex; flex-direction: column; min-height: 100dvh; }
+.legal { text-align: center; padding: 0 16px 14px; font-size: 11px; line-height: 1.2; }
+.legal a { color: var(--pgfg); opacity: .6; text-decoration: underline; text-underline-offset: 2px; }
+.legal a:hover { opacity: 1; }
+.tools { display: flex; gap: 10px; padding: 0 16px 8px; }
+.tool {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 10px; font: inherit; font-weight: 700; font-size: 13px;
+  color: var(--pgfg); background: transparent; border: 1.5px solid color-mix(in srgb, var(--pgfg) 28%, transparent); border-radius: 12px; cursor: pointer;
+}
+.tool:hover { background: color-mix(in srgb, var(--pgfg) 8%, transparent); }
+.tool:focus-visible { outline: 2px solid var(--pacc); outline-offset: 2px; }
+/* Save contact is a link when scripts are off */
+.wrap :global(.cfl .pg a.sv) { text-decoration: none; }
+.live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+
+/* lead form and share notices use a neutral light panel so they read well on every card colour */
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .5); display: grid; place-items: end center; padding: 0; }
+@media (min-width: 640px) { .modal { place-items: center; padding: 20px; } }
+.dialog { background: #fff; color: #070707; width: 100%; max-width: 440px; border-radius: 16px 16px 0 0; padding: 20px 18px 22px; display: flex; flex-direction: column; gap: 12px; max-height: 92dvh; overflow-y: auto; font-family: var(--font-ui); }
+@media (min-width: 640px) { .dialog { border-radius: 16px; } }
+.dialog h2 { font-size: 18px; }
+.dialog p { color: #606060; }
+.hp { position: absolute; inset-inline-start: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.toast { position: fixed; inset-inline: 0; inset-block-end: 22px; display: flex; justify-content: center; z-index: 60; pointer-events: none; }
+.toast span { background: #070707; color: #fff; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-family: var(--font-ui); box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
+
+/* paused, removed and unknown cards */
+.state { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
+.stateBox { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.stateIcon { width: 48px; height: 48px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; color: var(--accent); }

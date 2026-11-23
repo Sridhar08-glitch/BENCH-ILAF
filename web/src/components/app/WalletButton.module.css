@@ -1,0 +1,5 @@
+.wrap { display: inline-flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.btn { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding-block: 0; padding-inline: 16px 20px; border-radius: 999px; border: 1px solid #000; background: #000; color: #fff; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; }
+.btn:hover { background: #202124; }
+.btn:focus-visible { outline: 2px solid var(--focus, #3B82F6); outline-offset: 2px; }
+.btn:disabled { opacity: .6; cursor: progress; }

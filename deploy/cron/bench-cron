@@ -1,0 +1,61 @@
+# BENCH scheduled jobs. Install as /etc/cron.d/bench (owner root, mode 644):
+#     sudo cp /srv/bench/app/deploy/cron/bench-cron /etc/cron.d/bench && sudo chmod 644 /etc/cron.d/bench
+# There is no Celery: this file IS the job runner. Every job goes through run_job.sh, which uses flock so a slow
+# run is never started twice, and records the last success for check_bench.sh.
+# A missed run is harmless: each command works from "what is due" and catches up on the next run.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+CRON_TZ=UTC
+J=/srv/bench/app/deploy/run_job.sh
+D=/srv/bench/app/deploy
+
+# --- every minute: send queued lead webhooks and retry failed ones
+* * * * *      bench  QUIET=1 $J deliver_webhooks deliver_webhooks
+
+# --- every minute: send new leads to the connected CRMs (HubSpot, Salesforce, Zoho CRM) and retry failed sends
+* * * * *      bench  QUIET=1 $J sync_crm sync_crm
+
+# --- every minute: read the support mailbox (IMAP) and add new mail to tickets; does nothing until SUPPORT_IMAP_HOST is set
+* * * * *      bench  QUIET=1 $J fetch_support_mail fetch_support_mail
+
+# --- every 5 minutes: send due announcement e-mails (a batch at a time; a repeated run sends nothing twice)
+*/5 * * * *    bench  QUIET=1 $J send_announcements send_announcements
+
+# --- every 5 minutes: end support views whose 30 minutes ran out
+*/5 * * * *    bench  QUIET=1 $J expire_support_views expire_support_views
+
+# --- every minute: support clock: unanswered chats become tickets, idle chats end, staff presence times out, SLA alerts
+* * * * *      bench  QUIET=1 $J support_tick support_tick
+
+# --- every 5 minutes: build big data exports and e-mail the download links
+*/5 * * * *    bench  QUIET=1 $J process_data_requests process_data_requests
+
+# --- every hour: delete export files that were downloaded or whose 24 h link expired
+15 * * * *     bench  $J cleanup_data_exports cleanup_data_exports
+
+# --- daily
+10 3 * * *     bench  $J purge_deleted_accounts purge_deleted_accounts
+20 3 * * *     bench  $J expire_subscriptions expire_subscriptions
+30 3 * * *     bench  $J flushexpiredtokens flushexpiredtokens
+40 3 * * *     bench  $J prune_analytics prune_analytics
+50 3 * * *     bench  $J prune_api_idempotency prune_api_idempotency
+55 3 * * *     bench  $J prune_security prune_security
+
+# --- every hour: the daily summary e-mail, sent in each person's own morning (7 to 11 local time); one per person per day
+5 * * * *      bench  QUIET=1 $J send_daily_summary send_daily_summary
+55 3 * * *     bench  $J prune_back_office prune_back_office
+0 7 * * *      bench  $J send_renewal_reminders send_renewal_reminders
+
+# --- weekly (Monday 07:00 UTC): weekly report e-mails for the last full week; running twice sends nothing twice
+0 7 * * 1      bench  $J send_weekly_reports send_weekly_reports
+
+# --- weekly (Sunday 04:00 UTC): remove expired admin sessions
+0 4 * * 0      bench  $J clearsessions clearsessions
+
+# --- backups: database every night at 02:30, uploaded pictures every Sunday 03:45
+30 2 * * *     bench  $D/backup_db.sh >> /srv/bench/logs/backup.log 2>&1
+45 3 * * 0     bench  $D/backup_media.sh >> /srv/bench/logs/backup.log 2>&1
+
+# --- monitoring: the down-alarm every minute (mails after two failed checks in a row), the full report once a day
+* * * * *      bench  $D/alert_down.sh
+5 6 * * *      bench  $D/check_bench.sh --mail-daily >> /srv/bench/logs/check.log 2>&1
