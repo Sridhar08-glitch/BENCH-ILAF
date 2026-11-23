@@ -32,7 +32,7 @@ class Result:
     headers: dict = field(default_factory=dict)
 
 
-def call(method, url, host_ok, headers=None, json_body=None, form=None, params=None):
+def call(method, url, host_ok, headers=None, json_body=None, form=None, params=None, timeout=None):
     """Send one request and return a Result. `host_ok(hostname)` is the vendor's allow-list."""
     parts = urlsplit(url)
     if parts.scheme != "https" or not parts.hostname or parts.username or parts.password:
@@ -57,7 +57,7 @@ def call(method, url, host_ok, headers=None, json_body=None, form=None, params=N
     elif form is not None:
         body = urlencode(form).encode("utf-8")
         send_headers["Content-Type"] = "application/x-www-form-urlencoded"
-    conn = webhooks._PinnedHTTPS(host, ip, port, TIMEOUT_SECONDS)
+    conn = webhooks._PinnedHTTPS(host, ip, port, timeout or TIMEOUT_SECONDS)
     try:
         conn.request(method, path, body=body, headers=send_headers)
         response = conn.getresponse()

@@ -8,7 +8,7 @@ Rules (all enforced here, none by the screens):
 * the start and the end are written to the staff audit log AND to the company's own Activity log ("support viewed your
   account"), and every page opened is kept on the session.
 """
-from datetime import timedelta
+from datetime import timedelta, timezone as dt_timezone
 
 from django.conf import settings
 from django.http import Http404
@@ -17,7 +17,9 @@ from rest_framework.response import Response
 
 from cards.models import Card
 from cards.services import stats_for
+from ilaf.emails import send_brand_email
 from ilaf.errors import ApiError, validation_error
+from ilaf.i18n import format_date, tr, user_language
 from ilaf.utils import iso
 from leads.models import Lead
 from operations.audit import ip_hash
@@ -28,7 +30,7 @@ from .ops_services import customer_event
 from .perms_map import roles_for
 from .permissions import StaffView
 from .views_customers import (
-    CompanyDetailView, brand_json, card_row, events_json, get_company, member_json,
+    CompanyDetailView, brand_json, card_row, events_json, get_company, team_rows,
 )
 
 MIN_REASON = 8
@@ -74,6 +76,23 @@ def active_session(user):
     return SupportViewSession.objects.filter(staff=user, ended_at__isnull=True).select_related("workspace").first()
 
 
+def tell_owner_started(ws, session, staff_user):
+    """E-mail the company owner (in their language) that a support view was opened: who, why and until when."""
+    owner = ws.members.filter(role="owner").select_related("user").first()
+    if owner is None or not owner.email:
+        return
+    lang = user_language(owner.user) if owner.user_id else "en"
+    who = staff_user.full_name or staff_user.email.split("@")[0]
+    until = session.expires_at.astimezone(dt_timezone.utc)
+    when = f"{format_date(lang, until)}, {until:%H:%M} UTC"
+    send_brand_email(
+        owner.email, tr(lang, "Our support team opened a view of {workspace}", workspace=ws.name), tr(lang, "A support view was opened"),
+        [tr(lang, "{who} from our support team is looking at {workspace} in read-only view until {when}. Reason: {reason}", who=who, workspace=ws.name, when=when, reason=session.reason),
+         tr(lang, "Nothing can be changed during this view. It is also written in your company's Activity log.")],
+        lang=lang,
+    )
+
+
 class SupportViewStartView(StaffView):
     perm = "support"
     write_roles = roles_for("support")
@@ -98,6 +117,7 @@ class SupportViewStartView(StaffView):
         )
         customer_event(request, ws, "support.viewed", "workspace", ws.id, ws.name, {"reason": reason, "minutes": settings.SUPPORT_VIEW_MINUTES})
         services.log(request, "support_view.started", "company", ws.id, ws.name, {"reason": reason, "session": str(s.id)})
+        tell_owner_started(ws, s, request.user)
         return Response(session_json(s), status=201)
 
 
@@ -151,6 +171,8 @@ class MirrorView(StaffView):
         if last != self.page:
             s.pages = [*s.pages, {"t": iso(timezone.now()), "page": self.page}][-200:]
             s.save(update_fields=["pages"])
+            if self.page != "log":
+                services.log(request, "look.leads" if self.page == "leads" else "look.page", "company", ws.id, ws.name, {"page": self.page, "session": str(s.id)})
         return Response({"session": session_json(s), "data": self.get_data(request, ws, s)})
 
     def get_data(self, request, ws, session):
@@ -168,7 +190,7 @@ class MirrorTeamView(MirrorView):
     page = "team"
 
     def get_data(self, request, ws, session):
-        return [member_json(m) for m in ws.members.select_related("user", "department").order_by("role", "email")]
+        return team_rows(ws)
 
 
 class MirrorCardsView(MirrorView):

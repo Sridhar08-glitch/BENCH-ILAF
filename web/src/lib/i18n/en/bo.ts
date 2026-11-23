@@ -34,6 +34,7 @@ export const bo = {
   "bo.accessSize": "Company size",
   "bo.accessSizeChoose": "Choose",
   "bo.accessSizePeople": "{range} people",
+  "bo.accessCountry": "Country",
   "bo.accessMessage": "What would you like to do? (optional)",
   "bo.accessSend": "Send request",
   "bo.accessThanks": "Thank you, we received your request",

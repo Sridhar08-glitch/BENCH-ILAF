@@ -17,7 +17,9 @@ import { useI18n } from "@/lib/i18n/client";
 import { tk, type MessageKey } from "@/lib/i18n";
 import { SupportBanner } from "@/components/staff-admin/SupportView";
 import { navFor } from "@/lib/staff-admin/roles";
-import { NavBadge, StaffBell, useStaffAlerts } from "./StaffAlerts";
+import { countFor } from "@/lib/staff-admin/frame";
+import { CountBadge, NavBadge, StaffBell, useStaffAlerts, useStaffCounts } from "./StaffAlerts";
+import { StaffSearch } from "./StaffSearch";
 
 const NAV: { href: string; label: MessageKey; icon: string }[] = [
   { href: "/staff/design-requests", label: tk("staff.navRequests"), icon: "palette" },
@@ -45,7 +47,9 @@ function Frame({ children }: { children: React.ReactNode }) {
   useEffect(() => setMore(false), [pathname]);
   // Waits for the second step: before it the server refuses the alerts.
   const alerts = useStaffAlerts(!!me.data?.verified);
+  const counts = useStaffCounts(!!me.data?.verified);
   const support = (href: string) => (href === "/staff/support" ? alerts?.total : undefined);
+  const open = (href: string) => countFor(href, counts);
   if (me.isLoading) return <div className="panel" style={{ margin: 40, padding: 24 }} role="status">{t("staff.loading")}</div>;
   // not signed in is handled by the middleware; any other refusal means "this is not for you"
   if (me.error || !me.data) {
@@ -94,6 +98,7 @@ function Frame({ children }: { children: React.ReactNode }) {
                   <Icon name={n.icon} />
                   {n.label}
                   <NavBadge total={support(n.href)} place="side" />
+                  <CountBadge total={open(n.href)} place="side" testId="staff-count-badge" />
                 </Link>
               </Fragment>
             ))}
@@ -117,7 +122,10 @@ function Frame({ children }: { children: React.ReactNode }) {
       <main className="main staffpages">
         <header className="topbar">
           <Logo href="/staff" compact />
-          <div className="pick"><span className="pill dark" title={t("staff.strip")}>{t("staff.area")}</span></div>
+          <div className="pick">
+            <span className="pill dark" title={t("staff.strip")}>{t("staff.area")}</span>
+            {staff.verified && <StaffSearch />}
+          </div>
           {staff.verified && <StaffBell data={alerts} />}
           <LanguageSwitcher className="langpick top-lang" />
         </header>
@@ -131,18 +139,20 @@ function Frame({ children }: { children: React.ReactNode }) {
             <Icon name={n.icon} />
             {n.label}
             <NavBadge total={support(n.href)} place="bar" />
+            <CountBadge total={open(n.href)} place="bar" testId="staff-count-badge-bar" />
           </Link>
         ))}
         <button type="button" aria-expanded={more} aria-label={t("staff.more")} onClick={() => setMore((m) => !m)}>
           <Icon name="menu" />
           {t("staff.more")}
           {moreItems.some((n) => n.href === "/staff/support") && <NavBadge total={alerts?.total} place="bar" />}
+          {moreItems.some((n) => open(n.href)) && <CountBadge total={moreItems.reduce((sum, n) => sum + (open(n.href) ?? 0), 0)} place="bar" testId="staff-count-badge-more" />}
         </button>
       </nav>
       {more && (
         <div className="morepanel">
           {moreItems.map((n) => (
-            <Link key={n.href} href={n.href}><Icon name={n.icon} />{n.label}<NavBadge total={support(n.href)} place="side" /></Link>
+            <Link key={n.href} href={n.href}><Icon name={n.icon} />{n.label}<NavBadge total={support(n.href)} place="side" /><CountBadge total={open(n.href)} place="side" testId="staff-count-badge-more-item" /></Link>
           ))}
           <Link href="/app" data-testid="back-to-app-more"><Icon name="home" />{t("staff.backToApp")}</Link>
           {staff.verified && <button type="button" onClick={() => void endSession()}><Icon name="logout" className="flip-rtl" />{t("staff.endSession")}</button>}

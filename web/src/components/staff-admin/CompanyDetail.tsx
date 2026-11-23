@@ -2,7 +2,7 @@
 
 // One company: Overview, Team, Cards, Leads, Brand, Activity, Notes and the Danger zone (admin only).
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/app/ui";
 import { sa, type ActivityRow, type BrandInfo, type CardRow, type CompanyDetail as Detail, type LeadRow, type Member, type Note } from "@/lib/staff-admin/api";
@@ -13,6 +13,8 @@ import { StartSupportDialog } from "./SupportView";
 import { STATUS_WORDS } from "./Companies";
 import { Await, Kpi, NoRows, Page, Pill, ReasonDialog, RoleButton, Table, Tabs, td, toneOf, useFail } from "./ui";
 import { cardStatusWord } from "@/lib/staff-admin/card-data";
+import { brandSwatches, cardStateWord, fontName, seatsInfo, viewsPoints } from "@/lib/staff-admin/company-page";
+import { BarChart } from "./charts";
 import { CardDrawer } from "./People";
 
 const TABS = ["Overview", "Team", "Cards", "Leads", "Brand", "Activity", "Notes", "Danger zone"] as const;
@@ -48,18 +50,62 @@ export default function CompanyDetail({ id }: { id: string }) {
   );
 }
 
+function SeatsBar({ used, total }: { used: number; total: number }) {
+  const seats = seatsInfo(used, total);
+  const fill = seats.state === "full" ? "var(--danger)" : seats.state === "near" ? "var(--warn)" : "var(--accent)";
+  return (
+    <section className="panel" aria-label="Seats" style={{ padding: 14, display: "grid", gap: 8, alignContent: "start" }}>
+      <h3 style={{ margin: 0, fontSize: 15 }}>Seats</h3>
+      <b style={{ fontSize: 22 }}>{used} of {total} used{seats.state !== "none" ? ` (${seats.percent}%)` : ""}</b>
+      <div role="progressbar" aria-label="Seats used" aria-valuemin={0} aria-valuemax={100} aria-valuenow={seats.percent} style={{ height: 10, borderRadius: 999, background: "var(--surface-2)", overflow: "hidden" }}>
+        <div style={{ width: `${seats.percent}%`, height: "100%", background: fill, borderRadius: 999 }} />
+      </div>
+      {seats.state === "near" || seats.state === "full"
+        ? <div className={`notice ${seats.state === "full" ? "bad" : "warn"}`} role="status"><div className="grow">{seats.note}</div></div>
+        : <span className="hint">{seats.note}</span>}
+    </section>
+  );
+}
+
+function AccountPanel({ c }: { c: Detail }) {
+  const row = (label: string, value: ReactNode) => <><dt className="hint">{label}</dt><dd style={{ margin: 0, overflowWrap: "anywhere" }}>{value}</dd></>;
+  return (
+    <section className="panel" aria-label="Account" style={{ padding: 14, display: "grid", gap: 8, alignContent: "start" }}>
+      <h3 style={{ margin: 0, fontSize: 15 }}>Account</h3>
+      <dl style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "6px 16px", margin: 0 }}>
+        {row("Plan", c.plan ?? "No plan")}
+        {row("Status", STATUS_WORDS[c.status] ?? c.status)}
+        {row("Owner", c.owner?.full_name || "-")}
+        {row("Owner e-mail", c.owner?.email ?? "-")}
+        {row("Country", c.country ? countryName(c.country, "en") : "-")}
+        {row("Public address", c.public_address ? <a href={c.public_address} target="_blank" rel="noopener noreferrer">{c.public_address}</a> : "None")}
+      </dl>
+    </section>
+  );
+}
+
 function OverviewTab({ c }: { c: Detail }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-      <Kpi label="People" value={`${c.seats_used} of ${c.seats_total}`} hint="seats used" />
-      <Kpi label="Live cards" value={fmtNumber(c.counts.cards_published)} hint={`${c.counts.cards_draft} drafts, ${c.counts.cards_suspended} suspended`} />
-      <Kpi label="Leads" value={fmtNumber(c.counts.leads)} />
-      <Kpi label="Views, last 30 days" value={fmtNumber(c.counts.views_30d)} />
-      <Kpi label="Open card reports" value={fmtNumber(c.counts.open_reports)} tone={c.counts.open_reports ? "bad" : undefined} />
-      <Kpi label="Open design requests" value={fmtNumber(c.open_design_requests)} />
-      <Kpi label="Plan runs until" value={c.plan_ends_at ? fmtDay(c.plan_ends_at) : "-"} hint={c.plan ?? "No plan"} />
-      <Kpi label="Owner last signed in" value={c.owner?.last_sign_in ? fmtDay(c.owner.last_sign_in) : "-"} />
-      <Kpi label="Support views" value={fmtNumber(c.counts.support_views)} hint="all time" />
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+        <Kpi label="People" value={`${c.seats_used} of ${c.seats_total}`} hint="seats used" />
+        <Kpi label="Live cards" value={fmtNumber(c.counts.cards_published)} hint={`${c.counts.cards_draft} drafts, ${c.counts.cards_suspended} suspended`} />
+        <Kpi label="Leads" value={fmtNumber(c.counts.leads)} />
+        <Kpi label="Views, last 30 days" value={fmtNumber(c.counts.views_30d)} />
+        <Kpi label="Open card reports" value={fmtNumber(c.counts.open_reports)} tone={c.counts.open_reports ? "bad" : undefined} />
+        <Kpi label="Open design requests" value={fmtNumber(c.open_design_requests)} />
+        <Kpi label="Plan runs until" value={c.plan_ends_at ? fmtDay(c.plan_ends_at) : "-"} hint={c.plan ?? "No plan"} />
+        <Kpi label="Owner last signed in" value={c.owner?.last_sign_in ? fmtDay(c.owner.last_sign_in) : "-"} />
+        <Kpi label="Support views" value={fmtNumber(c.counts.support_views)} hint="all time" />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+        <SeatsBar used={c.seats_used} total={c.seats_total} />
+        <AccountPanel c={c} />
+      </div>
+      <section className="panel" aria-label="Views, last 14 days" style={{ padding: 14, display: "grid", gap: 8 }}>
+        <h3 style={{ margin: 0, fontSize: 15 }}>Views, last 14 days</h3>
+        <BarChart data={viewsPoints(c.views_14d)} label="Card views per day, last 14 days" height={200} format={(v) => fmtNumber(Math.round(v))} />
+      </section>
     </div>
   );
 }
@@ -69,11 +115,14 @@ function TeamTab({ id }: { id: string }) {
   return (
     <Await q={q}>
       {(rows) => rows.length === 0 ? <NoRows>No people yet.</NoRows> : (
-        <Table head={["Person", "Role", "Status", "Department", "Joined", "Last signed in"]}>
+        <Table head={["Person", "Title", "Role", "Status", "Card", "Department", "Joined", "Last signed in"]}>
           {rows.map((m) => (
             <tr key={m.id}>
-              <td style={td}>{m.user_id ? <Link href={`/staff/people?user=${m.user_id}`}><b>{m.full_name || m.email}</b></Link> : <b>{m.full_name || m.email}</b>}<div className="hint">{m.email}{m.title ? ` - ${m.title}` : ""}</div></td>
-              <td style={td}>{m.role}</td><td style={td}><Pill tone={toneOf(m.status)}>{m.status}</Pill></td><td style={td}>{m.department || "-"}</td>
+              <td style={td}>{m.user_id ? <Link href={`/staff/people?user=${m.user_id}`}><b>{m.full_name || m.email}</b></Link> : <b>{m.full_name || m.email}</b>}<div className="hint">{m.email}</div></td>
+              <td style={td}>{m.title || "-"}</td>
+              <td style={td}>{m.role}</td><td style={td}><Pill tone={toneOf(m.status)}>{m.status}</Pill></td>
+              <td style={td}><Pill tone={m.card_status === "published" ? "ok" : m.card_status === "suspended" ? "bad" : ""}>{cardStateWord(m.card_status)}</Pill>{m.cards > 1 && <span className="hint"> {m.cards} cards</span>}</td>
+              <td style={td}>{m.department || "-"}</td>
               <td style={td}>{fmtDay(m.joined_at)}</td><td style={td}>{fmtDay(m.last_sign_in)}</td>
             </tr>
           ))}
@@ -132,9 +181,19 @@ export function BrandView({ b }: { b: BrandInfo }) {
         {b.logo_url ? <img src={b.logo_url} alt="Company logo" style={{ height: 48, maxWidth: 160, objectFit: "contain" }} /> : <Pill>No logo</Pill>}
         {b.symbol_url && <img src={b.symbol_url} alt="Company symbol" style={{ height: 48, objectFit: "contain" }} />}
       </div>
+      <div className="row" aria-label="Brand colours">
+        {brandSwatches(b.colours).map((s) => (
+          <span key={s.name} className="row" style={{ gap: 8 }}>
+            <span aria-hidden style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid var(--line)", background: s.hex, display: "inline-block" }} />
+            <span><b>{s.name}</b><span className="hint" style={{ display: "block" }}>{s.hex}</span></span>
+          </span>
+        ))}
+        {brandSwatches(b.colours).length === 0 && <span className="hint">No brand colours chosen.</span>}
+      </div>
       <dl style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "6px 16px", margin: 0 }}>
         <dt className="hint">Company name</dt><dd style={{ margin: 0 }}>{b.company_name}</dd>
         <dt className="hint">Website</dt><dd style={{ margin: 0 }}>{b.website || "-"}</dd>
+        <dt className="hint">Card font</dt><dd style={{ margin: 0 }}>{fontName(b.font)}</dd>
         <dt className="hint">Design locked</dt><dd style={{ margin: 0 }}>{b.lock_design ? "Yes" : "No"}</dd>
         <dt className="hint">Footer shown</dt><dd style={{ margin: 0 }}>{b.show_footer ? "Yes" : "No"}</dd>
         <dt className="hint">Google sign-in required</dt><dd style={{ margin: 0 }}>{b.require_google_signin ? "Yes" : "No"}</dd>
@@ -229,7 +288,7 @@ function DangerTab({ c }: { c: Detail }) {
           <div><RoleButton perm="suspendCo" className="btn danger" onClick={() => setDlg("suspend")}>Suspend the company</RoleButton></div>
         </>
       )}
-      {dlg === "suspend" && <ReasonDialog title={`Suspend ${c.name}`} text="The owner is told by e-mail. Everything stays as it is and can be restored." confirm="Suspend" danger onClose={() => setDlg(null)} onConfirm={async (r) => { await sa.suspendCompany(c.id, r); await done("Company suspended"); }} />}
+      {dlg === "suspend" && <ReasonDialog title={`Suspend ${c.name}`} text="The owner is told by e-mail and sees the reason you write here. Everything stays as it is and can be restored." confirm="Suspend" danger typed={c.name} onClose={() => setDlg(null)} onConfirm={async (r) => { await sa.suspendCompany(c.id, r, c.name); await done("Company suspended"); }} />}
       {dlg === "restore" && <ReasonDialog title={`Restore ${c.name}`} minLength={0} confirm="Restore" onClose={() => setDlg(null)} onConfirm={async (r) => { await sa.restoreCompany(c.id, r || "Restored"); await done("Company restored"); }} />}
     </div>
   );

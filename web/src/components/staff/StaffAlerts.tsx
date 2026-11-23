@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/Icon";
 import { useI18n } from "@/lib/i18n/client";
+import { sa } from "@/lib/staff-admin/api";
+import { COUNTS_KEY, type StaffCounts } from "@/lib/staff-admin/frame";
 import {
   ALERTS_KEY, ALERT_MIN_GAP_MS, ALERT_VISIBLE_MS, alertBadge, alertHref, alertInterval, alertKindKey, alertsApi, chatsIncreased, onSupportPage, playBeep, primeSound,
   readSoundPref, stripCountPrefix, titleWithCount, writeSoundPref, type AlertsData,
@@ -47,6 +49,28 @@ export function useStaffAlerts(enabled: boolean): AlertsData | undefined {
   const data = enabled ? query.data : undefined;
   useTabTitle(data?.total ?? 0, enabled);
   return data;
+}
+
+/** The counts next to Abuse and Data requests in the menu: two cheap numbers, asked for on the same rhythm as the alerts. Off until the person is verified. */
+export function useStaffCounts(enabled: boolean): StaffCounts | undefined {
+  const qc = useQueryClient();
+  const pathname = usePathname();
+  const query = useQuery({
+    queryKey: COUNTS_KEY,
+    queryFn: sa.counts,
+    enabled,
+    retry: false,
+    staleTime: ALERT_VISIBLE_MS / 2,
+    refetchOnWindowFocus: true,
+    refetchIntervalInBackground: true,
+    refetchInterval: (q) => alertInterval(typeof document !== "undefined" && document.hidden, q.state.errorUpdateCount),
+  });
+  // A page change asks again (a report just dealt with should drop off the count), but not more often than every few seconds.
+  useEffect(() => {
+    const at = qc.getQueryState(COUNTS_KEY)?.dataUpdatedAt ?? 0;
+    if (enabled && Date.now() - at > ALERT_MIN_GAP_MS) void qc.invalidateQueries({ queryKey: COUNTS_KEY });
+  }, [pathname, enabled, qc]);
+  return enabled ? query.data : undefined;
 }
 
 /** The count in front of the page title while the tab is hidden or the person is away from the Support pages. Page titles are left as they are. */
@@ -167,6 +191,19 @@ export function NavBadge({ total, place }: { total: number | undefined; place: "
     <>
       <span className={place === "bar" ? s.navBar : s.navSide} aria-hidden="true" data-testid="staff-support-badge">{number(badge.value)}{badge.over ? "+" : ""}</span>
       <span className="sr-only">{t("staff.alerts.waiting", { n: total ?? 0 })}</span>
+    </>
+  );
+}
+
+/** The open count of a menu item (reports, data requests): the same badge as Support, with its own screen-reader text. */
+export function CountBadge({ total, place, testId }: { total: number | undefined; place: "side" | "bar"; testId: string }) {
+  const { t, number } = useI18n();
+  const badge = alertBadge(total);
+  if (!badge) return null;
+  return (
+    <>
+      <span className={place === "bar" ? s.navBar : s.navSide} aria-hidden="true" data-testid={testId}>{number(badge.value)}{badge.over ? "+" : ""}</span>
+      <span className="sr-only">{t("staff.count.open", { n: total ?? 0 })}</span>
     </>
   );
 }

@@ -3,7 +3,7 @@ import re
 from datetime import timedelta
 
 from django.db.models import Count, Q
-from django.db.models.functions import TruncWeek
+from django.db.models.functions import TruncMonth, TruncWeek
 from django.http import Http404
 from django.utils import timezone
 from rest_framework.response import Response
@@ -33,6 +33,8 @@ def lead_json(c):
     return {
         "id": str(c.id), "company": c.company, "name": c.name, "email": c.email, "size": c.size, "message": c.message, "source": c.source,
         "language": c.language, "status": c.status, "assignee": c.assignee.email if c.assignee_id else None, "notes": c.notes,
+        "assignee_id": str(c.assignee_id) if c.assignee_id else None, "assignee_name": (c.assignee.full_name or c.assignee.email) if c.assignee_id else None,
+        "country": c.country,
         "created_at": iso(c.created_at), "updated_at": iso(c.updated_at),
     }
 
@@ -53,6 +55,11 @@ class ApplicationsView(StaffView):
         counts = {r["status"]: r["n"] for r in CompanyLead.objects.values("status").annotate(n=Count("id")).order_by()}
         body["counts"] = {s: counts.get(s, 0) for s in PIPELINE}
         body["design_requests_open"] = DesignRequest.objects.filter(status__in=DesignRequest.OPEN).count()
+        # Everyone a request can be given to (the staff), for the "Assigned to" picker.
+        body["assignees"] = [
+            {"id": str(u.id), "email": u.email, "full_name": u.full_name, "staff_role": u.staff_role}
+            for u in User.objects.exclude(staff_role="none").filter(is_active=True, deleted_at__isnull=True).order_by("email")
+        ]
         return Response(body)
 
 
@@ -87,7 +94,9 @@ class ApplicationDetailView(StaffView):
         if not changed:
             raise validation_error({"status": ["Nothing to change."]})
         c.save()
-        services.log(request, "application.updated", "application", c.id, c.company, changed)
+        # Giving a request to someone (or taking it back) has its own line in the audit log.
+        action = "application.assigned" if set(changed) == {"assignee"} else "application.updated"
+        services.log(request, action, "application", c.id, c.company, changed)
         return Response(lead_json(c))
 
 
@@ -135,6 +144,7 @@ class AnnouncementsView(StaffView):
         return Response({
             "results": [announcement_json(a, now) for a in Announcement.objects.all()[:100]],
             "plans": [{"code": p.code, "name": p.name} for p in Plan.objects.filter(kind="company").order_by("sort_order")],
+            "countries": announce.audience_countries(),
         })
 
     def post(self, request):
@@ -255,6 +265,35 @@ def retention(now, cohorts=8):
     return out
 
 
+def _month_start(day, back=0):
+    """The first moment of the month `back` months before the month of `day` (UTC)."""
+    index = day.year * 12 + day.month - 1 - back
+    return day.replace(year=index // 12, month=index % 12 + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def monthly_retention(now, cohorts=6):
+    """For each of the last finished months: how many companies joined, and the share of them whose cards had visits in the
+    month they joined (month 0) and 1, 2 and 3 months later. A month that has not finished yet shows as null."""
+    out = []
+    for back in range(cohorts, 0, -1):
+        start, end = _month_start(now, back), _month_start(now, back - 1)
+        ids = list(Workspace.objects.filter(kind="company", deleted_at__isnull=True, created_at__gte=start, created_at__lt=end).values_list("id", flat=True))
+        row = {"month": start.date().isoformat()[:7], "companies": len(ids), "after": {}}
+        active = {}
+        if ids:
+            seen = Event.objects.filter(card__workspace_id__in=ids, created_at__gte=start).annotate(m=TruncMonth("created_at")).values_list("m", "card__workspace_id").distinct()
+            for m, ws_id in seen:
+                active.setdefault((m.year, m.month), set()).add(ws_id)
+        for k in range(4):
+            window = _month_start(now, back - k)
+            if _month_start(now, back - k - 1) > now or not ids:
+                row["after"][str(k)] = None
+                continue
+            row["after"][str(k)] = round(100 * len(active.get((window.year, window.month), ())) / len(ids))
+        out.append(row)
+    return out
+
+
 def company_countries(now):
     """Companies per country: the country a company chose, else (marked guessed) the one most of its visitors come from."""
     own = {}
@@ -293,7 +332,24 @@ def analytics_payload(weeks, now):
         Event.objects.filter(type="view", created_at__gte=now - timedelta(days=30)).values("card__workspace_id", "card__workspace__name")
         .annotate(n=event_count()).order_by("-n")[:10]
     )
+    start = week_start(now) - timedelta(weeks=weeks - 1)
+    live_cards = Card.objects.filter(status="published", workspace__deleted_at__isnull=True)
+    active_total = live_cards.filter(created_at__lt=start).count()
+    active_cards = []
+    for row in weekly_counts(live_cards.filter(created_at__gte=start).values_list("created_at", flat=True), weeks, now):
+        active_total += row["n"]
+        active_cards.append({"week": row["week"], "n": active_total})
+    last_30 = now - timedelta(days=30)
+    totals = {
+        "companies": Workspace.objects.filter(kind="company", deleted_at__isnull=True).count(),
+        "active_cards": live_cards.count(),
+        "views_30d": Event.objects.filter(type="view", created_at__gte=last_30).aggregate(n=event_count())["n"],
+        "leads_30d": Lead.objects.filter(created_at__gte=last_30).count(),
+    }
     return {
+        "totals": totals,
+        "active_cards": active_cards,
+        "retention_monthly": monthly_retention(now),
         "weeks": weekly_rows(weeks, now),
         "countries": [{"country": r["country"], "views": r["n"]} for r in countries],
         "company_countries": company_countries(now),

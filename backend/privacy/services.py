@@ -312,6 +312,9 @@ def user_from_restore_token(token):
 
 
 def request_account_deletion(user):
+    from staff.services import ensure_not_last_admin
+
+    ensure_not_last_admin(user, "none")  # the only staff admin cannot delete the account that holds the back office
     blocking = owned_companies_with_others(user)
     if blocking:
         names = [ws.name for ws in blocking]

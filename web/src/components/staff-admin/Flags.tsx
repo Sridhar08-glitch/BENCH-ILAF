@@ -6,17 +6,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/app/ui";
 import { sa, type Flag } from "@/lib/staff-admin/api";
 import { fmtWhen } from "@/lib/staff-admin/format";
-import { Await, Page, Pill, ReasonDialog, RoleButton, toneOf } from "./ui";
+import { CompanyPicker, type PickChip } from "./pickers";
+import { Await, Page, Pill, ReasonDialog, RoleButton, toneOf, useCan } from "./ui";
 
 const STATE_WORDS: Record<Flag["state"], string> = { off: "Off for everyone", selected: "On for chosen companies", everyone: "On" };
 
 function FlagCard({ f }: { f: Flag }) {
   const qc = useQueryClient();
   const toast = useToast();
+  const canEdit = useCan("flags");
   const [percent, setPercent] = useState(String(f.rollout_percent));
-  const [companies, setCompanies] = useState(f.companies.map((c) => c.id).join(", "));
+  const [companies, setCompanies] = useState<PickChip[]>(f.companies.map((c) => ({ value: c.id, label: c.name })));
   const [dlg, setDlg] = useState<null | { state: Flag["state"] }>(null);
-  const save = async (body: { state?: string; rollout_percent?: number; company_ids?: string[] }) => { await sa.setFlag(f.key, body); toast("Saved and logged"); await qc.invalidateQueries({ queryKey: ["staff-flags"] }); };
+  const save = async (body: { state?: string; rollout_percent?: number; company_ids?: string[]; reason?: string }) => { await sa.setFlag(f.key, body); toast("Saved and logged"); await qc.invalidateQueries({ queryKey: ["staff-flags"] }); };
   return (
     <section className="panel" style={{ padding: 14, display: "grid", gap: 10 }} aria-label={f.key}>
       <div className="row" style={{ justifyContent: "space-between" }}>
@@ -33,16 +35,16 @@ function FlagCard({ f }: { f: Flag }) {
         <RoleButton perm="flags" className="btn sm ghost" onClick={() => void save({ rollout_percent: Number(percent) }).catch(() => toast("Enter a whole number from 0 to 100"))}>Save rollout</RoleButton>
       </div>
       <div className="row">
-        <label className="row">Chosen companies (ids) <input value={companies} onChange={(e) => setCompanies(e.target.value)} placeholder="id, id" style={{ minWidth: 260 }} /></label>
-        <RoleButton perm="flags" className="btn sm ghost" onClick={() => void save({ company_ids: companies.split(",").map((x) => x.trim()).filter(Boolean) })}>Save companies</RoleButton>
+        <span id={`${f.key}-companies`}>Chosen companies</span>
+        <CompanyPicker selected={companies} onChange={setCompanies} label={`Chosen companies for ${f.key}`} disabled={!canEdit} testId={`flag-companies-${f.key}`} />
+        <RoleButton perm="flags" className="btn sm ghost" onClick={() => void save({ company_ids: companies.map((c) => c.value) })}>Save companies</RoleButton>
       </div>
-      {f.companies.length > 0 && <span className="hint">Chosen: {f.companies.map((c) => c.name).join(", ")}</span>}
       {f.history.length > 0 && (
         <details><summary>History ({f.history.length})</summary>
-          {f.history.map((h, i) => <div key={i} className="hint">{fmtWhen(h.at)} - {h.who}: {h.text}</div>)}
+          {f.history.map((h, i) => <div key={i} className="hint">{fmtWhen(h.at)} - {h.who}: {h.text}{h.reason ? ` - "${h.reason}"` : ""}</div>)}
         </details>
       )}
-      {dlg && <ReasonDialog title={`${f.key}: ${STATE_WORDS[dlg.state]}`} text="The customer app asks for switches about once a minute, so the change shows within a minute." confirm="Change" minLength={0} danger={dlg.state === "off"} onClose={() => setDlg(null)} onConfirm={() => save({ state: dlg.state })} />}
+      {dlg && <ReasonDialog title={`${f.key}: ${STATE_WORDS[dlg.state]}`} text="The customer app asks for switches about once a minute, so the change shows within a minute." confirm="Change" minLength={dlg.state === "selected" ? 0 : 5} danger={dlg.state === "off"} onClose={() => setDlg(null)} onConfirm={(reason) => save({ state: dlg.state, reason: reason || undefined })} />}
     </section>
   );
 }
@@ -57,7 +59,7 @@ export default function Flags() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>{d.flags.map((f) => <FlagCard key={f.key} f={f} />)}</div>
             <section className="panel" style={{ padding: 14, display: "grid", gap: 6 }}><h2 style={{ fontSize: 16 }}>Recent changes</h2>
               {d.history.length === 0 && <span className="hint">No changes yet.</span>}
-              {d.history.map((h, i) => <div key={i} className="row" style={{ justifyContent: "space-between" }}><span><b>{h.who}</b> {h.text}</span><span className="hint">{fmtWhen(h.at)}</span></div>)}
+              {d.history.map((h, i) => <div key={i} className="row" style={{ justifyContent: "space-between" }}><span><b>{h.who}</b> {h.text}{h.reason ? ` - "${h.reason}"` : ""}</span><span className="hint">{fmtWhen(h.at)}</span></div>)}
             </section>
           </>
         )}

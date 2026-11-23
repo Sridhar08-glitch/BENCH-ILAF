@@ -1,18 +1,20 @@
 "use client";
 
-// People and cards: one search box over names, e-mail addresses, card codes and companies; a card drawer with suspend
-// and restore; a person page with sign-in methods and sessions.
+// People and cards: one search box over names, e-mail addresses, card codes and companies; the list of every card and the
+// list of every person below it; a card drawer with suspend and restore; a person page with sign-in methods and sessions.
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/app/ui";
 import { Dialog } from "@/components/ops/shared";
-import { sa, type CardRow } from "@/lib/staff-admin/api";
+import { sa } from "@/lib/staff-admin/api";
 import { cardStatusWord } from "@/lib/staff-admin/card-data";
-import { fmtNumber, fmtWhen } from "@/lib/staff-admin/format";
+import { fmtDay, fmtNumber, fmtWhen } from "@/lib/staff-admin/format";
+import CardsList from "./CardsList";
 import { StaffCardThumb } from "./StaffCardThumb";
-import { Await, NoRows, Page, Pill, ReasonDialog, RoleButton, toneOf, useDebounced } from "./ui";
+import PeopleList from "./PeopleList";
+import { Await, Page, Pill, ReasonDialog, RoleButton, toneOf, useDebounced } from "./ui";
 
 export function CardDrawer({ id, onClose }: { id: string; onClose: () => void }) {
   const qc = useQueryClient();
@@ -32,10 +34,16 @@ export function CardDrawer({ id, onClose }: { id: string; onClose: () => void })
                 <div style={{ display: "grid", gap: 6, minWidth: 220, flex: 1 }}>
                   <h3 style={{ fontSize: 18 }}>{c.name || "(no name)"}</h3>
                   <span className="sub">{c.title}{c.company ? `, ${c.company}` : ""}</span>
-                  <span className="row"><Pill tone={toneOf(c.status)}>{cardStatusWord(c)}</Pill>{c.owner && <span className="hint">Owner {c.owner.email}</span>}</span>
+                  <span className="row"><Pill tone={toneOf(c.status)}>{cardStatusWord(c)}</Pill></span>
                   <span>Company: <Link href={`/staff/companies/${d.company.id}`}>{d.company.name}</Link></span>
+                  <dl style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "4px 14px", margin: 0 }}>
+                    <dt className="hint">Owner</dt><dd style={{ margin: 0, overflowWrap: "anywhere" }}>{c.owner ? `${c.owner.full_name ? `${c.owner.full_name}, ` : ""}${c.owner.email}` : "None"}</dd>
+                    <dt className="hint">Card holder e-mail</dt><dd style={{ margin: 0, overflowWrap: "anywhere" }}>{d.details.holder_email || "None"}</dd>
+                    {d.details.card_email && <><dt className="hint">E-mail on the card</dt><dd style={{ margin: 0, overflowWrap: "anywhere" }}>{d.details.card_email}</dd></>}
+                    <dt className="hint">Created</dt><dd style={{ margin: 0 }}>{fmtDay(d.details.created_at)}</dd>
+                  </dl>
                   <span className="hint">{fmtNumber(c.stats.views)} views, {fmtNumber(c.stats.scans)} scans, {fmtNumber(c.stats.saves)} saves, {fmtNumber(c.stats.leads)} leads</span>
-                  <span><a href={c.public_url} target="_blank" rel="noopener noreferrer">Open the public page</a> <span className="hint">(code {c.public_code})</span></span>
+                  <span><a href={c.public_url} target="_blank" rel="noopener noreferrer" onClick={() => { void sa.lookPublicPage(c.id).catch(() => undefined); }}>Open the public page</a> <span className="hint">(code {c.public_code})</span></span>
                   <div className="row">
                     {c.status === "suspended"
                       ? <RoleButton perm="suspendCard" onClick={() => setDlg("restore")}>Restore the card</RoleButton>
@@ -93,7 +101,7 @@ export function UserDrawer({ id, onClose }: { id: string; onClose: () => void })
             </section>
             {confirm && (
               <ReasonDialog title="Sign this person out everywhere" text="Every refresh token is revoked. Open pages stop working within an hour at the latest." confirm="Sign out" danger onClose={() => setConfirm(false)}
-                onConfirm={async () => { const r = await sa.signOutUser(id); toast(`${r.revoked} sessions ended`); await qc.invalidateQueries({ queryKey: ["staff-user", id] }); }} />
+                onConfirm={async (reason) => { const r = await sa.signOutUser(id, reason); toast(`${r.revoked} sessions ended`); await qc.invalidateQueries({ queryKey: ["staff-user", id] }); }} />
             )}
           </div>
         )}
@@ -110,9 +118,11 @@ export default function People() {
   const term = useDebounced(q.trim());
   const res = useQuery({ queryKey: ["staff-search", term], queryFn: () => sa.search(term), enabled: term.length >= 2, placeholderData: (p) => p });
   return (
-    <Page title="People and cards" sub="Search by name, e-mail address, card code or company.">
-      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people, e-mail, card code, company" aria-label="Global search" style={{ maxWidth: 480 }} autoFocus />
-      {term.length < 2 && <NoRows>Type at least two letters.</NoRows>}
+    <Page title="People and cards" sub="Every card and every person on the product, newest first. Type to narrow both lists by name, e-mail address, card link or company; two letters or more also find companies.">
+      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter people, or search e-mail, card code, company" aria-label="Global search" style={{ maxWidth: 480 }} autoFocus />
+      <CardsList term={term} onOpen={setCard} />
+      <h2 style={{ fontSize: 16 }}>People</h2>
+      <PeopleList term={term} onOpen={setUser} />
       {term.length >= 2 && res.data && (
         <>
           {res.data.companies.length > 0 && (
@@ -120,30 +130,7 @@ export default function People() {
               {res.data.companies.map((c) => <Link key={c.id} href={`/staff/companies/${c.id}`} className="panel" style={{ padding: 10, textDecoration: "none" }}><b>{c.name}</b> <span className="hint">{c.owner_email}</span></Link>)}
             </section>
           )}
-          {res.data.people.length > 0 && (
-            <section style={{ display: "grid", gap: 6 }}><h2 style={{ fontSize: 16 }}>People</h2>
-              {res.data.people.map((p) => (
-                <button key={p.id} type="button" className="panel" onClick={() => setUser(p.id)} style={{ padding: 10, textAlign: "start", cursor: "pointer" }}>
-                  <b>{p.full_name || p.email}</b> <span className="hint">{p.email}</span>{p.staff_role !== "none" && <Pill tone="dark">staff</Pill>}{!p.is_active && <Pill tone="bad">disabled</Pill>}
-                  <div className="hint">{p.companies.map((c) => `${c.name} (${c.role})`).join(", ")}</div>
-                </button>
-              ))}
-            </section>
-          )}
-          {res.data.cards.length > 0 && (
-            <section style={{ display: "grid", gap: 8 }}><h2 style={{ fontSize: 16 }}>Cards</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
-                {res.data.cards.map((c: CardRow) => (
-                  <button key={c.id} type="button" className="panel" onClick={() => setCard(c.id)} style={{ padding: 10, display: "grid", gap: 6, textAlign: "start", cursor: "pointer" }}>
-                    <StaffCardThumb card={c} width={130} />
-                    <b>{c.name || "(no name)"}</b><span className="hint">{c.workspace_name}</span>
-                    <span><Pill tone={toneOf(c.status)}>{cardStatusWord(c)}</Pill></span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-          {res.data.companies.length + res.data.people.length + res.data.cards.length === 0 && <NoRows>Nothing found.</NoRows>}
+          {res.data.companies.length === 0 && <span className="hint">No company matches either.</span>}
         </>
       )}
       {card && <CardDrawer id={card} onClose={() => setCard(null)} />}

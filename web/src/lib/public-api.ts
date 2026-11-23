@@ -5,11 +5,20 @@ import { API_PUBLIC_URL, API_SERVER_URL } from "./config";
 import { runtimeT } from "./i18n";
 import type { DirectoryPage, EventSource, EventType, PublicCardResponse } from "./types";
 
+/**
+ * How long the server may keep a public card answer, in seconds. The default is 0: every visit asks the API, so a card
+ * that was unpublished, paused or deleted disappears at once. The server only stores successful answers; the API answers
+ * 404 for a hidden card, so a stored copy would never be replaced and the old card would stay on the page.
+ * A value above 0 (PUBLIC_CARD_REVALIDATE) trades that for fewer API calls and is only safe for a short time.
+ */
+export function publicCardCacheInit(): RequestInit & { next?: { revalidate: number } } {
+  const seconds = Number(process.env.PUBLIC_CARD_REVALIDATE ?? 0);
+  return Number.isFinite(seconds) && seconds > 0 ? { next: { revalidate: seconds } } : { cache: "no-store" };
+}
+
 /** Fetch a public card on the server. Returns null for an unknown code (404). */
 export async function fetchPublicCard(code: string): Promise<PublicCardResponse | null> {
-  const res = await fetch(`${API_SERVER_URL}/public/cards/${encodeURIComponent(code)}`, {
-    next: { revalidate: Number(process.env.PUBLIC_CARD_REVALIDATE ?? 15) },
-  });
+  const res = await fetch(`${API_SERVER_URL}/public/cards/${encodeURIComponent(code)}`, publicCardCacheInit());
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Card request failed with ${res.status}`);
   return (await res.json()) as PublicCardResponse;
@@ -22,9 +31,7 @@ export async function fetchDirectory(slug: string, params: { q?: string; departm
   if (params.department) sp.set("department", params.department);
   if (params.page && params.page > 1) sp.set("page", String(params.page));
   const qs = sp.toString();
-  const res = await fetch(`${API_SERVER_URL}/public/directory/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`, {
-    next: { revalidate: Number(process.env.PUBLIC_CARD_REVALIDATE ?? 15) },
-  });
+  const res = await fetch(`${API_SERVER_URL}/public/directory/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`, publicCardCacheInit());
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Directory request failed with ${res.status}`);
   return (await res.json()) as DirectoryPage;

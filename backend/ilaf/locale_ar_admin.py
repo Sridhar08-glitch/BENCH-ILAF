@@ -24,6 +24,8 @@ TEXTS = {
     "Choose a person from the staff.": "اختر شخصًا من الفريق.",
     "Choose a plan from the list.": "اختر خطة من القائمة.",
     "Choose a status from the list.": "اختر حالة من القائمة.",
+    "Choose what was looked at.": "اختر ما تم الاطلاع عليه.",
+    "Type the company name exactly to confirm.": "اكتب اسم الشركة كما هو تمامًا للتأكيد.",
     "Choose a valid action.": "اختر إجراءً صالحًا.",
     "Choose at least one value for this audience.": "اختر قيمة واحدة على الأقل لهذه الفئة.",
     "Choose between 1 and 100 companies and an action.": "اختر ما بين شركة و100 شركة وإجراءً.",
@@ -50,6 +52,13 @@ TEXTS = {
     "Enter your name.": "أدخل اسمك.",
     "Choose a size from the list.": "اختر حجمًا من القائمة.",
     "Choose yes or no.": "اختر نعم أو لا.",
+    # ---------------------------------------------------------------- e-mail: a support view was opened
+    "Our support team opened a view of {workspace}": "فتح فريق الدعم لدينا عرضًا لـ {workspace}",
+    "A support view was opened": "تم فتح عرض للدعم",
+    "{who} from our support team is looking at {workspace} in read-only view until {when}. Reason: {reason}":
+        "{who} من فريق الدعم لدينا يطّلع على {workspace} بوضع القراءة فقط حتى {when}. السبب: {reason}",
+    "Nothing can be changed during this view. It is also written in your company's Activity log.":
+        "لا يمكن تغيير أي شيء أثناء هذا العرض. وهو مسجّل أيضًا في سجل نشاط شركتك.",
     # ---------------------------------------------------------------- e-mails: company suspended or restored
     "{workspace} was suspended": "تم تعليق {workspace}",
     "Your company was suspended": "تم تعليق شركتك",
@@ -57,6 +66,7 @@ TEXTS = {
         "علّق فريقنا {workspace}. تظهر بطاقاتها على أنها غير متاحة ولا يستطيع فريقك الدخول إليها حاليًا.",
     "If you think this is a mistake, please contact support and we will look at it with you.":
         "إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع الدعم وسنراجعه معك.",
+    "Reason from our team: {reason}": "السبب من فريقنا: {reason}",
     "{workspace} is active again": "{workspace} نشطة مجددًا",
     "Your company is active again": "شركتك نشطة مجددًا",
     "{workspace} is active again. Its cards are live and your team can sign in.":
@@ -74,6 +84,19 @@ TEXTS = {
         "يرجى مراجعة البطاقة وإصلاح أي شيء يخالف قواعدنا. إن لم يتم إصلاحه فقد نعلّق البطاقة.",
     "If you think this is a mistake, reply to this e-mail or contact support.":
         "إذا كنت تعتقد أن هذا خطأ، فرد على هذه الرسالة أو تواصل مع الدعم.",
+    "Note from our team: {note}": "ملاحظة من فريقنا: {note}",
+    "New staff sign-in to {product}": "تسجيل دخول جديد لفريق {product}",
+    "A staff session started from a new place": "بدأت جلسة فريق من مكان جديد",
+    "A staff session on your account was opened from {device} at {when}.":
+        "فُتحت جلسة فريق على حسابك من {device} في {when}.",
+    "If this was you, you do not need to do anything. If it was not, ask an admin to end your staff sessions and reset your two-step verification.":
+        "إذا كنت أنت من فعل ذلك فلا حاجة إلى أي إجراء. وإن لم يكن أنت، فاطلب من مسؤول إنهاء جلسات الفريق الخاصة بك وإعادة ضبط التحقق بخطوتين.",
+    "Review your staff sessions": "مراجعة جلسات الفريق",
+    # ---------------------------------------------------------------- e-mails: a card was suspended
+    "Your card {card} was suspended": "تم تعليق بطاقتك {card}",
+    "Your card was suspended": "تم تعليق بطاقتك",
+    "Our team suspended your card {card}. Its public page now shows a neutral \"not available\" message. Nothing was deleted.":
+        "علّق فريقنا بطاقتك {card}. تعرض صفحتها العامة الآن رسالة محايدة بأنها غير متاحة. لم يتم حذف أي شيء.",
     # ---------------------------------------------------------------- e-mails: announcements, staff invitation, applications
     "You get this because you chose product updates. Unsubscribe: {link}":
         "تصلك هذه الرسالة لأنك اخترت تحديثات المنتج. إلغاء الاشتراك: {link}",
@@ -98,15 +121,18 @@ TEXTS = {
     "Downloaded the audit log CSV": "تم تنزيل ملف CSV لسجل التدقيق",
     "Ended a support view": "انتهت جلسة عرض الدعم",
     "Ended all staff sessions of someone": "أُنهيت جميع جلسات أحد أعضاء الفريق",
+    "Ended one staff session": "أُنهيت جلسة واحدة لأحد أعضاء الفريق",
     "Granted a free plan period": "مُنحت فترة اشتراك مجانية",
     "Invited someone to the staff": "دُعي شخص للانضمام إلى الفريق",
     "Made a change that was not described (should not happen)": "أُجري تغيير غير موصوف (لا ينبغي أن يحدث)",
     "Marked a data request as done": "تم وضع علامة مكتمل على طلب بيانات",
     "Previewed an announcement audience": "تمت معاينة جمهور إعلان",
     "Ran a bulk action on companies": "نُفّذ إجراء جماعي على شركات",
+    "Downloaded a CSV of companies": "تم تنزيل ملف CSV للشركات",
     "Restored a card": "أُعيدت بطاقة",
     "Restored a company": "أُعيدت شركة",
     "Sent a failed e-mail again": "أُعيد إرسال بريد إلكتروني فاشل",
+    "Sent all failed e-mails again": "أُعيد إرسال كل رسائل البريد الإلكتروني الفاشلة",
     "Signed a customer out everywhere": "تم تسجيل خروج عميل من جميع الأجهزة",
     "Started a data export": "بدأ تصدير بيانات",
     "Started a support view": "بدأت جلسة عرض الدعم",
@@ -116,6 +142,10 @@ TEXTS = {
     "Suspended a company after a card report": "عُلّقت شركة بعد بلاغ عن بطاقة",
     "Suspended a reported card": "عُلّقت بطاقة تم الإبلاغ عنها",
     "Updated an application": "حُدّث طلب",
+    "Gave an application to someone": "أُسند طلب إلى شخص",
+    "Looked at the leads of a company": "اطّلع على جهات اتصال شركة",
+    "Opened a page of a support view": "فتح صفحة في عرض الدعم",
+    "Looked at the public page of a card": "اطّلع على الصفحة العامة لبطاقة",
     "Used a staff session from a new network address": "استُخدمت جلسة موظف من عنوان شبكة جديد",
     "Warned the owner about a reported card": "أُرسل تحذير إلى المالك بشأن بطاقة تم الإبلاغ عنها",
 }

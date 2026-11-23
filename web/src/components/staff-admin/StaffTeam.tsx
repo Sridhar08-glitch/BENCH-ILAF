@@ -6,8 +6,9 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/app/ui";
 import { Dialog } from "@/components/ops/shared";
-import { sa, type StaffPerson } from "@/lib/staff-admin/api";
+import { sa, type SecuritySession, type StaffPerson } from "@/lib/staff-admin/api";
 import { fmtWhen } from "@/lib/staff-admin/format";
+import { countryName } from "@/lib/staff-admin/frame";
 import { ROLE_NAMES, type StaffRole } from "@/lib/staff-admin/roles";
 import { Await, Page, Pill, ReasonDialog, RoleButton, Table, Tabs, td, useCan, useFail } from "./ui";
 
@@ -44,10 +45,9 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
 function PeopleTab() {
   const qc = useQueryClient();
   const toast = useToast();
-  const fail = useFail();
   const canEdit = useCan("staff");
   const [invite, setInvite] = useState(false);
-  const [act, setAct] = useState<{ p: StaffPerson; what: "remove" | "reset" | "revoke" } | null>(null);
+  const [act, setAct] = useState<{ p: StaffPerson; what: "remove" | "reset" | "revoke" | "role"; role?: StaffRole } | null>(null);
   const q = useQuery({ queryKey: ["staff-team"], queryFn: sa.team });
   const done = async (msg: string) => { toast(msg); await qc.invalidateQueries({ queryKey: ["staff-team"] }); };
   return (
@@ -64,13 +64,13 @@ function PeopleTab() {
                 <td style={td}><b>{p.full_name || p.email}</b><div className="hint">{p.email}</div></td>
                 <td style={td}>
                   <select value={p.staff_role} aria-label={`Role of ${p.email}`} disabled={!canEdit}
-                    onChange={(e) => void sa.setRole(p.id, e.target.value).then(() => done("Role changed")).catch((x) => toast(fail(x)))}>
+                    onChange={(e) => setAct({ p, what: "role", role: e.target.value as StaffRole })}>
                     {ROLES.map((r) => <option key={r} value={r}>{ROLE_NAMES[r]}</option>)}
                   </select>
                 </td>
                 <td style={td}>{p.totp_enrolled ? <Pill tone="ok">On</Pill> : <Pill tone="warn">Not set up</Pill>}<div className="hint">{p.recovery_codes_left} recovery codes left</div></td>
                 <td style={td}>{fmtWhen(p.last_sign_in)}</td>
-                <td style={td}>{p.sessions.length === 0 ? "-" : p.sessions.map((s) => <div key={s.id} className="hint">{s.method}, until {fmtWhen(s.expires_at)}{s.new_address_seen ? " (new address seen)" : ""}</div>)}</td>
+                <td style={td}>{p.sessions.length === 0 ? "-" : p.sessions.map((s) => <div key={s.id} className="hint">{[s.device, s.country && countryName(s.country)].filter(Boolean).join(", ") || s.method}, until {fmtWhen(s.expires_at)}{s.new_address_seen ? " (new address seen)" : ""}</div>)}</td>
                 <td style={td}><div className="row">
                   <RoleButton perm="staff" className="btn sm ghost" onClick={() => setAct({ p, what: "revoke" })}>End sessions</RoleButton>
                   <RoleButton perm="staff" className="btn sm ghost" onClick={() => setAct({ p, what: "reset" })}>Reset two-step</RoleButton>
@@ -80,9 +80,75 @@ function PeopleTab() {
             ))}
           </Table>
           {invite && <InviteDialog onClose={() => setInvite(false)} />}
-          {act?.what === "remove" && <ReasonDialog title={`Remove ${act.p.email} from the staff`} text="They keep their customer account. The last admin cannot be removed." confirm="Remove" danger minLength={0} onClose={() => setAct(null)} onConfirm={async () => { await sa.removeStaff(act.p.id); await done("Removed"); }} />}
-          {act?.what === "reset" && <ReasonDialog title={`Reset two-step for ${act.p.email}`} text="Their authenticator and recovery codes are deleted. They set it up again at their next visit." confirm="Reset" danger minLength={0} onClose={() => setAct(null)} onConfirm={async () => { await sa.resetTotp(act.p.id); await done("Two-step reset"); }} />}
-          {act?.what === "revoke" && <ReasonDialog title={`End all sessions of ${act.p.email}`} confirm="End sessions" minLength={0} onClose={() => setAct(null)} onConfirm={async () => { const r = await sa.revokeSessions(act.p.id); await done(`${r.revoked} sessions ended`); }} />}
+          {act?.what === "remove" && <ReasonDialog title={`Remove ${act.p.email} from the staff`} text="They keep their customer account. The last admin cannot be removed." confirm="Remove" danger minLength={0} onClose={() => setAct(null)} onConfirm={async (reason) => { await sa.removeStaff(act.p.id, reason || undefined); await done("Removed"); }} />}
+          {act?.what === "reset" && <ReasonDialog title={`Reset two-step for ${act.p.email}`} text="Their authenticator and recovery codes are deleted. They set it up again at their next visit." confirm="Reset" danger minLength={0} onClose={() => setAct(null)} onConfirm={async (reason) => { await sa.resetTotp(act.p.id, reason || undefined); await done("Two-step reset"); }} />}
+          {act?.what === "revoke" && <ReasonDialog title={`End all sessions of ${act.p.email}`} confirm="End sessions" minLength={0} onClose={() => setAct(null)} onConfirm={async (reason) => { const r = await sa.revokeSessions(act.p.id, reason || undefined); await done(`${r.revoked} sessions ended`); }} />}
+          {act?.what === "role" && act.role && <ReasonDialog title={`Change the role of ${act.p.email} to ${ROLE_NAMES[act.role]}`} text="Their staff sessions end, so they sign in with their code again. The last admin cannot be demoted." confirm="Change role" minLength={5} onClose={() => setAct(null)} onConfirm={async (reason) => { await sa.setRole(act.p.id, act.role as StaffRole, reason); await done("Role changed"); }} />}
+        </>
+      )}
+    </Await>
+  );
+}
+
+function SessionRow({ s, onRevoke, who }: { s: SecuritySession; onRevoke: () => void; who?: boolean }) {
+  const place = [s.device || "Unknown device", s.country && countryName(s.country)].filter(Boolean).join(", ");
+  return (
+    <div className="row" style={{ justifyContent: "space-between", borderBlockStart: "1px solid var(--line)", paddingBlockStart: 10, alignItems: "flex-start" }} data-testid="security-session">
+      <span style={{ display: "grid", gap: 2, minWidth: 0 }}>
+        <b dir="auto">{who ? `${s.full_name || s.email}: ` : ""}{place} {s.current && <Pill tone="ok">This session</Pill>} {s.new_address_seen && <Pill tone="warn">New address seen</Pill>}</b>
+        <span className="hint">Started {fmtWhen(s.started_at)}, last used {fmtWhen(s.last_seen_at)}, ends {fmtWhen(s.expires_at)}{who && s.email ? ` (${s.email})` : ""}</span>
+      </span>
+      <button type="button" className="btn sm ghost" onClick={onRevoke}>{s.current ? "Sign out here" : "Revoke"}</button>
+    </div>
+  );
+}
+
+function SecurityTab() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const [target, setTarget] = useState<SecuritySession | null>(null);
+  const q = useQuery({ queryKey: ["staff-security"], queryFn: sa.security });
+  return (
+    <Await q={q}>
+      {(d) => (
+        <>
+          <section className="panel" style={{ padding: 14, display: "grid", gap: 10 }} aria-label="Your sessions">
+            <h2 style={{ fontSize: 16 }}>Your staff sessions</h2>
+            <p className="hint" style={{ margin: 0 }}>Every browser where you passed the two-step check. End any you do not recognise or no longer use.</p>
+            {d.mine.length === 0 && <span className="hint">No open sessions.</span>}
+            {d.mine.map((s) => <SessionRow key={s.id} s={s} onRevoke={() => setTarget(s)} />)}
+          </section>
+          {d.everyone && (
+            <>
+              <section className="panel" style={{ padding: 14, display: "grid", gap: 8 }} aria-label="Two-step status">
+                <h2 style={{ fontSize: 16 }}>Two-step verification <Pill tone="ok">{d.everyone.two_step.filter((p) => p.enrolled).length} of {d.everyone.two_step.length} on</Pill></h2>
+                {d.everyone.two_step.map((p) => (
+                  <div key={p.id} className="row" style={{ justifyContent: "space-between", borderBlockStart: "1px solid var(--line)", paddingBlockStart: 8 }}>
+                    <span><b>{p.full_name || p.email}</b> <span className="hint">{p.email}</span></span>
+                    {p.enrolled ? <Pill tone="ok">Authenticator app</Pill> : <Pill tone="warn">Not set up</Pill>}
+                  </div>
+                ))}
+              </section>
+              <section className="panel" style={{ padding: 14, display: "grid", gap: 10 }} aria-label="Other people's sessions">
+                <h2 style={{ fontSize: 16 }}>Sessions of the rest of the team</h2>
+                {d.everyone.sessions.length === 0 && <span className="hint">Nobody else has an open session.</span>}
+                {d.everyone.sessions.map((s) => <SessionRow key={s.id} s={s} who onRevoke={() => setTarget(s)} />)}
+              </section>
+            </>
+          )}
+          {target && (
+            <ReasonDialog
+              title={target.current ? "Sign out of this browser" : `End this session${target.email ? ` of ${target.email}` : ""}`} confirm={target.current ? "Sign out" : "End session"} danger minLength={0}
+              text={target.current ? "You will enter your authenticator code again to come back." : "The person has to enter their authenticator code again on that browser."}
+              onClose={() => setTarget(null)}
+              onConfirm={async (reason) => {
+                await sa.revokeSession(target.id, reason || undefined);
+                toast("Session ended. Logged.");
+                await qc.invalidateQueries({ queryKey: ["staff-security"] });
+                if (target.current) { await qc.invalidateQueries({ queryKey: ["staff-me"] }); }
+              }}
+            />
+          )}
         </>
       )}
     </Await>
@@ -112,11 +178,11 @@ function PermissionsTab() {
 }
 
 export default function StaffTeam() {
-  const [tab, setTab] = useState<"people" | "permissions">("people");
+  const [tab, setTab] = useState<"people" | "permissions" | "security">("people");
   return (
     <Page title="Staff and permissions" sub="Who is on the team and what each role can do.">
-      <Tabs tabs={[{ key: "people", label: "People" }, { key: "permissions", label: "Permissions" }]} value={tab} onChange={setTab} />
-      {tab === "people" ? <PeopleTab /> : <PermissionsTab />}
+      <Tabs tabs={[{ key: "people", label: "People" }, { key: "permissions", label: "Permissions" }, { key: "security", label: "Security" }]} value={tab} onChange={setTab} />
+      {tab === "people" ? <PeopleTab /> : tab === "permissions" ? <PermissionsTab /> : <SecurityTab />}
     </Page>
   );
 }

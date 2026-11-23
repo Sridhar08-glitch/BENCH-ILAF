@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from billing.services import get_subscription
-from ilaf.emails import send_brand_email
+from ilaf.emails import build_brand_email, send_brand_email
 from ilaf.i18n import normalise_language, tr
 from workspaces.models import Member, Workspace
 
@@ -70,6 +70,17 @@ def audience_users(a):
     return users
 
 
+def audience_countries():
+    """The countries companies chose, with how many companies each has (most first)."""
+    from django.db.models import Count
+
+    rows = (
+        Workspace.objects.filter(kind="company", deleted_at__isnull=True).exclude(country__isnull=True).exclude(country="")
+        .values("country").annotate(n=Count("id")).order_by("-n", "country")
+    )
+    return [{"code": r["country"], "companies": r["n"]} for r in rows]
+
+
 def is_live(a, now=None):
     now = now or timezone.now()
     return a.cancelled_at is None and a.starts_at <= now and (a.ends_at is None or a.ends_at > now)
@@ -108,17 +119,33 @@ def user_from_unsubscribe_token(token):
 
 
 # ---------------------------------------------------------------- the e-mail broadcast
+def email_paragraphs(body, email_kind, lang, link):
+    """The paragraphs of the announcement e-mail: the text, and for a product update the unsubscribe line."""
+    paragraphs = [body]
+    if email_kind == "marketing":
+        paragraphs.append(tr(lang, "You get this because you chose product updates. Unsubscribe: {link}", link=link))
+    return paragraphs
+
+
+def preview_email(title, body, email_kind, lang):
+    """The e-mail as a person would get it (same brand frame as the broadcast), with a placeholder unsubscribe link."""
+    lang = normalise_language(lang) or "en"
+    link = f"{settings.WEB_BASE_URL}/unsubscribe?t=preview"
+    text, html, _style = build_brand_email(title, email_paragraphs(body, email_kind, lang, link), lang=lang)
+    return {"subject": title, "html": html, "text": text, "lang": lang}
+
+
 def send_one(a, user):
     """E-mail the announcement to one person in their language. Returns True when the server took it."""
     lang = normalise_language(user.language) or "en"
     ar = lang == "ar"
     title, body = (a.title_ar, a.body_ar) if ar else (a.title_en, a.body_en)
-    headers, paragraphs = {}, [body]
+    headers, link = {}, ""
     if a.email_kind == "marketing":
         token = unsubscribe_token(user)
         link = f"{settings.WEB_BASE_URL}/unsubscribe?t={token}"
         headers = {"List-Unsubscribe": f"<{settings.WEB_BASE_URL}/unsubscribe/send?t={token}>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"}
-        paragraphs.append(tr(lang, "You get this because you chose product updates. Unsubscribe: {link}", link=link))
+    paragraphs = email_paragraphs(body, a.email_kind, lang, link)
     before = _failed_count()
     send_brand_email(user.email, title, title, paragraphs, lang=lang, kind=a.email_kind, headers=headers)
     return _failed_count() == before

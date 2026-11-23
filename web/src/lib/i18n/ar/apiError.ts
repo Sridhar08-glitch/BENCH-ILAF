@@ -68,6 +68,7 @@ export const apiError: Messages<typeof en> = {
   "apiError.no_other_sign_in": "عيّن كلمة مرور أولًا، لتتمكن من تسجيل الدخول بعد إزالة Google.",
   "apiError.not_approved": "لم تعتمد الشركة هذا التصميم بعد.",
   "apiError.not_found": "تعذّر العثور على ما طلبته.",
+  "apiError.not_open": "هذا البلاغ مغلق بالفعل.",
   "apiError.not_in_review": "لا يوجد تصميم بانتظار موافقتك.",
   "apiError.not_linked": "لا يوجد حساب Google مرتبط.",
   "apiError.not_pending": "تم البتّ في هذا التغيير أو سحبه بالفعل.",

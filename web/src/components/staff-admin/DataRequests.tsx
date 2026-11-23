@@ -61,7 +61,7 @@ export default function DataRequests() {
           typed={dlg.r.scope === "workspace" ? dlg.r.company_name : dlg.r.user_email}
           extraCheck={dlg.r.scope === "workspace" || dlg.r.owns_company_with_people ? "I know this erases a company that other people use." : undefined}
           onClose={() => setDlg(null)}
-          onConfirm={async (_reason, extra) => { await sa.dataAction(dlg.r.id, { action: "confirm_delete", typed: dlg.r.scope === "workspace" ? dlg.r.company_name : dlg.r.user_email, ack_company: extra || undefined }); await refresh("Erased and logged"); }}
+          onConfirm={async (reason, extra) => { await sa.dataAction(dlg.r.id, { action: "confirm_delete", typed: dlg.r.scope === "workspace" ? dlg.r.company_name : dlg.r.user_email, ack_company: extra || undefined, reason: reason || undefined }); await refresh("Erased and logged"); }}
         />
       )}
       {dlg?.what === "done" && (

@@ -13,8 +13,11 @@ import { fetchImage } from "@/lib/og/fetch";
 // paused or removed gets a plain picture with only the product name.
 export const runtime = "nodejs";
 
-const LIVE_CACHE = "public, max-age=3600, stale-while-revalidate=86400";
-const GENERIC_CACHE = "public, max-age=300, stale-while-revalidate=3600";
+// Neither picture is kept by browsers or the network edge: a card that was just unpublished, paused or deleted must stop
+// showing its name at once. The drawn picture itself is kept on the server by content (see lib/og/cache.ts), so a repeat
+// request costs a card lookup, not a new drawing.
+const LIVE_CACHE = "no-store";
+const GENERIC_CACHE = "no-store";
 
 function png(body: Buffer, cache: string): Response {
   return new Response(new Uint8Array(body), { headers: { "Content-Type": "image/png", "Cache-Control": cache } });

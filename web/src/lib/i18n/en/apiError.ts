@@ -67,6 +67,7 @@ export const apiError = {
   "apiError.no_other_sign_in": "Set a password first, so you can still sign in after Google is removed.",
   "apiError.not_approved": "The company has not approved this design yet.",
   "apiError.not_found": "We could not find what you asked for.",
+  "apiError.not_open": "This report is already closed.",
   "apiError.not_in_review": "There is no design waiting for your approval.",
   "apiError.not_linked": "No Google account is linked.",
   "apiError.not_pending": "This change has already been decided or withdrawn.",

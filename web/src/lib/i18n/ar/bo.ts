@@ -35,6 +35,7 @@ export const bo: Messages<typeof en> = {
   "bo.accessSize": "حجم الشركة",
   "bo.accessSizeChoose": "اختر",
   "bo.accessSizePeople": "{range} أشخاص",
+  "bo.accessCountry": "البلد",
   "bo.accessMessage": "ماذا تريد أن تفعل؟ (اختياري)",
   "bo.accessSend": "إرسال الطلب",
   "bo.accessThanks": "شكرًا لك، استلمنا طلبك",

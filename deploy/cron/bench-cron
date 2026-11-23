@@ -15,6 +15,9 @@ D=/srv/bench/app/deploy
 # --- every minute: send new leads to the connected CRMs (HubSpot, Salesforce, Zoho CRM) and retry failed sends
 * * * * *      bench  QUIET=1 $J sync_crm sync_crm
 
+# --- every 5 minutes: send changed cards to the Google Wallet passes people saved; does nothing until Google Wallet is set up
+*/5 * * * *    bench  QUIET=1 $J sync_wallet_passes sync_wallet_passes
+
 # --- every minute: read the support mailbox (IMAP) and add new mail to tickets; does nothing until SUPPORT_IMAP_HOST is set
 * * * * *      bench  QUIET=1 $J fetch_support_mail fetch_support_mail
 

@@ -32,15 +32,23 @@ export interface Company {
   open_design_requests: number; created_at: string; suspended?: boolean;
   /** The country the company chose (ISO code), or "". */
   country?: string;
+  /** Number of cards (only on the companies list). */
+  cards?: number;
 }
 export interface CompanyDetail extends Company {
   suspended: boolean; suspended_at: string | null; suspended_reason: string; deletion_due_at: string | null; country: string; country_guessed: boolean; plan_ends_at: string | null;
   owner: { email: string; full_name: string; last_sign_in: string | null } | null;
+  /** Where the company is found on the web (its own domain or its directory page), or "". */
+  public_address: string;
+  /** Card views per day for the last 14 days, oldest first. */
+  views_14d: { day: string; views: number }[];
   counts: { members: number; cards_published: number; cards_draft: number; cards_suspended: number; leads: number; views_30d: number; open_reports: number; notes: number; support_views: number };
 }
 export interface Member {
   id: string; email: string; full_name: string; title: string; role: string; status: string; user_id: string | null; department: string;
   joined_at: string | null; invited_at: string | null; last_sign_in: string | null;
+  /** The state of the person's cards: published, suspended, draft or none. */
+  card_status: "published" | "suspended" | "draft" | "none"; cards: number;
 }
 export interface CardRow {
   id: string; workspace_id: string; workspace_name: string; name: string; title: string; company: string; address: string; status: string; staff_hold: boolean;
@@ -55,16 +63,25 @@ export interface LeadRow {
 export interface BrandInfo {
   company_name: string; website: string; design: unknown; lock_design: boolean; show_footer: boolean; logo_url: string | null; symbol_url: string | null;
   background_url: string | null; require_google_signin: boolean; allowed_email_domains: string[]; directory_enabled: boolean; directory_slug: string | null; custom_domain: string | null;
+  colours?: { primary: string; accent: string; mode: string } | null; palette?: Record<string, string> | null; font?: string;
 }
 export interface ActivityRow { id: string; action: string; label: string; actor_email: string; actor_name: string; target_label: string; details: Record<string, unknown>; created_at: string }
 export interface Note { id: string; author_email: string; body: string; created_at: string }
 
 export interface Overview {
-  health: { api_up: boolean; db_ok: boolean; db_ms: number; p95_ms: number | null; requests_10m: number; errors_last_hour: number };
+  health: {
+    api_up: boolean; db_ok: boolean; db_ms: number; p95_ms: number | null; requests_10m: number; errors_last_hour: number;
+    p50_ms: number | null; requests_1h: number; error_rate_1h: number | null; success_rate_7d: number | null; requests_7d: number;
+  };
   jobs: { name: string; label: string; state: string }[];
   email: { sent: number; failed: number; resent: number };
-  numbers: { companies: number; active_cards: number; views_today: number; new_companies_week: number; open_reports: number; open_data_requests: number; open_support_tickets: number | null };
+  numbers: {
+    companies: number; active_cards: number; views_today: number; new_companies_week: number; open_reports: number; open_data_requests: number; open_support_tickets: number | null;
+    deltas: { companies_4w: number; active_cards_4w: number; views_yesterday: number; new_companies_prev_week: number; reports_late: number; data_due_soon: number };
+  };
   growth: { week: string; n: number }[];
+  growth_total: { week: string; n: number }[];
+  customer_events: { kind: "signup" | "card" | "upgrade" | "support"; at: string; text: string; path: string }[];
   attention: { kind: string; level: "bad" | "warn" | "info"; count: number; text: string; path: string }[];
   recent_activity: StaffAuditRow[];
 }
@@ -74,8 +91,20 @@ export interface SearchResult {
   people: { id: string; email: string; full_name: string; staff_role: string; is_active: boolean; companies: { id: string; name: string; role: string }[] }[];
   cards: CardRow[];
 }
+export interface PlanCell { plan: string | null; plan_code: string | null; state: "live" | "expired" | "none" }
+export interface PersonRow {
+  id: string; email: string; full_name: string; email_verified: boolean; created_at: string; last_sign_in: string | null; staff_role: string; is_active: boolean;
+  status: "active" | "disabled" | "deletion_pending"; deletion_due_at: string | null; two_step: boolean; country: string;
+  personal: PlanCell; cards: number; cards_published: number; company_count: number;
+  companies: (PlanCell & { id: string; name: string; role: string; suspended: boolean })[];
+}
+export interface PeoplePage { count: number; offset: number; limit: number; results: PersonRow[]; plans: { code: string; name: string; kind: string }[] }
+/** One row of the card list: the card plus how many open abuse reports it has. */
+export interface CardListRow extends CardRow { open_reports: number }
+export interface CardStatusCounts { all: number; active: number; reported: number; suspended: number; draft: number }
+export interface CardsPage { count: number; offset: number; limit: number; status_counts: CardStatusCounts; results: CardListRow[] }
 export interface CardDrawer {
-  card: CardRow; company: Company; reports: { id: string; reason: string; status: string; created_at: string }[];
+  card: CardRow; details: { holder_email: string; card_email: string; created_at: string }; company: Company; reports: { id: string; reason: string; status: string; created_at: string }[];
   history: { at: string; text: string; who: string; kind: string; details?: Record<string, unknown> }[];
 }
 export interface UserDetail {
@@ -91,7 +120,7 @@ export interface SupportSession {
 }
 
 export interface Report {
-  id: string; card_id: string | null; card_name: string; company_id: string | null; company_name: string; reason: string; reason_label: string; note: string; reporter_email: string;
+  id: string; number: number | null; short_id: string; card_id: string | null; card_name: string; company_id: string | null; company_name: string; reason: string; reason_label: string; note: string; reporter_email: string;
   status: "new" | "reviewing" | "actioned" | "dismissed"; assignee: string | null; created_at: string; due_at: string; resolved_at: string | null; outcome: string;
   sla: { state: "late" | "soon" | "ok" | "done"; minutes_left: number | null };
 }
@@ -107,7 +136,9 @@ export interface DataRequest {
 export interface Application {
   id: string; company: string; name: string; email: string; size: string; message: string; source: string; language: string; status: string; assignee: string | null;
   notes: { t: string; who: string; text: string }[]; created_at: string; updated_at: string;
+  assignee_id: string | null; assignee_name: string | null; country: string;
 }
+export interface Assignee { id: string; email: string; full_name: string; staff_role: string }
 export interface Announcement {
   id: string; title_en: string; title_ar: string; body_en: string; body_ar: string; severity: "info" | "warning" | "critical"; audience_kind: string; audience_values: string[];
   audience: string; banner: boolean; starts_at: string; ends_at: string | null; send_email: boolean; email_kind: string; email_send_at: string | null; email_status: string;
@@ -122,21 +153,29 @@ export interface AnalyticsData {
   weeks: { week: string; new_companies: number; new_cards: number; views: number; scans: number; saves: number; leads: number }[];
   countries: { country: string; views: number }[]; company_countries: { country: string; companies: number; guessed: number }[]; sizes: { label: string; companies: number }[]; top_companies: { id: string; name: string; views: number }[];
   retention: { week: string; companies: number; after: Record<string, number | null> }[];
+  totals: { companies: number; active_cards: number; views_30d: number; leads_30d: number };
+  active_cards: { week: string; n: number }[];
+  retention_monthly: { month: string; companies: number; after: Record<string, number | null> }[];
 }
 
+export interface QueueRow { key: string; label: string; waiting: number; failing: number; state: "ok" | "warn" | "bad" }
 export interface HealthData {
-  health: Overview["health"]; series: { hour: string; requests: number; errors: number; p95_ms: number | null }[];
-  storage: { media_bytes: number; private_bytes: number; database_bytes: number | null };
+  health: Overview["health"]; series: { hour: string; requests: number; errors: number; p95_ms: number | null; p50_ms: number | null; error_rate: number | null }[];
+  storage: { media_bytes: number; private_bytes: number; database_bytes: number | null; categories: { key: string; label: string; bytes: number }[] };
+  queues: QueueRow[];
 }
 export interface JobRow { name: string; label: string; every: string; state: "ok" | "late" | "failed" | "unknown"; last_ok_at: string | null; duration_s: number | null; note: string }
 export interface EmailRow { id: string; to: string; subject: string; kind: string; status: string; error: string; created_at: string; can_resend: boolean }
-export interface EmailData extends Paged<EmailRow> { last_24h: { sent: number; failed: number; resent: number }; days: { day: string; sent: number; failed: number }[] }
+export interface EmailData extends Paged<EmailRow> {
+  last_24h: { sent: number; failed: number; resent: number }; days: { day: string; sent: number; failed: number }[];
+  bounce: { connected: boolean; bounced: number | null; rate: number | null }; resendable: number;
+}
 export interface ErrorRow { id: number; at: string; source: string; path: string; status: string; message: string; trace_hash: string }
 export interface ErrorsData extends Paged<ErrorRow> { groups: { trace_hash: string; message: string; path: string; n: number }[] }
 
 export interface Flag {
   key: string; description: string; known: boolean; state: "off" | "selected" | "everyone"; rollout_percent: number;
-  companies: { id: string; name: string }[]; history: { at: string; who: string; text: string }[];
+  companies: { id: string; name: string }[]; history: { at: string; who: string; text: string; reason?: string }[];
 }
 export interface BillingData {
   payments_parked: boolean;
@@ -146,12 +185,24 @@ export interface BillingData {
 
 export interface StaffPerson {
   id: string; email: string; full_name: string; staff_role: StaffRole; totp_enrolled: boolean; is_active: boolean; last_sign_in: string | null; recovery_codes_left: number;
-  sessions: { id: string; method: string; started_at: string; expires_at: string; last_seen_at: string | null; new_address_seen: boolean }[];
+  sessions: { id: string; method: string; started_at: string; expires_at: string; last_seen_at: string | null; new_address_seen: boolean; device?: string; country?: string }[];
 }
+/** One staff session of the Security tab. `email` and `user_id` are set on the other people's sessions an admin sees. */
+export interface SecuritySession {
+  id: string; device: string; country: string; method: string; started_at: string; expires_at: string; last_seen_at: string | null; new_address_seen: boolean;
+  current: boolean; user_id?: string; email?: string; full_name?: string;
+}
+export interface SecurityData {
+  mine: SecuritySession[];
+  everyone: { two_step: { id: string; email: string; full_name: string; staff_role: StaffRole; enrolled: boolean }[]; sessions: SecuritySession[] } | null;
+}
+export interface AnnouncementLists { results: Announcement[]; plans: { code: string; name: string }[]; countries: { code: string; companies: number }[] }
 export interface PermissionMatrix {
   roles: { key: StaffRole; summary: string }[]; permissions: { key: string; label: string; group: string; roles: StaffRole[] }[];
 }
-export interface AuditPage extends Paged<StaffAuditRow> { actions: { key: string; label: string }[]; categories: { key: string; label: string }[] }
+/** One audit entry as the audit log shows it: with its category and who did it ("System" when nobody did). */
+export interface AuditEntry extends StaffAuditRow { category: string; category_label: string; actor_name: string; from: string }
+export interface AuditPage extends Paged<AuditEntry> { actions: { key: string; label: string }[]; categories: { key: string; label: string }[] }
 
 export const sa = {
   me: () => get<StaffMe>("staff/me"),
@@ -161,16 +212,21 @@ export const sa = {
   company: (id: string) => get<CompanyDetail>(`staff/companies/${id}`),
   companyTab: <T,>(id: string, tab: string, q?: Q) => get<T>(`staff/companies/${id}/${tab}`, q),
   addNote: (id: string, body: string) => send<Note>("POST", `staff/companies/${id}/notes`, { body }),
-  suspendCompany: (id: string, reason: string) => send<CompanyDetail>("POST", `staff/companies/${id}/suspend`, { reason }),
+  suspendCompany: (id: string, reason: string, confirmName?: string) => send<CompanyDetail>("POST", `staff/companies/${id}/suspend`, { reason, confirm_name: confirmName }),
   restoreCompany: (id: string, reason: string) => send<CompanyDetail>("POST", `staff/companies/${id}/restore`, { reason }),
+  downloadCompanies: (q: Q) => downloadFile("staff/companies/export", q, "companies.csv"),
   bulkCompanies: (ids: string[], action: "suspend" | "restore", reason: string) => send<{ results: { id: string; ok: boolean; error?: string }[] }>("POST", "staff/companies/bulk", { ids, action, reason }),
   // people and cards
   search: (q: string) => get<SearchResult>("staff/search", { q }),
+  people: (q: Q) => get<PeoplePage>("staff/people", q),
+  cards: (q: Q) => get<CardsPage>("staff/cards", q),
   card: (id: string) => get<CardDrawer>(`staff/cards/${id}`),
+  /** Writes "looked at the public page" to the audit log. */
+  lookPublicPage: (id: string) => send<{ ok: boolean }>("POST", `staff/cards/${id}/look`, { what: "public_page" }),
   suspendCard: (id: string, reason: string) => send<CardRow>("POST", `staff/cards/${id}/suspend`, { reason }),
   restoreCard: (id: string, reason: string) => send<CardRow>("POST", `staff/cards/${id}/restore`, { reason }),
   user: (id: string) => get<UserDetail>(`staff/users/${id}`),
-  signOutUser: (id: string) => send<{ revoked: number }>("POST", `staff/users/${id}/sign-out`),
+  signOutUser: (id: string, reason?: string) => send<{ revoked: number }>("POST", `staff/users/${id}/sign-out`, { reason }),
   // support view
   supportCurrent: () => get<{ session: SupportSession | null }>("staff/support-view"),
   supportStart: (company_id: string, reason: string) => send<SupportSession>("POST", "staff/support-view", { company_id, reason }),
@@ -180,14 +236,16 @@ export const sa = {
   // abuse and data requests
   reports: (q: Q) => get<ReportList>("staff/abuse", q),
   report: (id: string) => get<ReportDetail>(`staff/abuse/${id}`),
-  reportAction: (id: string, action: string, note?: string) => send<Report>("POST", `staff/abuse/${id}/action`, { action, note }),
-  reportsBulk: (ids: string[], action: string) => send<{ results: { id: string; ok: boolean }[] }>("POST", "staff/abuse/bulk", { ids, action }),
+  reportAction: (id: string, action: string, note?: string, confirm_name?: string) => send<Report>("POST", `staff/abuse/${id}/action`, { action, note, ...(confirm_name ? { confirm_name } : {}) }),
+  reportsBulk: (ids: string[], action: string, note?: string) => send<{ results: { id: string; ok: boolean; error?: string }[] }>("POST", "staff/abuse/bulk", { ids, action, ...(note ? { note } : {}) }),
   dataRequests: (q: Q) => get<Paged<DataRequest> & { overdue: number }>("staff/data-requests", q),
-  dataAction: (id: string, body: { action: string; typed?: string; ack_company?: boolean; note?: string }) => send<DataRequest>("POST", `staff/data-requests/${id}/action`, body),
+  dataAction: (id: string, body: { action: string; typed?: string; ack_company?: boolean; note?: string; reason?: string }) => send<DataRequest>("POST", `staff/data-requests/${id}/action`, body),
   // growth
-  applications: (q: Q) => get<Paged<Application> & { counts: Record<string, number>; design_requests_open: number }>("staff/applications", q),
+  applications: (q: Q) => get<Paged<Application> & { counts: Record<string, number>; design_requests_open: number; assignees: Assignee[] }>("staff/applications", q),
   updateApplication: (id: string, body: { status?: string; assignee?: string | null; note?: string }) => send<Application>("PATCH", `staff/applications/${id}`, body),
-  announcements: () => get<{ results: Announcement[]; plans: { code: string; name: string }[] }>("staff/announcements"),
+  announcements: () => get<AnnouncementLists>("staff/announcements"),
+  announcementAudience: (kind: string, values: string[], emailKind: string) => get<{ companies: number; people: number; label: string }>("staff/announcements/audience", { kind, values: values.join(","), email_kind: emailKind }),
+  announcementEmailPreview: (q: { title: string; body: string; lang: string; email_kind: string }) => get<{ subject: string; html: string; text: string; lang: string }>("staff/announcements/email-preview", q),
   announcementPreview: (b: { audience_kind: string; audience_values: string[]; email_kind: string }) => send<{ companies: number; people: number; label: string; sample: string[] }>("POST", "staff/announcements/preview", b),
   createAnnouncement: (b: AnnouncementInput) => send<Announcement>("POST", "staff/announcements", b),
   cancelAnnouncement: (id: string) => send<Announcement>("POST", `staff/announcements/${id}/cancel`),
@@ -198,19 +256,24 @@ export const sa = {
   systemJobs: () => get<{ jobs: JobRow[]; state_dir_found: boolean }>("staff/system/jobs"),
   systemEmail: (q: Q) => get<EmailData>("staff/system/email", q),
   resendEmail: (id: string) => send<EmailRow>("POST", `staff/system/email/${id}/resend`),
+  resendAllEmails: () => send<{ tried: number; sent: number; failed: number }>("POST", "staff/system/email/resend-all"),
   systemErrors: (q: Q) => get<ErrorsData>("staff/system/errors", q),
-  flags: () => get<{ flags: Flag[]; history: { at: string; who: string; text: string }[] }>("staff/flags"),
-  setFlag: (key: string, body: { state?: string; rollout_percent?: number; company_ids?: string[] }) => send<Flag>("PATCH", `staff/flags/${key}`, body),
+  flags: () => get<{ flags: Flag[]; history: { at: string; who: string; text: string; reason?: string }[] }>("staff/flags"),
+  setFlag: (key: string, body: { state?: string; rollout_percent?: number; company_ids?: string[]; reason?: string }) => send<Flag>("PATCH", `staff/flags/${key}`, body),
   billing: () => get<BillingData>("staff/billing"),
   grantPlan: (b: { company_id: string; plan_code?: string; seats?: number; reason: string }) => send<{ company: string; plan: string; seats: number; until: string }>("POST", "staff/billing/grant", b),
   // staff
   permissions: () => get<PermissionMatrix>("staff/permissions"),
   team: () => get<{ people: StaffPerson[]; session_hours: number }>("staff/team"),
-  invite: (email: string, role: string) => send<{ granted: boolean; invited: boolean }>("POST", "staff/team", { email, role }),
-  setRole: (id: string, role: string) => send<StaffPerson>("PATCH", `staff/members/${id}`, { role }),
-  removeStaff: (id: string) => send<void>("DELETE", `staff/members/${id}`),
-  resetTotp: (id: string) => send<StaffPerson>("POST", `staff/members/${id}/reset-totp`),
-  revokeSessions: (id: string) => send<{ revoked: number }>("POST", `staff/members/${id}/sessions/revoke`),
+  invite: (email: string, role: string, reason?: string) => send<{ granted: boolean; invited: boolean }>("POST", "staff/team", { email, role, reason }),
+  setRole: (id: string, role: string, reason?: string) => send<StaffPerson>("PATCH", `staff/members/${id}`, { role, reason }),
+  removeStaff: (id: string, reason?: string) => send<void>("DELETE", `staff/members/${id}`, { reason }),
+  resetTotp: (id: string, reason?: string) => send<StaffPerson>("POST", `staff/members/${id}/reset-totp`, { reason }),
+  revokeSessions: (id: string, reason?: string) => send<{ revoked: number }>("POST", `staff/members/${id}/sessions/revoke`, { reason }),
+  // frame and security
+  counts: () => get<{ open_reports: number; open_data_requests: number }>("staff/counts"),
+  security: () => get<SecurityData>("staff/security"),
+  revokeSession: (id: string, reason?: string) => send<{ revoked: number }>("POST", `staff/security/sessions/${id}/revoke`, { reason }),
   audit: (q: Q) => get<AuditPage>("staff/audit", q),
   downloadAudit: (q: Q) => downloadFile("staff/audit/export", q, "staff-audit-log.csv"),
 };

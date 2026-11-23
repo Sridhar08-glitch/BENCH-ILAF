@@ -218,6 +218,7 @@ asks it a few questions, prints `DRILL OK` and deletes the scratch copy. Repeat 
 |---|---|---|
 | deliver_webhooks | every minute | sends lead notifications to companies' own web addresses, retries failures |
 | sync_crm | every minute | sends new leads to the companies' connected CRMs (HubSpot, Salesforce, Zoho CRM), refreshes tokens, retries failures |
+| sync_wallet_passes | every 5 minutes | sends changed cards to the Google Wallet passes people saved (only passes whose card changed; failures retried with growing waits); does nothing until Google Wallet is set up |
 | fetch_support_mail | every minute | reads the support mailbox (IMAP) and adds new mail to tickets; does nothing until `SUPPORT_IMAP_HOST` is set |
 | support_tick | every minute | support clock: unanswered chats become tickets, idle chats end, staff presence times out, SLA alerts go to admins, solved tickets close after 14 days |
 | prune_api_idempotency | daily | forgets API idempotency records older than 24 hours |

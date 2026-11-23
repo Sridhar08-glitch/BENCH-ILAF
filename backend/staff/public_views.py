@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cards.slugs import resolve_card
+from ilaf.countries import country_or_none
 from ilaf.emails import send_brand_email
 from ilaf.errors import ApiError, validation_error
 from ilaf.i18n import DEFAULT_LANGUAGE, normalise_language, request_language, tr
@@ -86,6 +87,9 @@ class PublicCompanyLeadView(PublicBase):
         size = _clean(data.get("size"), 20)
         if size and size not in SIZES:
             fields["size"] = ["Choose a size from the list."]
+        country = country_or_none(data.get("country"))
+        if country is None:
+            fields["country"] = ["Choose a country from the list."]
         if fields:
             raise validation_error(fields)
         if _clean(data.get("website"), 100):
@@ -96,7 +100,7 @@ class PublicCompanyLeadView(PublicBase):
             return Response({"ok": True}, status=201)
         lang = normalise_language(request_language(request)) or DEFAULT_LANGUAGE
         lead = CompanyLead.objects.create(
-            company=company, name=name, email=email, size=size, message=_clean(data.get("message"), 1000), source=_clean(data.get("source"), 30) or "website",
+            company=company, name=name, email=email, size=size, country=country, message=_clean(data.get("message"), 1000), source=_clean(data.get("source"), 30) or "website",
             language=lang, reporter_hash=who,
         )
         for address in [a for a in getattr(settings, "STAFF_NOTIFY_EMAILS", []) if a]:

@@ -7,7 +7,12 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from ilaf.emails import send_brand_email
+from ilaf.errors import ApiError
+from ilaf.i18n import normalise_language, tr
+from ilaf.utils import run_after_response
 from operations.audit import ip_hash
+from security import devices
 
 from . import totp
 from .models import StaffAuditEvent, StaffRecoveryCode, StaffSession, StaffTotp
@@ -59,6 +64,17 @@ def log(request, action, target_type="", target_id="", target_label="", details=
         details=details or {},
         ip_hash=ip_hash(request),
     )
+
+
+def log_look(request, action, target_type, target_id, target_label="", details=None, within_seconds=60):
+    """Write a "Look" entry (something only read), unless the same person logged the same look at the same thing a moment
+    ago: a screen that refreshes itself must not fill the log."""
+    user = getattr(request, "user", None)
+    if user is not None and getattr(user, "is_authenticated", False):
+        since = timezone.now() - timedelta(seconds=within_seconds)
+        if StaffAuditEvent.objects.filter(actor=user, action=action, target_id=str(target_id)[:64], created_at__gte=since).exists():
+            return None
+    return log(request, action, target_type, target_id, target_label, details)
 
 
 # ---------------------------------------------------------------- hashing
@@ -176,13 +192,79 @@ def is_enrolled(user):
 
 # ---------------------------------------------------------------- sessions
 def start_session(request, user, method="totp"):
-    """Open a 12 hour staff session and return (token, session). Older sessions of the person stay valid."""
+    """Open a 12 hour staff session and return (token, session). Older sessions of the person stay valid.
+
+    The session remembers a readable device name and the country it started from (the Security tab shows them). When
+    the person has signed in before and this is a country or a kind of browser not seen in their earlier sessions,
+    they get an e-mail about it; `session.new_place` tells the caller so the audit line can say it too."""
+    info = devices.describe(request)
+    earlier = list(StaffSession.objects.filter(user=user).order_by("-created_at").values_list("device_label", "country")[:200])
     token = secrets.token_urlsafe(32)
     session = StaffSession.objects.create(
         user=user, token_hash=hash_token(token), method=method, ip_hash=ip_hash(request),
-        expires_at=timezone.now() + timedelta(hours=SESSION_HOURS),
+        expires_at=timezone.now() + timedelta(hours=SESSION_HOURS), device_label=info["label"][:80], country=info["country"][:8],
     )
+    session.new_place = is_new_place(earlier, info)
+    if session.new_place:
+        mail_new_place(user, info)
     return token, session
+
+
+def is_new_place(earlier, info):
+    """True when there are earlier sessions and this one comes from a country or a browser/system none of them used."""
+    if not earlier:
+        return False
+    countries = {country for _label, country in earlier if country}
+    labels = {label for label, _country in earlier if label}
+    new_country = bool(info["country"]) and bool(countries) and info["country"] not in countries
+    new_device = bool(info["label"]) and info["label"] not in labels
+    return new_country or new_device
+
+
+def mail_new_place(user, info):
+    """Tell a staff member that a staff session was just opened from a new country or device."""
+    lang = normalise_language(user.language) or "en"
+    place = info["label"] or tr(lang, "an unknown device")
+    if info["country"]:
+        place = f"{place} ({info['country']})"
+    when = timezone.now().strftime("%Y-%m-%d %H:%M UTC")
+    run_after_response(
+        send_brand_email,
+        user.email,
+        tr(lang, "New staff sign-in to {product}", product=settings.PRODUCT_NAME),
+        tr(lang, "A staff session started from a new place"),
+        [
+            tr(lang, "A staff session on your account was opened from {device} at {when}.", device=place, when=when),
+            tr(lang, "If this was you, you do not need to do anything. If it was not, ask an admin to end your staff sessions and reset your two-step verification."),
+        ],
+        tr(lang, "Review your staff sessions"),
+        f"{settings.WEB_BASE_URL}/staff/team",
+        lang=lang,
+        kind="staff",
+    )
+
+
+def revoke_session(session):
+    """End one staff session. Returns False when it was already over."""
+    if session.revoked_at is not None or session.expires_at <= timezone.now():
+        return False
+    session.revoked_at = timezone.now()
+    session.save(update_fields=["revoked_at"])
+    return True
+
+
+def reason_details(data):
+    """{"reason": text} when the request body carries the reason typed in the confirmation dialog, else {}. Goes into the audit details."""
+    if not isinstance(data, dict):
+        return {}
+    reason = str(data.get("reason") or "").strip()[:300]
+    return {"reason": reason} if reason else {}
+
+
+def ensure_not_last_admin(user, new_role=None):
+    """Refuse a change that would leave no active admin: demoting, removing or deactivating the only one."""
+    if user.staff_role == "admin" and new_role != "admin" and count_admins(exclude=user) == 0:
+        raise ApiError("last_admin", "At least one staff admin is required.", 409)
 
 
 def session_for(user, token):

@@ -1,4 +1,6 @@
 """Trust and safety: the card report queue and data requests."""
+import re
+
 from django.db.models import Q
 from django.http import Http404
 from django.utils import timezone
@@ -35,7 +37,7 @@ def sla_json(r, now=None):
 
 def report_json(r, now=None):
     return {
-        "id": str(r.id), "card_id": str(r.card_id) if r.card_id else None, "card_name": r.card_name or (r.card.name if r.card_id else ""),
+        "id": str(r.id), "number": r.number, "short_id": r.short_id, "card_id": str(r.card_id) if r.card_id else None, "card_name": r.card_name or (r.card.name if r.card_id else ""),
         "company_id": str(r.workspace_id) if r.workspace_id else None, "company_name": r.workspace.name if r.workspace_id else "",
         "reason": r.reason, "reason_label": REASON_LABELS.get(r.reason, r.reason), "note": r.note, "reporter_email": r.reporter_email,
         "status": r.status, "assignee": r.assignee.email if r.assignee_id else None, "created_at": iso(r.created_at), "due_at": iso(r.due_at),
@@ -65,7 +67,11 @@ class AbuseListView(StaffView):
             qs = qs.filter(status__in=OPEN, due_at__lt=timezone.now())
         term = (params.get("q") or "").strip()[:100]
         if term:
-            qs = qs.filter(Q(card_name__icontains=term) | Q(workspace__name__icontains=term) | Q(note__icontains=term))
+            match = Q(card_name__icontains=term) | Q(workspace__name__icontains=term) | Q(note__icontains=term)
+            number = re.fullmatch(r"(?:r-?)?0*(\d{1,9})", term, re.IGNORECASE)
+            if number:
+                match |= Q(number=int(number.group(1)))
+            qs = qs.filter(match)
         qs = qs.order_by("due_at", "id") if status in ("open", "new", "reviewing") else qs.order_by("-created_at", "id")
         now = timezone.now()
         body = paged(request, qs, lambda r: report_json(r, now))
@@ -95,7 +101,7 @@ class AbuseDetailView(StaffView):
         })
 
 
-def _warn_owner(r):
+def _warn_owner(r, message=""):
     ws = r.workspace
     owner_member = ws.members.filter(role="owner").select_related("user").first() if ws else None
     card = r.card
@@ -109,17 +115,19 @@ def _warn_owner(r):
         "offensive": tr(lang, "it has offensive content"), "impersonation": tr(lang, "it looks like it pretends to be someone else"),
         "other": tr(lang, "it may break our rules"),
     }[r.reason]
-    send_brand_email(
-        email, tr(lang, "A visitor reported your card"), tr(lang, "A card was reported"),
-        [tr(lang, "A visitor reported the card {card} because {reason}.", card=r.card_name or "-", reason=reason),
-         tr(lang, "Please check the card and fix anything that breaks our rules. If it is not fixed we may suspend it."),
-         tr(lang, "If you think this is a mistake, reply to this e-mail or contact support.")],
-        lang=lang,
-    )
+    paragraphs = [
+        tr(lang, "A visitor reported the card {card} because {reason}.", card=r.card_name or "-", reason=reason),
+        tr(lang, "Please check the card and fix anything that breaks our rules. If it is not fixed we may suspend it."),
+    ]
+    if message:
+        paragraphs.append(tr(lang, "Note from our team: {note}", note=message))
+    paragraphs.append(tr(lang, "If you think this is a mistake, reply to this e-mail or contact support."))
+    send_brand_email(email, tr(lang, "A visitor reported your card"), tr(lang, "A card was reported"), paragraphs, lang=lang)
 
 
-def apply_action(request, r, action, note="", assignee=None):
-    """One triage action on one report. Raises ApiError when it cannot be done; the caller logs and saves."""
+def apply_action(request, r, action, note="", assignee=None, confirm_name=""):
+    """One triage action on one report. Raises ApiError when it cannot be done; the caller logs and saves.
+    Suspending the company needs its name typed exactly (`confirm_name`)."""
     who = request.user.email
     if action == "note":
         if not note:
@@ -138,7 +146,7 @@ def apply_action(request, r, action, note="", assignee=None):
         r.status, r.outcome, r.resolved_at = "dismissed", "dismissed", timezone.now()
         add_history(r, who, "status", note or "Dismissed: no problem found")
     elif action == "warn":
-        _warn_owner(r)
+        _warn_owner(r, note)
         r.status, r.outcome, r.resolved_at = "actioned", "warned", timezone.now()
         add_history(r, who, "warn", note or "Warned the owner by e-mail")
     elif action == "suspend_card":
@@ -153,6 +161,8 @@ def apply_action(request, r, action, note="", assignee=None):
             raise ApiError("forbidden", "Your staff role does not allow this action.", 403)
         if r.workspace is None:
             raise ApiError("card_gone", "This card no longer exists.", 409)
+        if str(confirm_name or "").strip().casefold() != r.workspace.name.strip().casefold():
+            raise validation_error({"confirm_name": ["Type the company name exactly to confirm."]})
         if r.workspace.suspended_at is None:
             _suspend_company(request, r.workspace, f"Card report: {r.reason}")
         r.status, r.outcome, r.resolved_at = "actioned", "company_suspended", timezone.now()
@@ -175,7 +185,7 @@ class AbuseActionView(StaffView):
             assignee = User.objects.filter(pk=data["assignee"]).exclude(staff_role="none").first()
             if assignee is None:
                 raise validation_error({"assignee": ["Choose a person from the staff."]})
-        apply_action(request, r, data.get("action"), str(data.get("note") or "").strip()[:500], assignee)
+        apply_action(request, r, data.get("action"), str(data.get("note") or "").strip()[:500], assignee, str(data.get("confirm_name") or ""))
         return Response({**report_json(r), "history": r.history})
 
 
@@ -186,12 +196,18 @@ class AbuseBulkView(StaffView):
     def post(self, request):
         data = request.data if isinstance(request.data, dict) else {}
         ids, action = data.get("ids"), data.get("action")
-        if action not in ("dismiss", "reviewing", "assign") or not isinstance(ids, list) or not ids or len(ids) > 100:
+        if action not in ("dismiss", "reviewing", "assign", "warn") or not isinstance(ids, list) or not ids or len(ids) > 100:
             raise validation_error({"ids": ["Choose between 1 and 100 reports and an action."]})
+        note = str(data.get("note") or "").strip()[:500]
+        if action == "warn" and len(note) < 5:
+            raise validation_error({"note": ["Write a reason of at least 5 characters. The owners get it in the e-mail."]})
         results = []
         for report_id in ids:
             try:
-                apply_action(request, get_report(report_id), action, str(data.get("note") or "")[:500])
+                report = get_report(report_id)
+                if action == "warn" and report.status not in OPEN:
+                    raise ApiError("not_open", "This report is already closed.", 409)
+                apply_action(request, report, action, note)
                 results.append({"id": str(report_id), "ok": True})
             except (ApiError, Http404, ValueError) as exc:
                 results.append({"id": str(report_id), "ok": False, "error": getattr(exc, "code", "not_found")})
@@ -262,7 +278,7 @@ class DataRequestActionView(StaffView):
             dr.status, dr.completed_at, dr.handled_by = "completed", timezone.now(), request.user
             dr.details = {**(dr.details or {}), "staff_note": str(data.get("note") or "")[:300]}
             dr.save()
-            services.log(request, "data_request.done", "data_request", dr.id, dr.user.email if dr.user_id else "", {"kind": dr.kind})
+            services.log(request, "data_request.done", "data_request", dr.id, dr.user.email if dr.user_id else "", {"kind": dr.kind, **services.reason_details(data)})
         else:
             raise validation_error({"action": ["Choose a valid action."]})
         dr.refresh_from_db()
@@ -291,11 +307,13 @@ class DataRequestActionView(StaffView):
         info = data_json(dr)
         if (dr.scope == "workspace" or info["owns_company_with_people"]) and data.get("ack_company") is not True:
             raise validation_error({"ack_company": ["Confirm that you know this erases a company that other people use."]})
+        if dr.scope != "workspace" and dr.user_id:
+            services.ensure_not_last_admin(dr.user, "none")
         label = expected
         if dr.scope == "workspace" and dr.workspace_id:
             privacy.purge_workspace(dr.workspace)
         elif dr.user_id:
             privacy.purge_user(dr.user)
         DataRequest.objects.filter(pk=dr.pk).update(status="completed", completed_at=timezone.now(), handled_by=request.user)
-        services.log(request, "data_request.deleted", "data_request", dr.id, label, {"scope": dr.scope})
+        services.log(request, "data_request.deleted", "data_request", dr.id, label, {"scope": dr.scope, **services.reason_details(data)})
 

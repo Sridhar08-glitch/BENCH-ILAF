@@ -28,6 +28,8 @@ PLURALS = {
 }
 
 TEXTS = {
+    "This report is already closed.": "هذا البلاغ مغلق بالفعل.",
+    "Write a reason of at least 5 characters. The owners get it in the e-mail.": "اكتب سببًا لا يقل عن 5 أحرف. سيصل السبب إلى المالكين في البريد الإلكتروني.",
     "tomorrow": "غدًا",
     "in 7 days": "بعد 7 أيام",
     "Your {product} plan ends {when}": "ينتهي اشتراكك في {product} {when}",

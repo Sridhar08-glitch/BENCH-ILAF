@@ -87,7 +87,7 @@ class AuditCoverageTests(SimpleTestCase):
         """Static check: each post/patch/put/delete of the staff views calls the audit log, directly or through a helper that does."""
         root = Path(__file__).resolve().parent.parent / "staff"
         files = [p for p in root.glob("views*.py")] + [root / "public_views.py"]
-        helper_names = {"log", "apply_action", "_suspend_company", "_restore_company", "staff_suspend_card", "staff_restore_card", "end_session", "_start_export", "_confirm_delete"}
+        helper_names = {"log", "apply_action", "_suspend_company", "_restore_company", "staff_suspend_card", "staff_restore_card", "end_session", "_start_export", "_confirm_delete", "log_look"}
         public = {"public_views.py"}
         missing = []
         for path in files:

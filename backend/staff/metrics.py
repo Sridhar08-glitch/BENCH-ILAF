@@ -126,7 +126,21 @@ def summary(minutes=10, now=None):
         errors += row.server_errors
         for key, count in (row.buckets or {}).items():
             merged[key] = merged.get(key, 0) + count
-    return {"requests": requests, "server_errors": errors, "p95_ms": percentile(merged)}
+    return {"requests": requests, "server_errors": errors, "p95_ms": percentile(merged), "p50_ms": percentile(merged, 0.5)}
+
+
+def availability(days=7, now=None):
+    """Share of the requests of the last `days` that were answered without a server error. Only the days the metrics table
+    keeps can be counted, so this is a success rate of requests, not a ping-based uptime."""
+    from django.db.models import Sum
+
+    from .models import RequestMetric
+
+    flush()
+    now = now or timezone.now()
+    row = RequestMetric.objects.filter(minute__gte=now - timedelta(days=days)).aggregate(r=Sum("requests"), e=Sum("server_errors"))
+    requests, errors = row["r"] or 0, row["e"] or 0
+    return {"requests": requests, "server_errors": errors, "success_rate": round(100 * (requests - errors) / requests, 2) if requests else None}
 
 
 def series(hours=24, now=None):
@@ -147,5 +161,6 @@ def series(hours=24, now=None):
     for i in range(hours):
         hour = start + timedelta(hours=i)
         slot = out.get(hour, {"requests": 0, "errors": 0, "buckets": {}})
-        points.append({"hour": hour.isoformat().replace("+00:00", "Z"), "requests": slot["requests"], "errors": slot["errors"], "p95_ms": percentile(slot["buckets"])})
+        points.append({"hour": hour.isoformat().replace("+00:00", "Z"), "requests": slot["requests"], "errors": slot["errors"], "p95_ms": percentile(slot["buckets"]),
+                       "p50_ms": percentile(slot["buckets"], 0.5), "error_rate": round(100 * slot["errors"] / slot["requests"], 2) if slot["requests"] else None})
     return points

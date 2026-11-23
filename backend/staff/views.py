@@ -90,7 +90,7 @@ class ConfirmView(StaffView):
             raise validation_error({"code": ["That code is not right. Check the time on your phone and try again."]})
         codes = services.make_recovery_codes(request.user)
         token, session = services.start_session(request, request.user)
-        services.log(request, "staff.totp_enrolled", "user", request.user.id, request.user.email)
+        services.log(request, "staff.totp_enrolled", "user", request.user.id, request.user.email, {"new_place": session.new_place})
         return Response({"recovery_codes": codes, "token": token, "expires_at": iso(session.expires_at)})
 
 
@@ -118,7 +118,7 @@ class VerifyView(StaffView):
             services.log(request, "staff.verify_failed", "user", request.user.id, request.user.email, {"method": method})
             raise validation_error({"code": ["That code is not right."]})
         token, session = services.start_session(request, request.user, method)
-        services.log(request, "staff.verified", "user", request.user.id, request.user.email, {"method": method})
+        services.log(request, "staff.verified", "user", request.user.id, request.user.email, {"method": method, "new_place": session.new_place})
         return Response({
             "token": token, "expires_at": iso(session.expires_at), "method": method,
             "recovery_codes_left": services.recovery_codes_left(request.user),
@@ -180,10 +180,12 @@ AUDIT_ACTIONS = {
     "staff.unlabelled_write": "Made a change that was not described (should not happen)",
     "staff.invited": "Invited someone to the staff",
     "staff.sessions_revoked": "Ended all staff sessions of someone",
+    "staff.session_revoked": "Ended one staff session",
     "company.suspended": "Suspended a company",
     "company.restored": "Restored a company",
     "company.note_added": "Added an internal note to a company",
     "company.bulk": "Ran a bulk action on companies",
+    "company.exported": "Downloaded a CSV of companies",
     "card.suspended": "Suspended a card",
     "card.restored": "Restored a card",
     "support_view.started": "Started a support view",
@@ -207,7 +209,12 @@ AUDIT_ACTIONS = {
     "audit.exported": "Downloaded the audit log CSV",
     "flag.changed": "Changed a feature switch",
     "plan.granted": "Granted a free plan period",
+    "application.assigned": "Gave an application to someone",
+    "look.leads": "Looked at the leads of a company",
+    "look.page": "Opened a page of a support view",
+    "look.public_page": "Looked at the public page of a card",
     "email.resent": "Sent a failed e-mail again",
+    "email.resent_all": "Sent all failed e-mails again",
 }
 
 # The groups of the audit log filter: a label and the action prefixes it covers.
@@ -222,14 +229,36 @@ AUDIT_CATEGORIES = {
     "staff": ("Staff", ("staff.",)),
     "announcement": ("Announcement", ("announcement.",)),
     "design": ("Design", ("design_request.", "face.")),
+    "application": ("Application", ("application.",)),
+    "support": ("Support", ("support.",)),
+    # Reading is logged too: what was only looked at, and the downloads of what was looked at.
+    "look": ("Look", ("look.", "audit.", "analytics.")),
+    # Things the product did by itself or that are not a person's decision.
+    "system": ("System", ("email.", "staff.ip_changed", "staff.unlabelled_write")),
 }
 
 
+def category_of(action):
+    """The audit category of an action: the category whose prefix is the longest match. Nothing is stored, so old rows
+    are sorted the same way as new ones."""
+    best, size = "", 0
+    for key, (_label, prefixes) in AUDIT_CATEGORIES.items():
+        for prefix in prefixes:
+            if action.startswith(prefix) and len(prefix) > size:
+                best, size = key, len(prefix)
+    return best
+
+
 def audit_json(e, lang="en"):
+    key = category_of(e.action)
+    person = e.actor.full_name if e.actor_id and e.actor.full_name else e.actor_email
     return {
         "id": str(e.id), "actor_email": e.actor_email, "actor_role": e.actor_role, "action": e.action,
         "label": translate_message(lang, AUDIT_ACTIONS.get(e.action, e.action)), "target_type": e.target_type, "target_id": e.target_id,
         "target_label": e.target_label, "details": e.details, "ip_hash": e.ip_hash, "created_at": iso(e.created_at),
+        "category": key, "category_label": translate_message(lang, AUDIT_CATEGORIES[key][0]) if key else "",
+        # Who did it: the person's name, or "System" for an entry nobody made.
+        "actor_name": person, "from": person or "System",
     }
 
 
@@ -247,6 +276,11 @@ def filtered_audit(params):
         cond = Q()
         for prefix in category[1]:
             cond |= Q(action__startswith=prefix)
+        # A longer prefix of another category (staff.ip_changed inside staff.) belongs to that other category.
+        for key, (_label, prefixes) in AUDIT_CATEGORIES.items():
+            for prefix in prefixes:
+                if prefix not in category[1] and any(prefix.startswith(own) for own in category[1]):
+                    cond &= ~Q(action__startswith=prefix)
         qs = qs.filter(cond)
     if params.get("role") in ("read_only", "support", "admin"):
         qs = qs.filter(actor_role=params["role"])
@@ -266,7 +300,7 @@ class AuditView(StaffView):
     perm = "view"
 
     def get(self, request):
-        qs = filtered_audit(request.query_params)
+        qs = filtered_audit(request.query_params).select_related("actor")
         lang = request_language(request)
         body = paged(request, qs, lambda e: audit_json(e, lang), 50)
         body["actions"] = [{"key": k, "label": translate_message(lang, v)} for k, v in AUDIT_ACTIONS.items()]
@@ -335,12 +369,11 @@ class MembersView(StaffView):
         if user is None:
             raise validation_error({"email": ["No account has this email address. Ask them to register first."]})
         previous = user.staff_role
-        if previous == "admin" and role != "admin" and services.count_admins(exclude=user) == 0:
-            raise ApiError("last_admin", "At least one staff admin is required.", 409)
+        services.ensure_not_last_admin(user, role)
         user.staff_role = role
         user.save(update_fields=["staff_role"])
         action = "staff.role_granted" if previous == "none" else "staff.role_changed"
-        services.log(request, action, "user", user.id, user.email, {"from": previous, "to": role})
+        services.log(request, action, "user", user.id, user.email, {"from": previous, "to": role, **services.reason_details(data)})
         return Response(staff_json(user), status=201 if previous == "none" else 200)
 
 
@@ -355,27 +388,26 @@ class MemberDetailView(StaffView):
 
     def patch(self, request, user_id):
         user = self._user(user_id)
-        role = (request.data if isinstance(request.data, dict) else {}).get("role")
+        data = request.data if isinstance(request.data, dict) else {}
+        role = data.get("role")
         if role not in services.ROLES:
             raise validation_error({"role": ["Choose read_only, support or admin."]})
-        if user.staff_role == "admin" and role != "admin" and services.count_admins(exclude=user) == 0:
-            raise ApiError("last_admin", "At least one staff admin is required.", 409)
+        services.ensure_not_last_admin(user, role)
         previous = user.staff_role
         user.staff_role = role
         user.save(update_fields=["staff_role"])
         services.end_sessions(user) if role != previous else None
-        services.log(request, "staff.role_changed", "user", user.id, user.email, {"from": previous, "to": role})
+        services.log(request, "staff.role_changed", "user", user.id, user.email, {"from": previous, "to": role, **services.reason_details(data)})
         return Response(staff_json(user))
 
     def delete(self, request, user_id):
         user = self._user(user_id)
-        if user.staff_role == "admin" and services.count_admins(exclude=user) == 0:
-            raise ApiError("last_admin", "At least one staff admin is required.", 409)
+        services.ensure_not_last_admin(user, "none")
         previous = user.staff_role
         user.staff_role = "none"
         user.save(update_fields=["staff_role"])
         services.end_sessions(user)
-        services.log(request, "staff.role_removed", "user", user.id, user.email, {"from": previous})
+        services.log(request, "staff.role_removed", "user", user.id, user.email, {"from": previous, **services.reason_details(request.data)})
         return Response(status=204)
 
 
@@ -393,5 +425,5 @@ class ResetTotpView(StaffView):
         StaffTotp.objects.filter(user=user).delete()
         StaffRecoveryCode.objects.filter(user=user).delete()
         services.end_sessions(user)
-        services.log(request, "staff.totp_reset", "user", user.id, user.email)
+        services.log(request, "staff.totp_reset", "user", user.id, user.email, services.reason_details(request.data))
         return Response(staff_json(user))

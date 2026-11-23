@@ -41,6 +41,9 @@ class StaffSession(models.Model):
     last_seen_at = models.DateTimeField(null=True, blank=True)
     # The newest address the session was used from, so a change of address is logged once.
     last_ip_hash = models.CharField(max_length=32, blank=True)
+    # What the Security tab shows: a readable device name ("Chrome on Windows") and the country the session started from.
+    device_label = models.CharField(max_length=80, blank=True)
+    country = models.CharField(max_length=8, blank=True)
 
 
 class StaffAuditEvent(models.Model):

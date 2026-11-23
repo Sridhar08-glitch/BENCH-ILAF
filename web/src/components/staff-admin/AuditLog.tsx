@@ -1,6 +1,6 @@
 "use client";
 
-// The staff audit log: everything staff did, with filters and a CSV download (support and admin).
+// The staff audit log: everything staff did, with category chips, filters and a CSV download (support and admin).
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/app/ui";
@@ -26,11 +26,13 @@ export default function AuditLog() {
   return (
     <Page title="Audit log" sub="Every staff action, newest first. Entries cannot be changed or deleted."
       actions={<RoleButton perm="export" className="btn ghost sm" onClick={() => void sa.downloadAudit(filters).catch((e) => toast(fail(e)))}>Download CSV</RoleButton>}>
+      <div className="row" role="group" aria-label="Category" style={{ gap: 6 }}>
+        <button type="button" className={`btn sm ${category === "" ? "" : "ghost"}`} aria-pressed={category === ""} onClick={() => change(() => setCategory(""))}>All</button>
+        {q.data?.categories.map((c) => (
+          <button key={c.key} type="button" className={`btn sm ${category === c.key ? "" : "ghost"}`} aria-pressed={category === c.key} onClick={() => change(() => setCategory(c.key))}>{c.label}</button>
+        ))}
+      </div>
       <div className="row">
-        <select value={category} onChange={(e) => change(() => setCategory(e.target.value))} aria-label="Category">
-          <option value="">Every category</option>
-          {q.data?.categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-        </select>
         <select value={role} onChange={(e) => change(() => setRole(e.target.value))} aria-label="Role"><option value="">Every role</option><option value="admin">Admin</option><option value="support">Support</option><option value="read_only">Read only</option></select>
         <input value={actor} onChange={(e) => change(() => setActor(e.target.value))} placeholder="Who (e-mail)" aria-label="Who" />
         <input value={text} onChange={(e) => change(() => setText(e.target.value))} placeholder="Search the target" aria-label="Search" />
@@ -41,13 +43,15 @@ export default function AuditLog() {
         {(d) => (
           <>
             {d.results.length === 0 ? <NoRows>No entries match.</NoRows> : (
-              <Table head={["When", "Who", "What", "Target", "Details"]}>
+              <Table head={["When", "Who", "Category", "What", "Target", "From", "Details"]}>
                 {d.results.map((e) => (
                   <tr key={e.id}>
                     <td style={{ ...td, whiteSpace: "nowrap" }}>{fmtWhen(e.created_at)}</td>
-                    <td style={td}>{e.actor_email || "-"} <Pill>{e.actor_role || "system"}</Pill></td>
+                    <td style={td}>{e.actor_name || "-"} <Pill>{e.actor_role || "system"}</Pill></td>
+                    <td style={td}>{e.category_label ? <Pill>{e.category_label}</Pill> : ""}</td>
                     <td style={td}>{e.label || humanAction(e.action)}</td>
                     <td style={td}>{e.target_label}</td>
+                    <td style={{ ...td, minWidth: 110 }}>{e.from}</td>
                     <td style={td}>{Object.keys(e.details ?? {}).length ? <span className="hint">{Object.entries(e.details).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`).join("; ").slice(0, 160)}</span> : ""}</td>
                   </tr>
                 ))}

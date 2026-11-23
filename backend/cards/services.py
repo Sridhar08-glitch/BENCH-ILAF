@@ -196,6 +196,9 @@ def replace_items(card, items, ):
             item = CardItem.objects.create(card=card, **fields)
         keep.append(item.id)
     card.items.exclude(id__in=keep).delete()
+    from wallet.sync import mark_dirty
+
+    mark_dirty(card)
 
 
 @transaction.atomic

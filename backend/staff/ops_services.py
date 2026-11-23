@@ -19,6 +19,7 @@ RETRY_KEEP_DAYS = 14
 JOBS = [
     ("deliver_webhooks", "Send lead webhooks", "Every minute", 10),
     ("sync_crm", "Send new leads to the connected CRMs", "Every minute", 10),
+    ("sync_wallet_passes", "Update saved Google Wallet passes", "Every 5 minutes", 30),
     ("fetch_support_mail", "Read the support mailbox", "Every minute", 10),
     ("support_tick", "Support clock (chats, presence, alerts)", "Every minute", 10),
     ("send_announcements", "Send announcement e-mails", "Every 5 minutes", 30),
@@ -95,6 +96,48 @@ def prune_back_office(now=None):
     RequestMetric.objects.filter(minute__lt=now - timedelta(days=KEEP_DAYS)).delete()
 
 
+def resend_all_failed(limit=100):
+    """Send the failed e-mails that still have their text saved again, newest first. Returns (tried, sent)."""
+    tried = sent = 0
+    for row in EmailLog.objects.filter(status="failed").exclude(retry_text="").order_by("-created_at")[:limit]:
+        tried += 1
+        if resend_email(row):
+            sent += 1
+    return tried, sent
+
+
+# ---------------------------------------------------------------- work queues
+QUEUE_RED_ABOVE = 50
+
+
+def queue_counts():
+    """How much work waits in each queue: support requests nobody answered, lead webhooks, data exports, wallet pass updates and
+    failed e-mails. `waiting` is what is still to do, `failing` what already went wrong; `state` is bad above QUEUE_RED_ABOVE."""
+    from leads.models import WebhookDelivery
+    from privacy.models import DataRequest
+
+    rows = []
+    try:
+        from support.models import SupportTicket
+
+        rows.append(("support", "Support requests without an answer", SupportTicket.objects.filter(status="new", spam=False).count(), 0))
+    except ImportError:
+        pass
+    rows.append(("webhooks", "Lead webhooks to send", WebhookDelivery.objects.filter(status="pending").count(), WebhookDelivery.objects.filter(status="failed").count()))
+    rows.append(("exports", "Data exports to build", DataRequest.objects.filter(kind="export", status__in=("pending", "processing")).count(), DataRequest.objects.filter(kind="export", status="failed").count()))
+    try:
+        from wallet.models import WalletPass
+
+        rows.append(("wallet", "Wallet passes to update", WalletPass.objects.filter(dirty=True).count(), WalletPass.objects.exclude(last_error="").count()))
+    except ImportError:
+        pass
+    rows.append(("email", "Failed e-mails to send again", EmailLog.objects.filter(status="failed").exclude(retry_text="").count(), 0))
+    return [
+        {"key": k, "label": label, "waiting": waiting, "failing": failing, "state": "bad" if waiting > QUEUE_RED_ABOVE else "warn" if failing else "ok"}
+        for k, label, waiting, failing in rows
+    ]
+
+
 # ---------------------------------------------------------------- scheduled jobs
 def job_states(now=None):
     """Last run and state of every job, read from the markers run_job.sh leaves in BENCH_STATE_DIR.
@@ -167,7 +210,20 @@ def storage_usage():
                 db_bytes = os.path.getsize(name) if name and os.path.exists(name) else None
     except Exception:
         db_bytes = None
+    media, private, exports = str(settings.MEDIA_ROOT), str(settings.PRIVATE_FILES_ROOT), str(settings.EXPORT_ROOT)
+
+    def size_of(*folders):
+        return sum(_folder_size(f) for f in folders if os.path.isdir(f))
+
+    # Sizes by kind of file, from the folders each kind is saved in.
+    categories = [
+        {"key": "card_photos", "label": "Card photos", "bytes": size_of(os.path.join(media, "cards"), os.path.join(media, "covers"), os.path.join(media, "users"))},
+        {"key": "logos", "label": "Logos and brand files", "bytes": size_of(os.path.join(media, "logos"), os.path.join(media, "brand"))},
+        {"key": "exports", "label": "Data exports", "bytes": size_of(exports)},
+        {"key": "design_files", "label": "Design request files", "bytes": size_of(os.path.join(private, "design-requests"))},
+    ]
     result = {
+        "categories": categories,
         "media_bytes": _folder_size(settings.MEDIA_ROOT) if os.path.isdir(settings.MEDIA_ROOT) else 0,
         "private_bytes": sum(_folder_size(p) for p in {str(settings.PRIVATE_FILES_ROOT), str(settings.EXPORT_ROOT)} if os.path.isdir(p)),
         "database_bytes": db_bytes,

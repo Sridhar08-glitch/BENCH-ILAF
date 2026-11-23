@@ -14,7 +14,7 @@ from . import perms_map, services
 from .common import csv_response
 from .models import StaffSession
 from .permissions import StaffView
-from .views import AUDIT_ACTIONS, filtered_audit, staff_json
+from .views import AUDIT_ACTIONS, AUDIT_CATEGORIES, category_of, filtered_audit, staff_json
 
 
 class PermissionsView(StaffView):
@@ -35,7 +35,7 @@ def team_json(user):
         **staff_json(user), "last_sign_in": iso(last.created_at) if last else None, "recovery_codes_left": services.recovery_codes_left(user),
         "sessions": [
             {"id": str(s.id), "method": s.method, "started_at": iso(s.created_at), "expires_at": iso(s.expires_at), "last_seen_at": iso(s.last_seen_at),
-             "new_address_seen": bool(s.last_ip_hash)}
+             "new_address_seen": bool(s.last_ip_hash), "device": s.device_label, "country": s.country}
             for s in live
         ],
     }
@@ -60,9 +60,10 @@ class StaffTeamView(StaffView):
         user = User.objects.filter(email__iexact=email, is_active=True, deleted_at__isnull=True).first()
         if user is not None:
             previous = user.staff_role
+            services.ensure_not_last_admin(user, role)
             user.staff_role = role
             user.save(update_fields=["staff_role"])
-            services.log(request, "staff.role_granted" if previous == "none" else "staff.role_changed", "user", user.id, user.email, {"from": previous, "to": role})
+            services.log(request, "staff.role_granted" if previous == "none" else "staff.role_changed", "user", user.id, user.email, {"from": previous, "to": role, **services.reason_details(data)})
             return Response({"granted": True, "invited": False, "person": team_json(user)}, status=201)
         lang = language_for_email(email)
         send_brand_email(
@@ -70,7 +71,7 @@ class StaffTeamView(StaffView):
             [tr(lang, "You were invited to the staff of {product}. Create an account with this e-mail address, then ask an admin to give you your role.", product=settings.PRODUCT_NAME)],
             tr(lang, "Create an account"), f"{settings.WEB_BASE_URL}/register", lang=lang, kind="staff",
         )
-        services.log(request, "staff.invited", "user", "", email, {"role": role})
+        services.log(request, "staff.invited", "user", "", email, {"role": role, **services.reason_details(data)})
         return Response({"granted": False, "invited": True}, status=201)
 
 
@@ -86,7 +87,7 @@ class StaffSessionsRevokeView(StaffView):
             raise Http404
         count = StaffSession.objects.filter(user=user, revoked_at__isnull=True, expires_at__gt=timezone.now()).count()
         services.end_sessions(user)
-        services.log(request, "staff.sessions_revoked", "user", user.id, user.email, {"sessions": count})
+        services.log(request, "staff.sessions_revoked", "user", user.id, user.email, {"sessions": count, **services.reason_details(request.data)})
         return Response({"revoked": count})
 
 
@@ -97,7 +98,10 @@ class AuditExportView(StaffView):
         rows = list(filtered_audit(request.query_params)[:5000])
         services.log(request, "audit.exported", "export", "", "Staff audit log", {"rows": len(rows)})
         return csv_response(
-            "staff-audit-log.csv", ["Time (UTC)", "Person", "Role", "Action", "What", "Target", "Details"],
-            [[iso(e.created_at), e.actor_email, e.actor_role, AUDIT_ACTIONS.get(e.action, e.action), e.target_type, e.target_label, e.details] for e in rows],
+            "staff-audit-log.csv", ["Time (UTC)", "Person", "Role", "Category", "Action", "What", "Target", "Details"],
+            [
+                [iso(e.created_at), e.actor_email or "System", e.actor_role, AUDIT_CATEGORIES.get(category_of(e.action), ("",))[0], AUDIT_ACTIONS.get(e.action, e.action), e.target_type, e.target_label, e.details]
+                for e in rows
+            ],
         )
 

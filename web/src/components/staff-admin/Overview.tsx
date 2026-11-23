@@ -5,8 +5,11 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { sa, type Overview as OverviewData } from "@/lib/staff-admin/api";
 import { fmtMs, fmtNumber, fmtWhen, humanAction } from "@/lib/staff-admin/format";
-import { LineChart } from "./charts";
+import { changeText, errorRateTone, fmtPercent, versusText } from "@/lib/staff-admin/health";
+import { BarChart, LineChart } from "./charts";
 import { Await, Kpi, Page, Pill, toneOf } from "./ui";
+
+const EVENT_LABEL = { signup: "Sign-up", card: "New card", upgrade: "Upgrade", support: "Support" } as const;
 
 function HealthStrip({ d }: { d: OverviewData }) {
   const h = d.health;
@@ -15,7 +18,8 @@ function HealthStrip({ d }: { d: OverviewData }) {
     { label: "API", value: h.api_up ? "Up" : "Down", tone: h.api_up ? "ok" : "bad" },
     { label: "Database", value: h.db_ok ? `OK (${h.db_ms} ms)` : "Not answering", tone: h.db_ok ? "ok" : "bad" },
     { label: "Speed (95 of 100 requests faster than)", value: fmtMs(h.p95_ms), tone: h.p95_ms != null && h.p95_ms > 1000 ? "warn" : "ok" },
-    { label: "Server errors, last hour", value: String(h.errors_last_hour), tone: h.errors_last_hour > 10 ? "bad" : h.errors_last_hour > 0 ? "warn" : "ok" },
+    { label: "Server errors, last hour", value: h.error_rate_1h == null ? String(h.errors_last_hour) : `${h.errors_last_hour} (${fmtPercent(h.error_rate_1h)})`, tone: h.errors_last_hour > 10 ? "bad" : errorRateTone(h.error_rate_1h) },
+    { label: "Requests answered without an error, 7 days", value: fmtPercent(h.success_rate_7d), tone: h.success_rate_7d != null && h.success_rate_7d < 99 ? "warn" : "ok" },
     { label: "Scheduled jobs", value: badJobs ? `${badJobs} need a look` : "All on time", tone: badJobs ? "bad" : "ok" },
     { label: "E-mail, last 24 h", value: `${d.email.sent} sent, ${d.email.failed} failed`, tone: d.email.failed ? "warn" : "ok" },
   ];
@@ -40,18 +44,22 @@ export default function Overview() {
           <>
             <HealthStrip d={d} />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-              <Kpi label="Companies" value={fmtNumber(d.numbers.companies)} />
-              <Kpi label="Active cards" value={fmtNumber(d.numbers.active_cards)} />
-              <Kpi label="Views today" value={fmtNumber(d.numbers.views_today)} />
-              <Kpi label="New companies this week" value={fmtNumber(d.numbers.new_companies_week)} />
-              <Kpi label="Open card reports" value={fmtNumber(d.numbers.open_reports)} tone={d.numbers.open_reports ? "bad" : undefined} />
-              <Kpi label="Open data requests" value={fmtNumber(d.numbers.open_data_requests)} />
+              <Kpi label="Companies" value={fmtNumber(d.numbers.companies)} hint={changeText(d.numbers.deltas.companies_4w, "in 4 weeks")} />
+              <Kpi label="Active cards" value={fmtNumber(d.numbers.active_cards)} hint={changeText(d.numbers.deltas.active_cards_4w, "in 4 weeks")} />
+              <Kpi label="Views today" value={fmtNumber(d.numbers.views_today)} hint={versusText(d.numbers.views_today, d.numbers.deltas.views_yesterday, "yesterday")} />
+              <Kpi label="New companies this week" value={fmtNumber(d.numbers.new_companies_week)} hint={versusText(d.numbers.new_companies_week, d.numbers.deltas.new_companies_prev_week, "last week")} />
+              <Kpi label="Open card reports" value={fmtNumber(d.numbers.open_reports)} tone={d.numbers.open_reports ? "bad" : undefined} hint={`${d.numbers.deltas.reports_late} past the answer time`} />
+              <Kpi label="Open data requests" value={fmtNumber(d.numbers.open_data_requests)} hint={`${d.numbers.deltas.data_due_soon} due within 5 days`} />
               {d.numbers.open_support_tickets != null && <Kpi label="Open support tickets" value={fmtNumber(d.numbers.open_support_tickets)} />}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
               <section className="panel" style={{ padding: 14, display: "grid", gap: 8 }} aria-label="New companies per week">
                 <h2 style={{ fontSize: 16 }}>New companies, last 12 weeks</h2>
-                <LineChart label="New companies per week for 12 weeks" labels={d.growth.map((g) => g.week.slice(5))} series={[{ name: "New companies", values: d.growth.map((g) => g.n) }]} />
+                <BarChart label="New companies per week for 12 weeks" data={d.growth.map((g) => ({ label: g.week.slice(5), value: g.n }))} />
+              </section>
+              <section className="panel" style={{ padding: 14, display: "grid", gap: 8 }} aria-label="Total companies">
+                <h2 style={{ fontSize: 16 }}>Total companies, last 12 weeks</h2>
+                <LineChart label="Total companies at the end of each week" labels={d.growth_total.map((g) => g.week.slice(5))} series={[{ name: "Total companies", values: d.growth_total.map((g) => g.n), color: "#10B981" }]} />
               </section>
               <section className="panel" style={{ padding: 14, display: "grid", gap: 8, alignContent: "start" }} aria-label="Needs attention">
                 <h2 style={{ fontSize: 16 }}>Needs attention</h2>
@@ -63,6 +71,16 @@ export default function Overview() {
                 ))}
               </section>
             </div>
+            <section className="panel" style={{ padding: 14, display: "grid", gap: 8 }} aria-label="Customer activity">
+              <h2 style={{ fontSize: 16 }}>What customers did lately</h2>
+              {d.customer_events.length === 0 && <p className="sub">Nothing in the last 30 days.</p>}
+              {d.customer_events.map((e, i) => (
+                <Link key={`${e.kind}${e.at}${i}`} href={e.path} className="row" style={{ justifyContent: "space-between", borderTop: "1px solid var(--line)", paddingTop: 6, textDecoration: "none" }}>
+                  <span><Pill tone={e.kind === "upgrade" ? "ok" : e.kind === "support" ? "warn" : ""}>{EVENT_LABEL[e.kind]}</Pill> {e.text}</span>
+                  <span className="hint">{fmtWhen(e.at)}</span>
+                </Link>
+              ))}
+            </section>
             <section className="panel" style={{ padding: 14, display: "grid", gap: 8 }} aria-label="Recent staff activity">
               <div className="row" style={{ justifyContent: "space-between" }}><h2 style={{ fontSize: 16 }}>Recent staff activity</h2><Link href="/staff/audit" className="btn ghost sm">Open the audit log</Link></div>
               {d.recent_activity.length === 0 && <p className="sub">No staff activity yet.</p>}

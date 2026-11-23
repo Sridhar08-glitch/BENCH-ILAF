@@ -59,8 +59,8 @@ class AbuseQueueTests(BackOfficeCase):
         self.client_for().post(f"{API}public/cards/{self.card['public_code']}/report", {"reason": "impersonation", "note": "Pretends to be our CEO"}, format="json")
         self.report = AbuseReport.objects.get()
 
-    def act(self, person, action, note="", rid=None):
-        return person.client.post(self.url(f"abuse/{rid or self.report.id}/action"), {"action": action, "note": note}, format="json")
+    def act(self, person, action, note="", rid=None, **extra):
+        return person.client.post(self.url(f"abuse/{rid or self.report.id}/action"), {"action": action, "note": note, **extra}, format="json")
 
     def test_the_queue_shows_sla_and_counts(self):
         res = self.ro.client.get(self.url("abuse"))
@@ -110,10 +110,19 @@ class AbuseQueueTests(BackOfficeCase):
         self.assertEqual((card.status, card.staff_hold), ("suspended", True))
 
     def test_suspend_company_is_admin_only(self):
-        self.assertEqual(self.act(self.support, "suspend_company").status_code, 403)
+        self.assertEqual(self.act(self.support, "suspend_company", confirm_name="Acme Ltd").status_code, 403)
         self.assertIsNone(Workspace.objects.get(pk=self.ws).suspended_at)
-        self.assertEqual(self.act(self.admin, "suspend_company").status_code, 200)
+        self.assertEqual(self.act(self.admin, "suspend_company", confirm_name="Acme Ltd").status_code, 200)
         self.assertIsNotNone(Workspace.objects.get(pk=self.ws).suspended_at)
+
+    def test_suspend_company_needs_the_typed_name(self):
+        for wrong in ("", "Acme", "Other Ltd"):
+            res = self.act(self.admin, "suspend_company", confirm_name=wrong)
+            self.assertEqual(res.status_code, 400, wrong)
+        self.assertIsNone(Workspace.objects.get(pk=self.ws).suspended_at)
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, "new")
+        self.assertEqual(self.act(self.admin, "suspend_company", confirm_name="  acme ltd ").status_code, 200)
 
     def test_read_only_cannot_triage(self):
         self.assertEqual(self.act(self.ro, "dismiss").status_code, 403)

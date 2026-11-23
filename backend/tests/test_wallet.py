@@ -179,6 +179,13 @@ class WalletEndpointTests(ApiTestCase):
         self.assertEqual(obj["logo"]["sourceUri"]["uri"], "https://web.test/brand/icon-512.png")
         self.assertTrue(any("https" in w for w in res.data["warnings"]), res.data["warnings"])
 
+    @override_settings(GOOGLE_WALLET_OBJECT_SUFFIX="_v2")
+    def test_pass_id_suffix_gives_a_new_pass_for_the_same_card(self):
+        card = self.published_card(self.alice)
+        res = self.alice.client.get(self.url(card))
+        obj = decode(res.data["save_url"])[1]["payload"]["genericObjects"][0]
+        self.assertEqual(obj["id"], f"{ISSUER}.{card['public_code']}_v2")
+
     def test_no_banner_picture_and_a_logo_is_always_present(self):
         card = self.published_card(self.alice)
         res = self.alice.client.get(self.url(card))

@@ -8,9 +8,9 @@ import { postJson, seeOther, textFields } from "@/lib/server/public-form";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const f = textFields(await req.formData(), ["company", "name", "email", "size", "message", "website"]);
+  const f = textFields(await req.formData(), ["company", "name", "email", "size", "country", "message", "website"]);
   if (!f.company || !f.name || !f.email || (f.size && !isCompanySize(f.size))) return seeOther("/request-access?error=1");
   const lang = (await cookies()).get(LANG_COOKIE)?.value ?? null;
-  const ok = await postJson("/public/company-leads", { company: f.company, name: f.name, email: f.email, size: f.size ?? "", message: f.message ?? "", website: f.website ?? "", source: "website" }, req.headers, lang);
+  const ok = await postJson("/public/company-leads", { company: f.company, name: f.name, email: f.email, size: f.size ?? "", country: f.country ?? "", message: f.message ?? "", website: f.website ?? "", source: "website" }, req.headers, lang);
   return seeOther(ok ? "/request-access?sent=1" : "/request-access?error=1");
 }

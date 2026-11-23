@@ -27,14 +27,16 @@ class SystemHealthView(StaffView):
     perm = "view"
 
     def get(self, request):
-        return Response({"health": health(), "series": metrics.series(24), "storage": ops_services.storage_usage()})
+        return Response({"health": health(), "series": metrics.series(24), "storage": ops_services.storage_usage(), "queues": ops_services.queue_counts()})
 
 
 class SystemJobsView(StaffView):
     perm = "view"
 
     def get(self, request):
-        return Response({"jobs": ops_services.job_states(), "state_dir_found": os.path.isdir(settings.BENCH_STATE_DIR)})
+        from wallet import sync as wallet_sync
+
+        return Response({"jobs": ops_services.job_states(), "state_dir_found": os.path.isdir(settings.BENCH_STATE_DIR), "wallet": wallet_sync.summary()})
 
 
 def email_json(e):
@@ -53,8 +55,30 @@ class SystemEmailView(StaffView):
             days.append({"day": start.date().isoformat(), "sent": rows.get("sent", 0) + rows.get("resent", 0), "failed": rows.get("failed", 0)})
         failed = EmailLog.objects.filter(status="failed").order_by("-created_at")
         body = paged(request, failed, email_json, 20)
-        body.update({"last_24h": ops_services.email_counts(24, now), "days": days})
+        body.update({"last_24h": ops_services.email_counts(24, now), "days": days, "bounce": bounce_summary(now), "resendable": EmailLog.objects.filter(status="failed").exclude(retry_text="").count()})
         return Response(body)
+
+
+def bounce_summary(now):
+    """Bounced e-mails of the last 24 hours and the bounce rate. Bounces only exist when the mail provider reports them back;
+    until then `connected` is false and no numbers are given."""
+    if not getattr(settings, "EMAIL_BOUNCE_TRACKING", False):
+        return {"connected": False, "bounced": None, "rate": None}
+    rows = {r["status"]: r["n"] for r in EmailLog.objects.filter(created_at__gte=now - timedelta(hours=24)).values("status").annotate(n=Count("id")).order_by()}
+    bounced, total = rows.get("bounced", 0), sum(rows.values())
+    return {"connected": True, "bounced": bounced, "rate": round(100 * bounced / total, 2) if total else None}
+
+
+class SystemEmailResendAllView(StaffView):
+    """Send every failed e-mail that still has its text saved again (at most 100 at a time)."""
+
+    perm = "view"
+    write_roles = roles_for("resend")
+
+    def post(self, request):
+        tried, sent = ops_services.resend_all_failed(100)
+        services.log(request, "email.resent_all", "email", "", f"{sent} of {tried} failed e-mails", {"tried": tried, "sent": sent})
+        return Response({"tried": tried, "sent": sent, "failed": tried - sent})
 
 
 class SystemEmailResendView(StaffView):
@@ -91,7 +115,7 @@ def flag_json(key, row, changes):
         "key": key, "description": flags.KNOWN.get(key) or (row.description if row else ""), "known": key in flags.KNOWN,
         "state": row.state if row else "everyone", "rollout_percent": row.rollout_percent if row else 100,
         "companies": [{"id": i, "name": next((n for k, n in names.items() if str(k) == i), i)} for i in ids],
-        "history": [{"at": iso(c.created_at), "who": c.actor_email, "text": c.summary} for c in changes],
+        "history": [{"at": iso(c.created_at), "who": c.actor_email, "text": c.summary, "reason": c.reason} for c in changes],
     }
 
 
@@ -104,7 +128,7 @@ class FlagsView(StaffView):
         keys = list(flags.KNOWN) + [k for k in rows if k not in flags.KNOWN]
         out = [flag_json(k, rows.get(k), list(rows[k].changes.all()[:8]) if k in rows else []) for k in keys]
         recent = FeatureFlagChange.objects.select_related("flag").order_by("-created_at")[:20]
-        return Response({"flags": out, "history": [{"at": iso(c.created_at), "who": c.actor_email, "text": f"{c.flag_id}: {c.summary}"} for c in recent]})
+        return Response({"flags": out, "history": [{"at": iso(c.created_at), "who": c.actor_email, "text": f"{c.flag_id}: {c.summary}", "reason": c.reason} for c in recent]})
 
 
 class FlagDetailView(StaffView):
@@ -139,9 +163,10 @@ class FlagDetailView(StaffView):
         if before[2] != row.company_ids:
             parts.append(f"chosen companies {len(before[2])} to {len(row.company_ids)}")
         summary = ", ".join(parts) or "saved without changes"
-        FeatureFlagChange.objects.create(flag=row, actor_email=request.user.email, summary=summary)
+        reason = services.reason_details(data).get("reason", "")
+        FeatureFlagChange.objects.create(flag=row, actor_email=request.user.email, summary=summary, reason=reason)
         flags.clear_cache()
-        services.log(request, "flag.changed", "flag", key, key, {"summary": summary})
+        services.log(request, "flag.changed", "flag", key, key, {"summary": summary, **services.reason_details(data)})
         return Response(flag_json(key, row, list(row.changes.all()[:8])))
 
 

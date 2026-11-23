@@ -3,7 +3,8 @@ from django.urls import path
 from designs import staff_views as d
 
 from . import public_views as pub
-from . import views, views_customers as c, views_growth as g, views_overview as o, views_safety as sf, views_staffadmin as sa, views_supportview as sv, views_system as sy
+from . import views_look as look
+from . import views, views_customers as c, views_frame as fr, views_growth as g, views_overview as o, views_safety as sf, views_staffadmin as sa, views_supportview as sv, views_system as sy
 
 urlpatterns = [
     path("staff/me", views.MeView.as_view()),
@@ -20,6 +21,7 @@ urlpatterns = [
     path("staff/overview", o.OverviewView.as_view()),
     path("staff/companies", c.CompaniesListView.as_view()),
     path("staff/companies/bulk", c.CompaniesBulkView.as_view()),
+    path("staff/companies/export", c.CompaniesExportView.as_view()),
     path("staff/companies/<uuid:company_id>", c.CompanyDetailView.as_view()),
     path("staff/companies/<uuid:company_id>/team", c.CompanyTeamView.as_view()),
     path("staff/companies/<uuid:company_id>/cards", c.CompanyCardsView.as_view()),
@@ -30,9 +32,12 @@ urlpatterns = [
     path("staff/companies/<uuid:company_id>/suspend", c.CompanySuspendView.as_view()),
     path("staff/companies/<uuid:company_id>/restore", c.CompanyRestoreView.as_view()),
     path("staff/search", c.SearchView.as_view()),
+    path("staff/people", c.PeopleListView.as_view()),
+    path("staff/cards", c.CardsListView.as_view()),
     path("staff/cards/<uuid:card_id>", c.CardDrawerView.as_view()),
     path("staff/cards/<uuid:card_id>/suspend", c.CardSuspendView.as_view()),
     path("staff/cards/<uuid:card_id>/restore", c.CardRestoreView.as_view()),
+    path("staff/cards/<uuid:card_id>/look", look.CardLookView.as_view()),
     path("staff/users/<uuid:user_id>", c.UserDetailView.as_view()),
     path("staff/users/<uuid:user_id>/sign-out", c.UserSignOutView.as_view()),
     # support view: the mirror pages are GET-only views of their own
@@ -58,6 +63,8 @@ urlpatterns = [
     path("staff/applications/<uuid:lead_id>", g.ApplicationDetailView.as_view()),
     path("staff/announcements", g.AnnouncementsView.as_view()),
     path("staff/announcements/preview", g.AnnouncementPreviewView.as_view()),
+    path("staff/announcements/audience", fr.AnnouncementAudienceView.as_view()),
+    path("staff/announcements/email-preview", fr.AnnouncementEmailPreviewView.as_view()),
     path("staff/announcements/<uuid:announcement_id>/cancel", g.AnnouncementCancelView.as_view()),
     path("staff/analytics", g.AnalyticsView.as_view()),
     path("staff/analytics/export", g.AnalyticsExportView.as_view()),
@@ -66,6 +73,7 @@ urlpatterns = [
     path("staff/system/jobs", sy.SystemJobsView.as_view()),
     path("staff/system/email", sy.SystemEmailView.as_view()),
     path("staff/system/email/<uuid:email_id>/resend", sy.SystemEmailResendView.as_view()),
+    path("staff/system/email/resend-all", sy.SystemEmailResendAllView.as_view()),
     path("staff/system/errors", sy.SystemErrorsView.as_view()),
     path("staff/flags", sy.FlagsView.as_view()),
     path("staff/flags/<slug:key>", sy.FlagDetailView.as_view()),
@@ -76,6 +84,9 @@ urlpatterns = [
     path("staff/team", sa.StaffTeamView.as_view()),
     path("staff/members/<uuid:user_id>/sessions/revoke", sa.StaffSessionsRevokeView.as_view()),
     path("staff/audit/export", sa.AuditExportView.as_view()),
+    path("staff/counts", fr.CountsView.as_view()),
+    path("staff/security", fr.SecurityView.as_view()),
+    path("staff/security/sessions/<uuid:session_id>/revoke", fr.SecuritySessionRevokeView.as_view()),
     # what customers and visitors reach
     path("public/cards/<str:key>/report", pub.PublicReportView.as_view()),
     path("public/company-leads", pub.PublicCompanyLeadView.as_view()),

@@ -1,7 +1,8 @@
 """A Google Wallet "generic pass" for a published card, and the "Save to Google Wallet" link.
 
-The link carries a signed JWT that contains both the pass class and the pass object, so Google
-creates them when the person taps Save and no call to the Wallet REST API is needed. The JWT is
+Normally the pass is stored at Google through the Wallet REST API (see wallet.sync) and the link names it.
+When that is off or fails, the link carries a signed JWT that contains both the pass class and the pass object, so
+Google creates them when the person taps Save. The JWT is
 signed (RS256) with the private key of the service account; the issuer id comes from the Google
 Pay & Wallet Console.
 """
@@ -120,7 +121,7 @@ def class_id(issuer):
 
 
 def object_id(issuer, card):
-    return f"{issuer}.{card.public_code}"
+    return f"{issuer}.{card.public_code}{settings.GOOGLE_WALLET_OBJECT_SUFFIX}"
 
 
 def _localized(value):
@@ -211,9 +212,36 @@ def sign_save_jwt(obj, issuer_email, key, now=None):
     return rsa.jwt_encode_rs256(claims, key)
 
 
+def sign_reference_jwt(object_id, issuer_email, key, now=None):
+    """A short save link token for a pass that is already stored at Google: it names the class and the object only."""
+    claims = {
+        "iss": issuer_email,
+        "aud": "google",
+        "typ": "savetowallet",
+        "iat": int(now if now is not None else time.time()),
+        "origins": [settings.WEB_BASE_URL],
+        "payload": {
+            "genericClasses": [{"id": class_id(settings.GOOGLE_WALLET_ISSUER_ID)}],
+            "genericObjects": [{"id": object_id}],
+        },
+    }
+    return rsa.jwt_encode_rs256(claims, key)
+
+
 def save_link(card, request=None, now=None):
-    """(save URL, warnings) for a card. Optional parts are dropped until the link is short enough."""
+    """(save URL, warnings) for a card. The pass is stored at Google first (so later changes reach it) and the link
+    only names it; when that is not possible the whole pass goes inside the link, with optional parts dropped
+    until the link is short enough."""
     email, key = load_service_account()
+    from . import sync
+
+    if sync.rest_enabled():
+        try:
+            stored_id, warnings = sync.rest_link(card, request)
+            return SAVE_URL + sign_reference_jwt(stored_id, email, key, now), sorted(set(warnings))
+        except Exception:
+            # The reason is kept on the pass (see sync.rest_link); the button must keep working.
+            pass
     token, warnings = "", []
     for level in range(4):
         obj = build_object(card, request, level)

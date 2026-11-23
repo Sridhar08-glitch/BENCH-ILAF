@@ -112,9 +112,33 @@ class AbuseReport(models.Model):
     # Notes and decisions: [{"t": iso time, "who": email, "kind": "note|status|warn|suspend_card|suspend_company", "text": str}]
     history = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    # The short number people say aloud (R-00042). The id stays the key everywhere; the number is only for reading.
+    number = models.PositiveIntegerField(null=True, blank=True, unique=True)
 
     class Meta:
         ordering = ["created_at"]
+
+    @property
+    def short_id(self):
+        return f"R-{self.number:05d}" if self.number else ""
+
+    def save(self, *args, **kwargs):
+        """A new report takes the next free number; two reports saved at once retry until one of them gets a free one."""
+        if not self._state.adding or self.number is not None:
+            return super().save(*args, **kwargs)
+        from django.db import IntegrityError, transaction
+        from django.db.models import Max
+
+        for attempt in range(6):
+            self.number = (AbuseReport.objects.aggregate(m=Max("number"))["m"] or 0) + 1
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                if attempt == 5:
+                    raise
+                self.number = None
+                self._state.adding = True
 
 
 class CompanyLead(models.Model):
@@ -127,6 +151,8 @@ class CompanyLead(models.Model):
     name = models.CharField(max_length=120)
     email = models.CharField(max_length=254)
     size = models.CharField(max_length=20, blank=True)
+    # The country the company named in the form (ISO 3166-1 alpha-2), or empty.
+    country = models.CharField(max_length=2, blank=True, default="")
     message = models.CharField(max_length=1000, blank=True)
     source = models.CharField(max_length=30, blank=True, default="website")
     language = models.CharField(max_length=5, blank=True, default="")
@@ -158,6 +184,8 @@ class FeatureFlagChange(models.Model):
     flag = models.ForeignKey(FeatureFlag, on_delete=models.CASCADE, related_name="changes")
     actor_email = models.CharField(max_length=254, blank=True)
     summary = models.CharField(max_length=300)
+    # The reason the person typed in the confirmation dialog.
+    reason = models.CharField(max_length=300, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

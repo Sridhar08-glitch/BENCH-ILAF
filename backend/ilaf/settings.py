@@ -396,6 +396,19 @@ GOOGLE_WALLET_ISSUER_ID = env("GOOGLE_WALLET_ISSUER_ID")
 GOOGLE_WALLET_SERVICE_ACCOUNT_FILE = env("GOOGLE_WALLET_SERVICE_ACCOUNT_FILE")
 GOOGLE_WALLET_SERVICE_ACCOUNT_JSON = env("GOOGLE_WALLET_SERVICE_ACCOUNT_JSON")
 GOOGLE_WALLET_CLASS_SUFFIX = env("GOOGLE_WALLET_CLASS_SUFFIX", "bench_card")
+# Google keeps a pass it has already stored and ignores new details sent with the same pass id. A suffix such as
+# "_v2" gives every card a new pass id, so a card saved again shows the current design (the old pass stays in the wallet).
+GOOGLE_WALLET_OBJECT_SUFFIX = env("GOOGLE_WALLET_OBJECT_SUFFIX", "")
+# With the Wallet REST API the pass is stored at Google when the save link is made and every later card change is sent
+# to the saved pass by the sync_wallet_passes job. false keeps the old behaviour (the whole pass inside the link only).
+GOOGLE_WALLET_REST_UPDATES = env_bool("GOOGLE_WALLET_REST_UPDATES", True)
+GOOGLE_WALLET_REST_TIMEOUT = int(env("GOOGLE_WALLET_REST_TIMEOUT", "10") or 10)
+# A failed update is retried with growing waits and given up after this many tries (it is tried again after the recheck).
+GOOGLE_WALLET_MAX_ATTEMPTS = int(env("GOOGLE_WALLET_MAX_ATTEMPTS", "6") or 6)
+# Every saved pass is compared with its card at least this often, in case a change was missed.
+GOOGLE_WALLET_RECHECK_HOURS = int(env("GOOGLE_WALLET_RECHECK_HOURS", "24") or 24)
+# true adds a short "card updated" message that the phone shows when a pass changes (off: updates are silent).
+GOOGLE_WALLET_NOTIFY_ON_UPDATE = env_bool("GOOGLE_WALLET_NOTIFY_ON_UPDATE", False)
 
 # ---------------------------------------------------------------- privacy: export and deletion
 # Export files are private (never under MEDIA_ROOT) and are removed after the link expires.

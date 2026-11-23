@@ -1,0 +1,13 @@
+.box { position: relative; min-inline-size: min(100%, 320px); flex: 1 1 320px; }
+.field { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
+.field:focus-within { outline: 3px solid var(--focus); outline-offset: 1px; }
+.field input { flex: 1 1 140px; min-inline-size: 120px; border: 0; outline: 0; background: transparent; padding: 4px; font: inherit; color: var(--ink); }
+.chip { display: inline-flex; align-items: center; gap: 6px; max-inline-size: 100%; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--ink); }
+.chip span { overflow-wrap: anywhere; }
+.chip button { display: inline-grid; place-items: center; inline-size: 20px; block-size: 20px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--mute); cursor: pointer; font: inherit; line-height: 1; }
+.chip button:hover { background: var(--line); color: var(--ink); }
+.pop { position: absolute; inset-block-start: calc(100% + 4px); inset-inline: 0; z-index: 30; max-block-size: 260px; overflow-y: auto; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); box-shadow: var(--float); }
+.opt { display: flex; flex-direction: column; inline-size: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; text-align: start; font: inherit; color: var(--ink); cursor: pointer; }
+.opt:hover, .opt[aria-selected="true"] { background: var(--surface-2); }
+.opt small { color: var(--mute); font-size: 12px; overflow-wrap: anywhere; }
+.none { margin: 0; padding: 10px; font-size: 13px; color: var(--mute); }
