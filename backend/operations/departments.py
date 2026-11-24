@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 from cards.models import CardItem
 from designs.services import custom_face_checker
 from ilaf.branding import has_palette
-from ilaf.design import LOCKED_KEYS, validate_design
+from ilaf.design import LOCKED_KEYS, require_pack2_face, validate_design
 from ilaf.errors import validation_error
 from ilaf.items import MAX_ITEMS
 
@@ -22,6 +22,7 @@ def clean_design(raw, workspace):
     extra = [k for k in raw if k not in LOCKED_KEYS]
     if extra:
         raise validation_error({"design": [f"A department can set only the face, colour, layout below, opening, font and text size, not {extra[0]}."]})
+    require_pack2_face(raw, workspace)
     try:
         validate_design(raw, company_colour_ok=has_palette(workspace), custom_face_ok=custom_face_checker(workspace))
     except ValidationError as exc:

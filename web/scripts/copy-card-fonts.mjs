@@ -15,20 +15,22 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "public", "card-fonts");
 
 // [family name as the card CSS writes it, @fontsource package, [[weight, style], ...], subsets (default ["latin"])]
-// The weights are the ones the design library asks for. Cairo and Tajawal are the Arabic choices of the card font picker
-// (design.font); the app's own Arabic font (IBM Plex Sans Arabic) is bundled by next/font in app/layout.tsx.
+// The weights are the ones the design library asks for (Design Pack 2, faces 401 to 500, added Poppins 600, Cormorant
+// Garamond 500 italic, Playfair Display 400 italic, Cairo 800, Amiri and IBM Plex Sans Arabic). Cairo and Tajawal are the
+// Arabic choices of the card font picker (design.font); the app's own Arabic font (IBM Plex Sans Arabic) is bundled by
+// next/font in app/layout.tsx, and listed here as well so a card face that names it never falls back on a public page.
 const FAMILIES = [
   ["Plus Jakarta Sans", "plus-jakarta-sans", [[500], [700], [800]]],
   ["Manrope", "manrope", [[500], [700], [800]]],
   ["DM Sans", "dm-sans", [[500], [700]]],
   ["Outfit", "outfit", [[500], [700]]],
   ["Sora", "sora", [[500], [700]]],
-  ["Poppins", "poppins", [[500], [700]]],
+  ["Poppins", "poppins", [[500], [600], [700]]],
   ["Montserrat", "montserrat", [[500], [700], [800]]],
   ["Nunito", "nunito", [[600], [800]]],
-  ["Playfair Display", "playfair-display", [[600], [700], [600, "italic"]]],
+  ["Playfair Display", "playfair-display", [[600], [700], [400, "italic"], [600, "italic"]]],
   ["DM Serif Display", "dm-serif-display", [[400]]],
-  ["Cormorant Garamond", "cormorant-garamond", [[500], [700]]],
+  ["Cormorant Garamond", "cormorant-garamond", [[500], [700], [500, "italic"]]],
   ["Lora", "lora", [[500], [700]]],
   ["Fraunces", "fraunces", [[500], [700]]],
   ["Bebas Neue", "bebas-neue", [[400]]],
@@ -41,8 +43,10 @@ const FAMILIES = [
   ["Caveat", "caveat", [[600], [700]]],
   ["Dancing Script", "dancing-script", [[600], [700]]],
   ["Press Start 2P", "press-start-2p", [[400]]],
-  ["Cairo", "cairo", [[500], [700]], ["latin", "arabic"]],
+  ["Cairo", "cairo", [[500], [700], [800]], ["latin", "arabic"]],
   ["Tajawal", "tajawal", [[500], [700]], ["latin", "arabic"]],
+  ["Amiri", "amiri", [[400], [700]], ["latin", "arabic"]],
+  ["IBM Plex Sans Arabic", "ibm-plex-sans-arabic", [[400], [700]], ["latin", "arabic"]],
 ];
 
 // The Latin range Google and Fontsource use: basic Latin, Latin-1, punctuation, the euro sign and a few symbols.

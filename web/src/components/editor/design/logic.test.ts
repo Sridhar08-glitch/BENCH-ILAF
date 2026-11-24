@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BELOW_COUNT, FACE_COUNT, INTRO_COUNT } from "@/lib/library";
 import {
-  PAGE_SIZE, STEPS, backStep, belowItems, faceItems, filterItems, firstStep, goToStep, introItems, isDone, nextStep, pad, pageOf, pagesToShow, randomBetween,
-  type Item,
+  PACK1_COUNT, PAGE_SIZE, STEPS, backStep, belowItems, faceItems, filterItems, firstStep, goToStep, introItems, isDone, nextStep, offeredFaces, packOf, pad, pageOf,
+  pagesToShow, randomBetween, type Item,
 } from "./logic";
 
 const sample: Item[] = [
@@ -72,6 +72,20 @@ describe("filterItems", () => {
     const corp = filterItems(faceItems(), "", "corporate");
     expect(corp.length).toBeGreaterThan(0);
     expect(corp.every((i) => i.tags.includes("corporate"))).toBe(true);
+  });
+  it("finds Design Pack 2 faces by number, by pack and by tag, and hides them when the switch is off", () => {
+    expect(filterItems(faceItems(), "437").map((i) => i.n)).toEqual([437]);
+    expect(filterItems(faceItems(), "#500").map((i) => i.n)).toEqual([500]);
+    expect(packOf(400)).toBe(1);
+    expect(packOf(401)).toBe(2);
+    expect(filterItems(faceItems(), "", null, undefined, 2).map((i) => i.n)).toEqual(Array.from({ length: 100 }, (_, i) => 401 + i));
+    expect(filterItems(faceItems(), "", null, undefined, 1)).toHaveLength(PACK1_COUNT);
+    const lux = filterItems(faceItems(), "", "luxury", undefined, 2);
+    expect(lux.length).toBeGreaterThan(0);
+    expect(lux.every((i) => i.n > PACK1_COUNT && i.tags.includes("luxury"))).toBe(true);
+    expect(offeredFaces(true)).toHaveLength(FACE_COUNT);
+    expect(offeredFaces(false)).toHaveLength(PACK1_COUNT);
+    expect(offeredFaces(false).every((i) => i.n <= PACK1_COUNT)).toBe(true);
   });
 });
 

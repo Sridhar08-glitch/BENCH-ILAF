@@ -190,11 +190,11 @@ class DesignTests(ApiTestCase):
         self.assertEqual(res.data["design"]["face"], 314)  # earlier values survive a partial update
         self.assertEqual(res.data["design"]["below"], 8)
 
-    def test_every_face_below_and_intro_number_passes(self):
-        from ilaf.design import BELOW_COUNT, FACE_COUNT, INTRO_COUNT
+    def test_every_face_below_and_intro_number_passes_with_design_pack_2_making_500_faces(self):
+        from ilaf.design import BELOW_COUNT, FACE_COUNT, INTRO_COUNT, PACK1_FACE_COUNT
 
-        self.assertEqual((FACE_COUNT, BELOW_COUNT, INTRO_COUNT), (400, 400, 400))
-        for key, values in (("face", (1, 25, 26, 200, 201, 400)), ("below", (1, 12, 200, 400)),
+        self.assertEqual((FACE_COUNT, PACK1_FACE_COUNT, BELOW_COUNT, INTRO_COUNT), (500, 400, 400, 400))
+        for key, values in (("face", (1, 25, 26, 200, 201, 400, 401, 437, 500)), ("below", (1, 12, 200, 400)),
                             ("intro", (0, 1, 22, 400)), ("colour", (0, 1, 2, 3))):
             for value in values:
                 res = self.patch({"design": {key: value}})
@@ -203,9 +203,29 @@ class DesignTests(ApiTestCase):
         self.assertEqual(res.status_code, 200, res.content)
         self.assertIs(res.data["design"]["photo"], False)
 
+    def test_pack_2_faces_are_refused_while_their_switch_is_off(self):
+        from staff import flags
+        from staff.models import FeatureFlag
+
+        FeatureFlag.objects.create(key="pack2_faces", state="off")
+        flags.clear_cache()
+        try:
+            res = self.patch({"design": {"face": 437}})
+            self.assertEqual((res.status_code, res.data["error"]["code"]), (403, "feature_unavailable"))
+            self.assertEqual(self.patch({"design": {"face": 401}}).status_code, 403)
+            self.assertEqual(self.patch({"design": {"face": 400}}).status_code, 200)
+            self.assertEqual(self.patch({"design": {"colour": 2}}).status_code, 200)
+            # the switch is per company: a selected one keeps the pack
+            FeatureFlag.objects.filter(key="pack2_faces").update(state="selected", company_ids=[str(self.card["workspace_id"])])
+            flags.clear_cache()
+            self.assertEqual(self.patch({"design": {"face": 500}}).status_code, 200)
+        finally:
+            FeatureFlag.objects.filter(key="pack2_faces").delete()
+            flags.clear_cache()
+
     def test_invalid_design_values_rejected(self):
         for bad in (
-            {"face": 0}, {"face": 401}, {"face": "classic"}, {"face": True}, {"colour": 4}, {"colour": -1},
+            {"face": 0}, {"face": 501}, {"face": "classic"}, {"face": True}, {"colour": 4}, {"colour": -1},
             {"below": 0}, {"below": 401}, {"intro": -1}, {"intro": 401}, {"intro": "fade-up"}, {"face": 1.5},
             {"photo": "yes"}, {"brand_colors": 1}, {"foot": None},
         ):

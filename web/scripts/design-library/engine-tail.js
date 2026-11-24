@@ -178,4 +178,13 @@ export function renderTab(inp, group) {
   return rows(group === 'c' ? CT : group === 's' ? SO : WE);
 }
 
+/* Design Pack 2 (faces 401 to 500) is built by scripts/build-pack2.mjs into generated/pack2.js and joins the face list here,
+   before the count is taken. A rebuild of the whole library must keep this block: the pack2 build looks for the import and
+   leaves the face list alone when it is already there (and the library build runs the engine without it, see
+   build-design-library.mjs). Each pack face draws from the same person object P as the faces above. */
+/* pack2 start */
+import PACK2 from "./pack2.js";
+PACK2.forEach(function (f) { D.push({n: f.n, tags: f.tags, p: f.p, h: function () { return f.h(P); }}); });
+/* pack2 end */
+
 export var FACE_COUNT = D.length, BELOW_COUNT = DV.length, INTRO_COUNT = OPS.length;

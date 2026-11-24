@@ -43,11 +43,22 @@ const empty: CardPageData = { ...sample, name: "", title: "", company: "", addre
 const design = (patch: Partial<Design>): Design => ({ ...defaultDesign(), ...patch });
 
 describe("library size", () => {
-  it("has 400 faces, 400 layouts and 400 openings", () => {
-    expect(FACE_COUNT).toBe(400);
+  it("has 500 faces (400 plus Design Pack 2), 400 layouts and 400 openings", () => {
+    expect(FACE_COUNT).toBe(500);
     expect(BELOW_COUNT).toBe(400);
     expect(INTRO_COUNT).toBe(400);
     expect(COLOUR_COUNT).toBe(4);
+  });
+  it("keeps the first 400 faces as they were and numbers Design Pack 2 from 401", () => {
+    expect(faceInfo(400).name).toBe("Typewriter");
+    expect(faceInfo(401).name).toBe("Crushed Velvet");
+    expect(faceInfo(437).name.length).toBeGreaterThan(0);
+    expect(faceInfo(500).name).toBe("Pearl Monument");
+    const names = new Set<string>();
+    for (let n = 401; n <= 500; n++) names.add(faceInfo(n).name);
+    expect(names.size).toBe(100);
+    // every pack face has a light colourway first, so the default colour reads well
+    for (let n = 401; n <= 500; n++) expect(faceInfo(n).palettes[0].bg, `face ${n}`).toMatch(/^#[E-F][0-9A-F]{5}$/i);
   });
   it("gives every face a name, tags and four valid colourways", () => {
     for (let n = 1; n <= FACE_COUNT; n++) {
@@ -122,6 +133,8 @@ describe("normalizeDesign", () => {
     expect(normalizeDesign("x")).toEqual(defaultDesign());
     expect(normalizeDesign({ face: "nope", colour: "2", below: 1.5, intro: -1, photo: "yes" })).toEqual(defaultDesign());
     expect(normalizeDesign({ face: 0, colour: 5, below: 401, intro: 401 })).toEqual(defaultDesign());
+    expect(normalizeDesign({ face: 501 })).toEqual(defaultDesign());
+    expect(normalizeDesign({ face: 500 }).face).toBe(500);
   });
 });
 
@@ -194,6 +207,37 @@ describe("engine", () => {
     const html = renderCardPage({ ...sample, design: design({ face: 44, colour: 2 }) }, "live").html;
     expect(html).toContain(`--cbg:${f.bg}`);
     expect(html).toContain(`--cacc:${f.acc}`);
+  });
+  it("draws a Design Pack 2 face from the card's own details, inside the engine's face element", () => {
+    const html = renderCardPage({ ...sample, design: design({ face: 437, colour: 1 }) }, "live").html;
+    expect(html).toContain('class="face d437 tv0"><div class="fx"></div><div class="p2"');
+    expect(html).toContain("Sara Al Mansoori");
+    expect(html).toContain("Brand Designer");
+    expect(html).toContain("Studio Noor");
+    expect(html).toContain("+974 5512 3344");
+    expect(html).toContain("sara@studionoor.qa");
+    expect(html).toContain(`--cbg:${faceInfo(437).palettes[1].bg}`);
+    expect(html).not.toMatch(/\{(name|first|last|ini|title|co|phone|email|site)\}/);
+    // the marker classes the text settings and the long-name fitting look for
+    expect(html).toMatch(/class="(?:p2-[\w-]+ )*n"/);
+    expect(html).toMatch(/class="(?:p2-[\w-]+ )*t2"/);
+    // the company's own colours work for a pack face too
+    const brand = renderCardPage({ ...sample, brand: { ...sample.brand!, palette: { bg: "#123456", bg2: "#234567", fg: "#FFFFFF", acc: "#ABCDEF", on: "#000000" } }, design: design({ face: 437, colour: 4 }) }, "live").html;
+    expect(brand).toContain("--cbg:#123456");
+  });
+  it("fills the Arabic-first pack face with the card's details, right to left, without the designers' sample person", () => {
+    const html = renderCardPage({ ...sample, design: design({ face: 494 }) }, "live").html;
+    expect(html).toContain('<div class="p2" dir="rtl"');
+    expect(html).toContain("Sara Al Mansoori");
+    expect(html).not.toMatch(/[؀-ۿ]/);
+    const mirror = renderCardPage({ ...sample, design: design({ face: 491 }) }, "live").html;
+    expect(mirror).not.toMatch(/[؀-ۿ]/);
+    expect(mirror.split("Sara Al Mansoori").length).toBeGreaterThanOrEqual(3);
+  });
+  it("escapes what the owner typed in a pack face", () => {
+    const html = renderCardPage({ ...sample, name: '<img src=x onerror="a()"> Bob', company: "A & B", design: design({ face: 401 }) }, "live").html;
+    expect(html).not.toContain("<img src=x");
+    expect(html).toContain("A &amp; B");
   });
 
   const cases: [string, CardPageData][] = [["a full card", sample], ["an empty card", empty]];

@@ -704,5 +704,5 @@ DYNAMIC = [
     'privacy/services.py:153 ApiError(...)',
     'publicapi/auth.py:52 ApiError(...)',
     'wallet/passes.py:34 ApiError(...)',
-    'workspaces/views.py:267 ApiError(...)',
+    'workspaces/views.py:268 ApiError(...)',
 ]

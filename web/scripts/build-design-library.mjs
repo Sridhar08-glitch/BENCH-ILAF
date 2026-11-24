@@ -115,10 +115,11 @@ const body = [
 ].join("\n");
 const engineSource = body + "\n" + read(PARTS, "engine-tail.js");
 
-// Run the engine's data once (without the exports) to read the names and check the counts.
+// Run the engine's data once (without the exports, and without Design Pack 2, which engine-tail.js imports from
+// generated/pack2.js) to read the names and check the counts.
 const sandbox = vm.createContext({});
 const data = new vm.Script(
-  "(function(){" + engineSource.replace(/^export /gm, "") + "\nreturn {D:D,DV:DV,OPS:OPS,PAL:PAL};})()",
+  "(function(){var PACK2=[];" + engineSource.replace(/^export /gm, "").replace(/^import .*$/gm, "") + "\nreturn {D:D,DV:DV,OPS:OPS,PAL:PAL};})()",
 ).runInContext(sandbox);
 must(data.D.length === 400, `expected 400 faces, got ${data.D.length}`);
 must(data.DV.length === 400, `expected 400 layouts, got ${data.DV.length}`);
@@ -195,3 +196,4 @@ export const CSS_URL = ${j("/card-library/designs.css?v=" + version)};
 fs.writeFileSync(path.join(GENERATED, "meta.ts"), meta);
 
 console.log(`engine.js ${Math.round(minified.length / 1024)} KB, designs.css ${Math.round(css.length / 1024)} KB (v${version})`);
+console.log("Now add Design Pack 2 again: node scripts/build-pack2.mjs (faces 401 to 500, their rules and FACE_META entries).");

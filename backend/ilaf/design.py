@@ -6,7 +6,9 @@ from .utils import clean_multiline
 
 # Designs are numbers from the design library: a face, a below-the-card layout and an opening animation.
 # A face has exactly four colourways of its own, so the card, its icons and the area below always match.
-FACE_COUNT = 400
+# Faces 401 to 500 are Design Pack 2, behind the "pack2_faces" feature switch (see require_pack2_face).
+FACE_COUNT = 500
+PACK1_FACE_COUNT = 400
 BELOW_COUNT = 400
 INTRO_COUNT = 400  # 0 means no opening animation
 COLOURWAYS = 4
@@ -70,6 +72,18 @@ def is_current(design):
 
 def _whole(value):
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+def is_pack2_face(face):
+    return _whole(face) and PACK1_FACE_COUNT < face <= FACE_COUNT
+
+
+def require_pack2_face(data, workspace):
+    """A design write that picks a Pack 2 face needs the switch on for this company (403 feature_unavailable otherwise)."""
+    if isinstance(data, dict) and is_pack2_face(data.get("face")):
+        from staff.flags import require_flag
+
+        require_flag("pack2_faces", workspace)
 
 
 def validate_design(data, base=None, company_colour_ok=None, custom_face_ok=None):

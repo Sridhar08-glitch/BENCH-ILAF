@@ -16,7 +16,7 @@ from billing.services import is_live
 from cards.models import Card
 from ilaf.branding import merge_branding, normalize_branding
 from designs.services import custom_face_checker
-from ilaf.design import validate_design
+from ilaf.design import require_pack2_face, validate_design
 from ilaf.countries import country_or_none
 from ilaf.errors import ApiError, validation_error
 from ilaf.i18n import localise_message
@@ -212,6 +212,7 @@ class WorkspaceDetailView(APIView):
             })
             if "design" in incoming:
                 allowed = bool(brand.get("palette")) and ws.kind == "company"
+                require_pack2_face(incoming["design"], ws)
                 try:
                     brand["design"] = validate_design(
                         incoming["design"], base=brand.get("design"), company_colour_ok=allowed,

@@ -62,6 +62,21 @@ describe("the app stylesheet stays out of the cards", () => {
     for (const c of ["cl", "cr", "ln", "face", "card", "stg"]) expect(classes.has(c)).toBe(true);
   });
 
+  it("sees the Design Pack 2 faces too, whose own class names all carry the pack prefix", () => {
+    expect(FACE_COUNT).toBe(500);
+    expect(classes.has("p2")).toBe(true);
+    const prefixed = [...classes].filter((c) => c.startsWith("p2-"));
+    expect(prefixed.length).toBeGreaterThan(100);
+    for (let n = 401; n <= 500; n++) {
+      const html = renderCardPage(sample(n, 1), "thumb").html;
+      const inside = /<div class="p2"[^>]*>([\s\S]*)<\/div><\/div><div class="face back">/.exec(html)?.[1] ?? "";
+      expect(inside.length, `face ${n}`).toBeGreaterThan(50);
+      for (const m of inside.matchAll(/class="([^"]*)"/g)) {
+        for (const c of m[1].split(/\s+/)) expect(["n", "t2", "co", "cl"].includes(c) || c.startsWith("p2-"), `face ${n}: class ${c}`).toBe(true);
+      }
+    }
+  });
+
   it("guards every app rule that names a class the cards use", () => {
     const bad = appRules()
       .filter((r) => !r.selector.includes(".cfl"))

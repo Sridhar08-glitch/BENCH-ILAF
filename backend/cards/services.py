@@ -11,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 from billing.services import get_subscription, is_live
 from designs.services import custom_face_checker, resolve_design
 from ilaf.branding import has_palette
-from ilaf.design import COMPANY_COLOUR, LOCKED_KEYS, default_design, default_vc, validate_design, validate_vc
+from ilaf.design import COMPANY_COLOUR, LOCKED_KEYS, default_design, default_vc, require_pack2_face, validate_design, validate_vc
 from ilaf.errors import ApiError, validation_error
 from ilaf.items import DOWNLOAD_KIND, item_href
 from ilaf.utils import file_url, iso
@@ -237,6 +237,7 @@ def apply_card_data(card, data, role="owner", member=None, enforce=False, creati
         incoming = data["design"]
         if is_design_locked(card.workspace) and role != "owner":
             incoming = {k: v for k, v in incoming.items() if k not in LOCKED_KEYS}
+        require_pack2_face(incoming, card.workspace)
         try:
             card.design = validate_design(
                 incoming, base=card.design, company_colour_ok=has_palette(card.workspace),

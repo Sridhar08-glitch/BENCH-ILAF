@@ -16,6 +16,7 @@ KNOWN = {
     "wallet_google": "Add to Google Wallet",
     "custom_designs": "Custom card design requests and company faces",
     "support_chat": "Live chat with the support team",
+    "pack2_faces": "Design Pack 2: card faces 401 to 500 in the design picker",
 }
 CACHE_KEY = "staff:flags:v1"
 CACHE_SECONDS = 60

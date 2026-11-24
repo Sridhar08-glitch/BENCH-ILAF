@@ -1,6 +1,6 @@
-// The card design library: 400 faces, 400 layouts below the card and 400 opening animations, in number order.
-// This module holds the names, tags and colours (small). The code that draws them is in ./render.
-// Rebuild with `npm run build:library` (see README).
+// The card design library: 500 faces (401 to 500 are Design Pack 2), 400 layouts below the card and 400 opening
+// animations, in number order. This module holds the names, tags and colours (small). The code that draws them is in ./render.
+// Rebuild with `npm run build:library` and `npm run build:pack2` (see README).
 import { BELOW_META, CSS_URL, FACE_META, INTRO_META, PALETTES } from "./generated/meta";
 import { OLD_DETAILS, OLD_FACES, OLD_INTROS } from "./legacy";
 import type { Design } from "@/lib/types";

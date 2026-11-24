@@ -17,6 +17,18 @@ export type StepKey = (typeof STEPS)[number]["key"];
 export const TAGS = ["corporate", "creative", "luxury", "minimal", "bold", "tech", "playful"] as const;
 export type Tag = (typeof TAGS)[number];
 
+/** Faces 1 to 400 are Pack 1; 401 to 500 are Design Pack 2 (added later, shown with a "new" mark and switchable by the product team). */
+export const PACK1_COUNT = 400;
+export const PACKS = [1, 2] as const;
+export type Pack = (typeof PACKS)[number];
+export const packOf = (face: number): Pack => (face > PACK1_COUNT ? 2 : 1);
+export const PACK_LABELS: Record<Pack, MessageKey> = { 1: tk("editor.pack1"), 2: tk("editor.pack2") };
+
+/** The faces the picker offers: without Pack 2 when its switch is off for this company. */
+export function offeredFaces(pack2: boolean): Item[] {
+  return pack2 ? faceItems() : faceItems().filter((it) => packOf(it.n) === 1);
+}
+
 /** The message that names each style tag. */
 export const TAG_LABELS: Record<Tag, MessageKey> = {
   corporate: tk("editor.tagCorporate"), creative: tk("editor.tagCreative"), luxury: tk("editor.tagLuxury"), minimal: tk("editor.tagMinimal"),
@@ -87,7 +99,7 @@ let faces: Item[] | null = null;
 let belows: Item[] | null = null;
 let intros: Item[] | null = null;
 
-/** The 400 faces (built once). */
+/** The 500 faces (built once). */
 export function faceItems(): Item[] {
   return (faces ??= build(FACE_COUNT, (n) => {
     const f = faceInfo(n);
@@ -117,13 +129,14 @@ function words(q: string): string[] {
 
 /**
  * Items that match every word typed: a word is found in the name, the description or the tags, or it is
- * the item's number ("12", "012" or "#12"). An optional tag keeps only items that carry it. `extra` adds more
- * searchable words per item (the tags in the viewer's language).
+ * the item's number ("12", "012" or "#12"). An optional tag keeps only items that carry it, an optional pack only
+ * the faces of that pack. `extra` adds more searchable words per item (the tags in the viewer's language).
  */
-export function filterItems(list: Item[], query: string, tag?: string | null, extra?: (it: Item) => string): Item[] {
+export function filterItems(list: Item[], query: string, tag?: string | null, extra?: (it: Item) => string, pack?: Pack | null): Item[] {
   const ws = words(query);
   return list.filter((it) => {
     if (tag && !it.tags.includes(tag)) return false;
+    if (pack && packOf(it.n) !== pack) return false;
     const hay = `${it.name} ${it.description} ${it.tags.join(" ")} ${extra ? extra(it) : ""}`.toLowerCase();
     return ws.every((w) => {
       const num = w.replace(/^#/, "");

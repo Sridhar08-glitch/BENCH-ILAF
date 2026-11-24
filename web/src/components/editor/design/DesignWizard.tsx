@@ -16,14 +16,15 @@ import { fontInfo, isFontLocked, FONT_FACE } from "@/lib/library/text";
 import { BELOW_COUNT, COMPANY_COLOUR, FACE_COUNT, INTRO_COUNT, belowInfo, defaultDesign, faceInfo, introInfo, normalizeDesign } from "@/lib/library";
 import type { CardPageData } from "@/lib/library/types";
 import type { Design } from "@/lib/types";
+import { useFlags } from "@/lib/flags";
 import { apiErrorText } from "@/lib/i18n/api-error";
 import { useI18n } from "@/lib/i18n/client";
 import { IMAGE_ACCEPT, isAllowedImage } from "@/lib/images";
 import { cardLocale, dirOf, type MessageKey } from "@/lib/i18n";
 import type { EditorApi } from "../types";
 import {
-  PAGE_SIZE, STEPS, TAGS, backStep, belowItems, faceItems, filterItems, firstStep, goToStep, introItems, isDone, nextStep, pad, pageOf, pagesToShow, paletteLabel, randomBetween,
-  tagLabel, type Item, type StepState,
+  PACK1_COUNT, PACKS, PACK_LABELS, PAGE_SIZE, STEPS, TAGS, backStep, belowItems, filterItems, firstStep, goToStep, introItems, isDone, nextStep, offeredFaces, packOf, pad, pageOf,
+  pagesToShow, paletteLabel, randomBetween, tagLabel, type Item, type Pack, type StepState,
 } from "./logic";
 import { Scaled, Thumb } from "./Preview";
 import { TextStep } from "./TextStep";
@@ -67,6 +68,8 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
   const faceList = useQuery({ queryKey: ["custom-faces", card.workspace_id], queryFn: () => designsApi.faces(card.workspace_id), staleTime: 60000 });
   const faces: CompanyFace[] = faceList.data ?? [];
   const customFace = faces.find((f) => f.id === d.custom_face) ?? null;
+  // Design Pack 2 (faces 401 to 500) can be switched off by the product team; the picker then offers the first 400 only.
+  const pack2 = useFlags(card.workspace_id).pack2_faces;
   // The cards are drawn in the card's own language, or in the dashboard's when the card follows the visitor.
   const cardLang = cardLocale(draft.language ?? "auto", locale);
   const [st, setSt] = useState<StepState>(firstStep);
@@ -98,7 +101,7 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
   };
 
   const shuffle = () => {
-    const face = randomBetween(1, FACE_COUNT);
+    const face = randomBetween(1, pack2 ? FACE_COUNT : PACK1_COUNT);
     set({ face, colour: randomBetween(0, ed.brand?.palette ? COMPANY_COLOUR : 3), below: randomBetween(1, BELOW_COUNT), intro: randomBetween(1, INTRO_COUNT) });
     play();
   };
@@ -153,7 +156,7 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
       </div>
 
       <div role="group" aria-labelledby={headId}>
-        {stepKey === "face" && <FaceStep base={base} d={d} faces={faces} onPick={(face) => set({ face, custom_face: null })} onPickCustom={(id) => set({ custom_face: id, colour: d.colour === 4 ? 4 : d.colour })} />}
+        {stepKey === "face" && <FaceStep base={base} d={d} faces={faces} pack2={pack2} onPick={(face) => set({ face, custom_face: null })} onPickCustom={(id) => set({ custom_face: id, colour: d.colour === 4 ? 4 : d.colour })} />}
         {stepKey === "colour" && <ColourStep base={base} d={d} customFace={customFace} onPick={(colour) => set({ colour })} />}
         {stepKey === "text" && <TextStep base={base} d={d} set={set} />}
         {stepKey === "below" && <BelowStep base={base} d={d} onPick={(below) => set({ below })} />}
@@ -178,11 +181,13 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
   );
 }
 
-/** Search box, optional tag filter and the "Show more" paging shared by the face and layout lists. */
-function Browser({ items, selected, tags, thumb, label, onPick }: {
+/** Search box, optional tag and pack filters and the "Show more" paging shared by the face and layout lists. */
+function Browser({ items, selected, tags, packs, thumb, label, onPick }: {
   items: Item[];
   selected: number;
   tags?: boolean;
+  /** Offer the Pack 1 / Pack 2 chips and mark the Pack 2 faces as new. */
+  packs?: boolean;
   /** Which list this is; it picks the search and count texts. */
   label: "faces" | "layouts";
   thumb: (it: Item, width: number) => React.ReactNode;
@@ -191,8 +196,9 @@ function Browser({ items, selected, tags, thumb, label, onPick }: {
   const { t, number, list } = useI18n();
   const [q, setQ] = useState("");
   const [tag, setTag] = useState<string | null>(null);
+  const [pack, setPack] = useState<Pack | null>(null);
   const [pages, setPages] = useState(() => pagesToShow(items, selected));
-  const found = useMemo(() => filterItems(items, q, tag, (it) => it.tags.map((x) => tagLabel(x, t)).join(" ")), [items, q, tag, t]);
+  const found = useMemo(() => filterItems(items, q, tag, (it) => it.tags.map((x) => tagLabel(x, t)).join(" "), pack), [items, q, tag, t, pack]);
   const { shown, more } = pageOf(found, pages);
   const [gridRef, grid] = useGrid();
   const current = items.find((it) => it.n === selected);
@@ -201,9 +207,12 @@ function Browser({ items, selected, tags, thumb, label, onPick }: {
   return (
     <div className={s.tools}>
       <input type="search" dir="auto" aria-label={search} placeholder={search} value={q} onChange={(e) => { setQ(e.target.value); setPages(1); }} />
-      {tags && (
-        <div className={s.tags} role="group" aria-label={t("editor.filterStyle")}>
-          {TAGS.map((x) => (
+      {(tags || packs) && (
+        <div className={s.tags} role="group" aria-label={packs ? `${t("editor.filterPack")}, ${t("editor.filterStyle")}` : t("editor.filterStyle")}>
+          {packs && PACKS.map((x) => (
+            <button key={`pack${x}`} type="button" className={s.tag} aria-pressed={pack === x} onClick={() => { setPack(pack === x ? null : x); setPages(1); }}>{t(PACK_LABELS[x])}</button>
+          ))}
+          {tags && TAGS.map((x) => (
             <button key={x} type="button" className={s.tag} aria-pressed={tag === x} onClick={() => { setTag(tag === x ? null : x); setPages(1); }}>{tagLabel(x, t)}</button>
           ))}
         </div>
@@ -217,7 +226,7 @@ function Browser({ items, selected, tags, thumb, label, onPick }: {
             <button key={it.n} type="button" className={s.cell} aria-pressed={selected === it.n} onClick={() => onPick(it.n)}>
               {thumb(it, grid.thumb)}
               <span>
-                <b><span className={s.num}>{pad(it.n)}</span>{it.name}</b>
+                <b><span className={s.num}>{pad(it.n)}</span>{it.name}{packs && packOf(it.n) === 2 && <em className={s.new}>{t("editor.newFace")}</em>}</b>
                 {it.description && it.tags.length === 0 && <small>{it.description}</small>}
                 {it.tags.length > 0 && <small>{list(it.tags.map((x) => tagLabel(x, t)))}</small>}
               </span>
@@ -232,12 +241,15 @@ function Browser({ items, selected, tags, thumb, label, onPick }: {
   );
 }
 
-function FaceStep({ base, d, faces, onPick, onPickCustom }: { base: Omit<CardPageData, "design">; d: Design; faces: CompanyFace[]; onPick: (n: number) => void; onPickCustom: (id: number) => void }) {
+function FaceStep({ base, d, faces, pack2, onPick, onPickCustom }: {
+  base: Omit<CardPageData, "design">; d: Design; faces: CompanyFace[]; pack2: boolean; onPick: (n: number) => void; onPickCustom: (id: number) => void;
+}) {
+  const items = useMemo(() => offeredFaces(pack2), [pack2]);
   return (
     <>
     <CustomFaceGrid faces={faces} base={base} d={d} onPick={onPickCustom} />
     <Browser
-      items={faceItems()} selected={d.face} tags label="faces" onPick={onPick}
+      items={items} selected={d.face} tags packs={pack2} label="faces" onPick={onPick}
       thumb={(it, w) => <Thumb base={base} face={it.n} colour={d.colour} below={d.below} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={w} ratio={1.15} />}
     />
     </>
