@@ -23,7 +23,6 @@ export interface GuideContext {
   /** Client flags: kept as guide progress because the server cannot see them. */
   shared_qr_opened: boolean;
   signature_copied: boolean;
-  background_opened: boolean;
   approval_sent: boolean;
   // company
   brand_logo_set: boolean;

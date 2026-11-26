@@ -100,6 +100,7 @@ export const company: Messages<typeof en> = {
   "company.wordTitle": "المسمى الوظيفي",
   "company.wordCompany": "سطر الشركة",
   "company.wordAddress": "العنوان",
+  "company.wordBio": "النبذة",
   "company.wordPhoto": "الصورة",
   "company.wordButtons": "الأزرار",
   "company.hintPending": "التعديل المطلوب على {word} بانتظار موافقة المسؤول. ستظل بطاقتك تعرض القيمة الحالية.",
@@ -416,4 +417,9 @@ export const company: Messages<typeof en> = {
   "company.evCardSuspendedSupport": "علّق دعم {app} بطاقة {who}",
   "company.evCardRestoredSupport": "أعاد دعم {app} تفعيل بطاقة {who}",
   "company.groupSupport": "فريق الدعم",
+  "company.extrasSection": "الإضافات أسفل البطاقات",
+  "company.extrasHint": "فيديو ومتجر وساعات عمل وحجز وفريق ومعرض وفعالية وخريطة. تختار منها ما يمكن للناس إضافته، في صفحة العلامة التجارية ضمن فريقك.",
+  "company.extrasOpen": "اختر الإضافات",
+  "company.evShareOn": "بدأ {who} مشاركة جهات الاتصال الجديدة مع الشركة",
+  "company.evShareOff": "أوقف {who} مشاركة جهات الاتصال الجديدة مع الشركة",
 };

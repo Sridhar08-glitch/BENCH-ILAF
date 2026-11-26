@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/Icon";
 import { Empty, ErrorBox, PageHead, SkeletonBlocks, UpgradeNotice, useToast } from "@/components/app/ui";
+import { EnterpriseCard } from "@/components/app/EnterpriseCard";
 import { useWs } from "@/components/app/WorkspaceContext";
 import { api, isUpgradeError } from "@/lib/api";
 import { keys, useInvoices, usePlans } from "@/lib/hooks";
@@ -25,7 +26,7 @@ export default function BillingPage() {
 }
 
 function Billing() {
-  const { current } = useWs();
+  const { current, role } = useWs();
   const { t, date: formatDate, money } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
@@ -54,9 +55,19 @@ function Billing() {
     onError: setErr,
   });
 
-  const available = (plans.data ?? []).filter((p) => p.kind === current.kind);
+  const portal = useMutation({
+    mutationFn: () => api.billingPortal(current.id),
+    onSuccess: (r) => window.location.assign(r.url),
+    onError: setErr,
+  });
+
+  const available = (plans.data ?? []).filter((p) => p.kind === current.kind && p.purchasable !== false && !p.by_quote);
+  const quotePlan = current.kind === "company" ? (plans.data ?? []).find((p) => p.by_quote && p.kind === "company") : undefined;
+  const isOwner = role === "owner";
   const active = plans.data?.find((p) => p.code === sub.plan_code);
   const ended = sub.status === "expired";
+  // A plan that renews by itself is changed in Manage billing: paying a second time would start a second subscription.
+  const renewing = !!sub.auto_renew && !sub.cancel_at_period_end && sub.live && !ended;
 
   return (
     <div className="view">
@@ -75,9 +86,32 @@ function Billing() {
           </div>
           <div className="list">
             <div className="li"><div className="t"><small>{t("billing.plan")}</small><b dir="auto">{active?.name ?? t("billing.none")}</b></div></div>
-            {sub.ends_at && <div className="li"><div className="t"><small>{ended ? t("billing.endedOn") : t("billing.renewsOn")}</small><b>{date(sub.ends_at)}</b></div></div>}
+            {sub.ends_at && ended && <div className="li"><div className="t"><small>{t("billing.endedOn")}</small><b>{date(sub.ends_at)}</b></div></div>}
+            {sub.ends_at && !ended && (
+              <div className="li">
+                <div className="t">
+                  <small>{sub.auto_renew && !sub.cancel_at_period_end ? t("billing.renewsOn") : t("billing.endsOn")}</small>
+                  <b data-testid="renewal-line">
+                    {sub.auto_renew && !sub.cancel_at_period_end
+                      ? t("billing.autoRenews", { date: date(sub.renews_at ?? sub.ends_at) })
+                      : sub.plan_code === "free" ? t("billing.freeEnds", { date: date(sub.ends_at) }) : t("billing.endsAutoOff", { date: date(sub.ends_at) })}
+                  </b>
+                </div>
+              </div>
+            )}
             {current.kind === "company" && <div className="li"><div className="t"><small>{t("billing.seats")}</small><b>{t("billing.seatsUsed", { used: sub.seats_used, total: sub.seats_total })}</b></div></div>}
           </div>
+          {sub.payment_failed && (
+            <div className="notice bad" role="alert" data-testid="payment-failed"><Icon name="alert" /><div className="grow"><b>{t("billing.paymentFailed")}</b>{t("billing.paymentFailedText")}</div></div>
+          )}
+          {sub.cancel_at_period_end && !ended && <div className="hint">{t("billing.cancelledNote", { date: date(sub.ends_at) })}</div>}
+          {renewing && <div className="hint">{t("billing.renewingNote")}</div>}
+          {isOwner && sub.can_manage_billing && (
+            <div>
+              <button type="button" className="btn" disabled={portal.isPending} onClick={() => { setErr(null); portal.mutate(); }}>{portal.isPending ? t("billing.oneMoment") : t("billing.manage")}</button>
+              <div className="hint">{t("billing.manageHint")}</div>
+            </div>
+          )}
           {ended && sub.live && (
             <div className="notice warn" role="status"><Icon name="alert" /><div className="grow"><b>{t("billing.renewBefore", { date: date(sub.grace_ends_at) })}</b>{t("billing.renewBeforeText")}</div></div>
           )}
@@ -117,6 +151,7 @@ function Billing() {
                 {isCurrent && <span className="pill dark" style={{ alignSelf: "flex-start" }}>{t("billing.currentPlan")}</span>}
                 <h2 dir="auto">{p.name}</h2>
                 <div className="price">{money(p.price_minor, p.currency)}<small> {unit ? t(unit) : `/ ${p.interval}`}</small></div>
+                <div className="hint">{t("billing.renewsUntilCancel")}</div>
                 <ul>
                   <li><Icon name="check" size="s" />{p.per_seat ? t("billing.oneCardPerSeat") : t("billing.cardsEach", { n: p.max_cards })}</li>
                   {p.features.map((f) => <li key={f}><Icon name="check" size="s" />{f}</li>)}
@@ -127,13 +162,14 @@ function Billing() {
                     <input type="number" min={p.min_seats} max={5000} value={n} onChange={(e) => setSeats({ ...seats, [p.code]: Math.max(p.min_seats, parseInt(e.target.value || "0", 10) || p.min_seats) })} />
                   </label>
                 )}
-                <button type="button" className="btn" disabled={checkout.isPending} onClick={() => { setErr(null); checkout.mutate({ plan: p, seats: n }); }}>
-                  {checkout.isPending ? t("billing.oneMoment") : isCurrent ? t("billing.extendFor", { price: money(total, p.currency) }) : t("billing.chooseFor", { price: money(total, p.currency) })}
+                <button type="button" className="btn" disabled={checkout.isPending || renewing} onClick={() => { setErr(null); checkout.mutate({ plan: p, seats: n }); }}>
+                  {checkout.isPending ? t("billing.oneMoment") : t("billing.subscribeFor", { price: money(total, p.currency) })}
                 </button>
               </div>
             );
           })}
-          {available.length === 0 && <div className="panel"><Empty title={t("billing.noPlans")}>{t("billing.noPlansText")}</Empty></div>}
+          {quotePlan && <EnterpriseCard plan={quotePlan} onError={setErr} />}
+          {available.length === 0 && !quotePlan && <div className="panel"><Empty title={t("billing.noPlans")}>{t("billing.noPlansText")}</Empty></div>}
         </div>
       )}
     </div>

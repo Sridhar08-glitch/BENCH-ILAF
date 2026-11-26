@@ -2,12 +2,12 @@
 title: Scan a paper card
 summary: Turn a business card you were given into a contact or a lead.
 audience: personal, company_owner, company_admin, employee
-pages: /app/scan, /app/contacts
+pages: /app/contacts/scan, /app/contacts
 related: exchange-contacts-and-leads
 updated: 2026-11-22
 ---
 
-Open Scan in the Tools section.
+Open Contacts, choose Add contact, then Scan a paper card.
 
 ## Read the card
 Take a photo or choose a picture of the paper card. English and Arabic are read. The photo is read on your device and is never uploaded. Lay the card flat in good light so it fills the picture.

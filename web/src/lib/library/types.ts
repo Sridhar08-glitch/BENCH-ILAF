@@ -1,6 +1,6 @@
 // Shapes shared by the design library and the card renderer.
 import type { ResolvedIcon } from "@/lib/card/brand";
-import type { Design, BrandArtwork, BrandColours, LogoChip, LogoCorner, LogoDisplay, LogoPlacement } from "@/lib/types";
+import type { Design, BrandArtwork, BrandColours, LogoChip, LogoCorner, LogoDisplay, LogoFree, LogoPlacement } from "@/lib/types";
 import type { CompanyPalette } from "./company/colour";
 import type { Locale } from "@/lib/i18n/config";
 import type { CardLabels } from "@/lib/card/labels";
@@ -54,6 +54,10 @@ export interface CompanyBrand {
   logoCorner?: LogoCorner;
   logoChip?: LogoChip;
   showName?: boolean;
+  /** The logo's size as a percentage of its automatic size (50 to 150). */
+  logoSize?: number;
+  /** Places the owner gave the logo on some designs. */
+  logoFree?: LogoFree;
   artwork?: BrandArtwork;
   backgroundUrl?: string | null;
   templateFrontUrl?: string | null;
@@ -67,6 +71,8 @@ export interface CardPageData {
   title: string;
   company: string;
   address: string;
+  /** A short text about the person (at most 300 characters), shown by the page-style headers. */
+  bio?: string;
   photoUrl: string | null;
   coverUrl?: string | null;
   items: { kind: string; value: string; label?: string; on?: boolean; res?: ResolvedIcon }[];
@@ -115,6 +121,7 @@ export interface EngineInput {
     title: string;
     company: string;
     address: string;
+    bio?: string;
     initials: string;
     photoUrl: string | null;
     coverUrl: string | null;

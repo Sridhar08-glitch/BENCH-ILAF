@@ -2,12 +2,12 @@
 title: أضف بطاقتك إلى توقيع البريد
 summary: اختر نمطاً وانسخه والصقه في Gmail أو Outlook أو Apple Mail.
 audience: personal, company_owner, company_admin, employee
-pages: /app/signature
+pages: /app/share/signature
 related: publish-and-share
 updated: 2026-11-22
 ---
 
-افتح التوقيع في قسم الأدوات.
+افتح مشاركة ثم اختر تبويب توقيع البريد.
 
 ## أنشئه
 1. اختر نمطاً: مختصر، أو كلاسيكي بصورة، أو شريط بشعار، أو نص بسيط.

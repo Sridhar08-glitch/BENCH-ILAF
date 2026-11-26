@@ -1,5 +1,6 @@
 "use client";
 
+import { EnterpriseGate } from "@/components/app/EnterpriseLock";
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +30,7 @@ const STATUS_TEXT: Record<ApiKey["status"], MessageKey> = {
   active: tk("dev.statusActive"), revoked: tk("dev.statusRevoked"), expired: tk("dev.statusExpired"),
 };
 
-export default function DevelopersPage() {
+function DevelopersPageContent() {
   const { current, isManager, isCompany } = useWs();
   const { t, date } = useI18n();
   const flags = useFlags(current.id);
@@ -199,4 +200,9 @@ function RevealDialog({ secret, onClose }: { secret: string; onClose: () => void
       <p className="hint"><Weave text={t("dev.revealUse", { header: slot(0) })} nodes={[<span key="h" className="ltr">Authorization: Bearer …</span>]} /></p>
     </Dialog>
   );
+}
+
+export default function DevelopersPage() {
+  const { t } = useI18n();
+  return <EnterpriseGate feature="integrations" title={t("dev.title")}><DevelopersPageContent /></EnterpriseGate>;
 }

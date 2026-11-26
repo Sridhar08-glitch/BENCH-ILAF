@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { APP_NAME, COMPANY_LOGO, COMPANY_NAME } from "@/lib/config";
+import { APP_NAME, BRAND_WORDMARK, COMPANY_LOGO, COMPANY_NAME } from "@/lib/config";
 import { useOptionalI18n } from "@/lib/i18n/client";
 
 /** Split a product name into the ink part and the orange tail ("BEN" + "CH"). */
@@ -23,12 +23,27 @@ export function Wordmark({ name = APP_NAME }: { name?: string }) {
   );
 }
 
+/** The Bench logo picture. A white-label build with another product name keeps the text wordmark instead. */
+export function BrandMark({ tone = "light", height = 30 }: { tone?: "light" | "dark"; height?: number }) {
+  if (APP_NAME.trim().toLowerCase() !== "bench") return <Wordmark />;
+  return (
+    <img
+      className="brandmark"
+      src={tone === "dark" ? BRAND_WORDMARK.white : BRAND_WORDMARK.ink}
+      alt={APP_NAME}
+      height={height}
+      width={Math.round((height * BRAND_WORDMARK.width) / BRAND_WORDMARK.height)}
+      style={{ height }}
+    />
+  );
+}
+
 /** The product logo as a link to the home page. */
 export function Logo({ href = "/", compact = false }: { href?: string; compact?: boolean }) {
   const i18n = useOptionalI18n();
   return (
     <Link href={href} className={`logo${compact ? " compact" : ""}`} aria-label={i18n ? i18n.t("common.homeOf", { app: APP_NAME }) : `${APP_NAME} home`}>
-      <Wordmark />
+      <BrandMark height={compact ? 22 : 30} />
     </Link>
   );
 }
@@ -54,10 +69,7 @@ export function ByLine({ tone = "light", height = 18 }: { tone?: "light" | "dark
 export function Lockup({ tone = "light", height = 18 }: { tone?: "light" | "dark"; height?: number }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-      <span className="wordmark" style={{ fontSize: 22, letterSpacing: "-1.3px", color: tone === "dark" ? "#fff" : undefined }} aria-label={APP_NAME}>
-        {wordmarkParts(APP_NAME)[0]}
-        <span aria-hidden="true">{wordmarkParts(APP_NAME)[1]}</span>
-      </span>
+      <BrandMark tone={tone} height={22} />
       <ByLine tone={tone} height={height} />
     </span>
   );

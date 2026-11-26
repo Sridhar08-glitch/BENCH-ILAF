@@ -130,11 +130,12 @@ export function resolveSpec(src: MarkSources, ctx: "card" | "tight"): Spec {
   const lock = (m: Mark) => mkSpec(m, src.showName ? src.name : null);
   if (ctx === "tight") {
     if (md === "full") return mkSpec(full || asSym || src.mono, null);
-    return mkSpec(asSym || (md === "sym" || md === "auto" ? asFull : null) || src.mono, null);
+    return mkSpec(asSym || (md === "sym" || md === "auto" || md === "symname" ? asFull : null) || src.mono, null);
   }
   if (md === "full") return full ? mkSpec(full, null) : lock(asSym || src.mono);
   if (md === "sym") return mkSpec(asSym || full || src.mono, null);
-  if (md === "symname") return lock(asSym || src.mono);
+  // No symbol uploaded: the logo stands in for it. The company's initial letters are only for a company with no picture at all.
+  if (md === "symname") return lock(asSym || full || src.mono);
   return asFull ? mkSpec(asFull, null) : lock(asSym || src.mono);
 }
 
@@ -226,12 +227,12 @@ const SCALES = [1, 0.84, 0.7, 0.58];
 export const cornerOrder = (pref: LogoCorner): Corner[] => (pref === "auto" ? ["tr", "tl", "br", "bl"] : [pref]);
 
 /** The corner and size with the least overlap with the text and photo of a face. */
-export function choosePlacement(obstacles: Box[], sp: Spec, pref: LogoCorner): { c: Corner; r: Box; w: number; h: number; sc: number; ov: number } {
+export function choosePlacement(obstacles: Box[], sp: Spec, pref: LogoCorner, size = 1): { c: Corner; r: Box; w: number; h: number; sc: number; ov: number } {
   const order = cornerOrder(pref);
   let best: { c: Corner; r: Box; w: number; h: number; sc: number; ov: number } | null = null;
   let bo = 1e9;
   for (let si = 0; si < SCALES.length && bo > 0; si++) {
-    const d = dimsOf(sp, SCALES[si]);
+    const d = dimsOf(sp, SCALES[si] * size);
     const bw = d.w + 2 * PAD;
     const bh = d.h + 2 * PAD;
     for (let ci = 0; ci < order.length; ci++) {
@@ -297,6 +298,8 @@ export interface PlaceInput {
   fallbackBgs: string[];
   /** The corner to try first when the face was not measured. */
   guess?: Corner;
+  /** How large the owner wants the logo, as a share of its automatic size (0.5 to 1.5). */
+  size?: number;
 }
 
 /** Decide where one mark goes on the front of a card and how it is drawn. */
@@ -308,11 +311,11 @@ export function place(i: PlaceInput): Placement {
   let sc: number;
   let ov: number;
   if (i.obstacles) {
-    const b = choosePlacement(i.obstacles, i.spec, i.pref);
+    const b = choosePlacement(i.obstacles, i.spec, i.pref, i.size ?? 1);
     ({ c, r, w, h, sc, ov } = b);
   } else {
     c = i.pref === "auto" ? i.guess || "tr" : i.pref;
-    const d = dimsOf(i.spec, 0.84);
+    const d = dimsOf(i.spec, 0.84 * (i.size ?? 1));
     w = d.w;
     h = d.h;
     sc = 0.84;
@@ -379,15 +382,27 @@ export function overlayHtml(pl: Placement, alt: string, extra = ""): string {
 }
 
 /** The mark above the card, on the page colour. Sizes are in pixels (the page is phone width). */
-export function headerHtml(sp: Spec, setting: LogoChip, pageBg: string, alt: string, own: string[], hidden = false): string {
+/**
+ * The logo where the owner put it on this design: left, top and width in percent of the card face. The mark alone is drawn
+ * (no company name beside it), on a plate when it would not be readable on the card colours.
+ */
+export function freeOverlayHtml(sp: Spec, spot: { x: number; y: number; w: number }, setting: LogoChip, bgs: string[], alt: string, extra = ""): string {
+  const cf = chipFor(sp, bgs, setting);
+  const pad = cf.chip ? ` padding:1.1cqw;background:${cf.bgc};` : "";
+  const cls = `colg${cf.chip ? " chip" : ""}${cf.mono ? " " + cf.mono : ""}`;
+  const st = `left:${spot.x.toFixed(1)}%;top:${spot.y.toFixed(1)}%;width:${spot.w.toFixed(1)}%;height:auto;aspect-ratio:${sp.mark.asp.toFixed(3)};${pad}`;
+  return `<div class="${cls}" style="${st}" data-c="free"${extra}><img alt="${esc(alt)} logo" src="${esc(sp.mark.src)}"></div>`;
+}
+
+export function headerHtml(sp: Spec, setting: LogoChip, pageBg: string, alt: string, own: string[], hidden = false, size = 1): string {
   const st = chipStyle(setting);
   const mono = st === "white" ? "w" : st === "black" ? "k" : "";
   const col = mono === "w" ? WHITE : mono === "k" ? "#000000" : sp.col;
   const chip = st === "chip" || (st !== "none" && weak(sp, pageBg, mono ? col : ""));
   const bgc = chip ? chipBg(sp, mono ? col : "") : "";
   const a = sp.asp;
-  const mw = sp.name ? 200 : 190;
-  let h = sp.name ? 30 : a >= 4.5 ? 20 : a >= 2.2 ? 28 : a >= 1.35 ? 34 : a >= 0.75 ? 36 : 46;
+  const mw = (sp.name ? 200 : 190) * size;
+  let h = (sp.name ? 30 : a >= 4.5 ? 20 : a >= 2.2 ? 28 : a >= 1.35 ? 34 : a >= 0.75 ? 36 : 46) * size;
   let w = h * a;
   if (w > mw) {
     w = mw;

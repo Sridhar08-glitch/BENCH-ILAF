@@ -114,4 +114,5 @@ export const analytics: Messages<typeof en> = {
   "analytics.colSource": "المصدر",
   "analytics.colLeadsPer100": "عملاء / 100",
   "analytics.sourcesNote": "يُحتسب العملاء المحتملون بحسب الطريقة التي وصل بها الزائر إلى البطاقة عند مشاركة بياناته. رابط البطاقة المفتوح من وسم NFC يُحتسب ضمن NFC. العملاء المحتملون الذين لا تُعرف طريقة وصولهم يظهرون ضمن «أخرى».",
+  "analytics.contactsHidden": "جهات الاتصال خاصة بصاحب البطاقة التي وردت عليها.",
 };

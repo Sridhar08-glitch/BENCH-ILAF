@@ -90,10 +90,6 @@ export const growth = {
   "growth.offlineContact": "Contact inside the code",
   "growth.offlineSaved": "Saved {date}",
   // ---- navigation
-  "growth.navNfc": "NFC card writer",
-  "growth.barNfc": "NFC",
-  "growth.navEvent": "Event mode",
-  "growth.barEvent": "Event",
   // ---- NFC writer
   "growth.nfcTitle": "NFC card writer",
   "growth.nfcSub": "Put your card on an NFC tag or card: anyone taps it with their phone and your card opens.",

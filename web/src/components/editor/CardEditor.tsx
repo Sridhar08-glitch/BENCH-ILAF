@@ -10,28 +10,27 @@ import { PreviewDock } from "@/components/app/PreviewDock";
 import { WalletButton } from "@/components/app/WalletButton";
 import { clearDraft } from "@/lib/preview-bridge";
 import { Empty, ErrorBox, SkeletonBlocks, UpgradeNotice, useToast } from "@/components/app/ui";
-import { ButtonsTab } from "./ButtonsTab";
-import { DesignTab } from "./DesignTab";
-import { ProfileTab } from "./ProfileTab";
 import { CardSwitcher } from "./CardSwitcher";
+import { GuidedFlow } from "./GuidedFlow";
+import { ExtrasPreview } from "./ExtrasPreview";
+import { resolveColours } from "@/lib/library";
 import { TourButton } from "@/components/guide/TourButton";
 import { announce } from "@/lib/guide/api";
 import type { Draft, EditorApi } from "./types";
 import { ApiError, api } from "@/lib/api";
-import { PUBLIC_HOST } from "@/lib/config";
+import { shortAddress } from "@/lib/card-address";
 import { MAX_ITEMS, toApiItems } from "@/lib/card/buttons";
 import { normalizeDesign } from "@/lib/library";
 import { toCompanyBrand } from "@/lib/library/company/brand";
 import { previewFromCard } from "@/lib/card/vcard";
 import { keys, useCard, useWorkspaceDetail } from "@/lib/hooks";
+import { useFlags } from "@/lib/flags";
 import { FREE_ACCESS, buttonsAllLocked, buttonsNeedApproval, fieldWordIn, linkProblem, mandatoryProblem } from "@/lib/ops/fields";
 import { useResolvedIcons } from "@/lib/icons-client";
 import { apiErrorText, apiFieldText } from "@/lib/i18n/api-error";
 import { useI18n } from "@/lib/i18n/client";
 import { cardLocale, type TFunction } from "@/lib/i18n";
 import type { Card } from "@/lib/types";
-
-type Tab = "profile" | "buttons" | "look";
 
 /** A plain sentence for a rejected save: unsafe links, too many buttons, or the API's own message. */
 function saveProblem(e: ApiError, t: TFunction): string {
@@ -61,7 +60,9 @@ function Loaded({ card }: { card: Card }) {
   const qc = useQueryClient();
   const toast = useToast();
   const ws = useWorkspaceDetail(card.workspace_id);
-  const [tab, setTab] = useState<Tab>("profile");
+  // The Content tab (sections under the card) follows the page-styles switch; cards keep what they already hold.
+  const flags = useFlags(card.workspace_id) as Record<string, boolean>;
+  const contentOn = flags.page_styles ?? true;
   const [sheet, setSheet] = useState(false);
   const [photo, setPhoto] = useState(card.photo_url);
   const [cover, setCover] = useState(card.cover_url ?? null);
@@ -280,11 +281,6 @@ function Loaded({ card }: { card: Card }) {
     }
   }
 
-  const tabs: { k: Tab; label: string; icon: string }[] = [
-    { k: "profile", label: t("editor.tabProfile"), icon: "user" },
-    { k: "buttons", label: t("editor.tabButtons"), icon: "link" },
-    { k: "look", label: t("editor.tabDesign"), icon: "palette" },
-  ];
   const live = cardStatus === "published";
 
   return (
@@ -294,7 +290,7 @@ function Loaded({ card }: { card: Card }) {
           <div>
             <h1 dir="auto">{draft.name || t("editor.untitled")}</h1>
             <p className="sub">
-              <Link href="/app/cards" style={{ fontWeight: 700 }}>{t("editor.allCards")}</Link> &middot; <span className="ltr">{PUBLIC_HOST}/{card.slug ?? card.public_code}</span>
+              <Link href="/app/cards" style={{ fontWeight: 700 }}>{t("editor.allCards")}</Link> &middot; <span className="ltr">{shortAddress(card)}</span>
             </p>
           </div>
           <div className="row">
@@ -304,7 +300,7 @@ function Loaded({ card }: { card: Card }) {
               {status === "saving" ? t("editor.saving") : status === "error" ? t("editor.notSaved") : t("editor.allSaved")}
             </span>
             <TourButton />
-            <Link className="btn ghost" href={`/app/qr?card=${card.id}`} data-guide="editor-qr"><Icon name="qr" size="s" />{t("editor.qrShare")}</Link>
+            <Link className="btn ghost" href={`/app/share?card=${card.id}`} data-guide="editor-qr"><Icon name="qr" size="s" />{t("editor.qrShare")}</Link>
             <WalletButton cardId={card.id} published={live} />
             <button type="button" className={live ? "btn ghost" : "btn"} data-guide="editor-publish" disabled={busy || cardStatus === "suspended"} onClick={() => void togglePublish()}>
               <Icon name="check" size="s" />{live ? t("editor.unpublish") : t("editor.publish")}
@@ -345,18 +341,7 @@ function Loaded({ card }: { card: Card }) {
         )}
 
         <div className="panel card">
-          <div className="tabs" role="tablist" data-guide="editor-tabs">
-            {tabs.map((x) => (
-              <button key={x.k} type="button" role="tab" className="tab" data-guide={`editor-tab-${x.k}`} aria-selected={tab === x.k} onClick={() => setTab(x.k)}>
-                <Icon name={x.icon} size="s" />{x.label}
-              </button>
-            ))}
-          </div>
-          <div role="tabpanel" data-guide="editor-body">
-            {tab === "profile" && <ProfileTab ed={ed} />}
-            {tab === "buttons" && <ButtonsTab ed={ed} />}
-            {tab === "look" && <DesignTab ed={ed} />}
-          </div>
+          <GuidedFlow ed={ed} extras={contentOn} live={live} busy={busy} onPublish={() => void togglePublish()} />
         </div>
       </div>
 
@@ -367,7 +352,8 @@ function Loaded({ card }: { card: Card }) {
         onReplay={() => setReplay((n) => n + 1)}
         onSave={() => setSheet(true)}
         overlay={sheet ? <SaveSheet position="absolute" contact={contact} photoUrl={photo} onAdd={() => undefined} onClose={() => setSheet(false)} /> : null}
-        hint={`${PUBLIC_HOST}/${card.slug ?? card.public_code}`}
+        hint={shortAddress(card)}
+        extra={<ExtrasPreview card={ed.card} name={draft.name} language={draft.language} pageVars={resolveColours(design, companyBrand?.palette ?? null).pageVars} />}
       />
     </div>
   );

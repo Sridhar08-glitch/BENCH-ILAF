@@ -85,7 +85,7 @@ Company workspaces carry a palette, logo options and artwork (see "Company brand
 
 ## How sign-in works
 
-Tokens never reach page scripts. `/api/session/*` talks to the API and stores the tokens in httpOnly cookies. The browser calls `/api/proxy/*`, which adds the token and refreshes it once when it has expired. `src/middleware.ts` sends signed-out visitors away from `/app/*`.
+Tokens never reach page scripts. `/api/session/*` talks to the API and stores the tokens in httpOnly cookies. The browser calls `/api/proxy/*`, which adds the token and refreshes it once when it has expired. `src/middleware.ts` sends signed-out visitors away from `/app/*` and `/staff/*`, and is also the router for **custom domains** (Enterprise): a request on a host that is not the Bench host is looked up through the API (`GET /domains/resolve?host=`, cached 20 s) and rewritten to `/c/<code>` or `/d/<slug>` while the visitor keeps the address they typed; the dashboard is never served there. The decisions are pure functions in `src/lib/domains/route.ts` (tests: `route.test.ts`, `src/middleware.test.ts`); pages read the domain from the `x-bench-custom-host` header (`src/lib/server/custom-host.ts`) and pass it to the API as `?host=`. See `deploy/CUSTOM_DOMAINS.md`.
 
 ## Folder map
 
@@ -201,6 +201,7 @@ The staff area is now a full dashboard. The screens are English only (owner deci
 | `/staff/people` | Global search with real card thumbnails (the customer card renderer), card drawer (suspend, restore), person drawer (sign-in methods, sessions, sign out everywhere) |
 | `/staff/support-view`, `/staff/support-view/[session]` | Start dialog (reason, 30 minutes), the orange "Support view · read-only · logged" banner on every staff page while a session is open, the mirror (overview, team, cards, leads, brand, activity, what was viewed) |
 | `/staff/abuse`, `/staff/data-requests`, `/staff/applications` | Card reports with answer-time timers and bulk actions; data requests with due countdown; sign-up requests board plus a pointer to the design requests |
+| `/staff/enterprise` | Enterprise requests: companies that asked for a quote; admins set the seats and the price per seat for that customer (or decline), everyone else looks |
 | `/staff/announcements`, `/staff/analytics`, `/staff/system`, `/staff/flags`, `/staff/billing` | Compose banners and e-mails (English and Arabic required); business analytics and CSV; health, e-mail, jobs, errors and storage; feature switches; plan list and manual grant (payments are parked) |
 | `/staff/team`, `/staff/audit` | Staff table, invitations, permissions page read from the server; audit log with filters and CSV |
 | `/staff/design-requests` | The design request board (it used to be `/staff`) |

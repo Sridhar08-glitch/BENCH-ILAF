@@ -29,9 +29,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
       icon("/brand/icon-maskable-512.png", "512x512", "maskable"),
     ],
     shortcuts: [
-      { name: t("growth.pwaShortcutQr"), url: "/app/qr", icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }] },
+      { name: t("growth.pwaShortcutQr"), url: "/app/share", icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }] },
       { name: t("growth.pwaShortcutCards"), url: "/app/cards", icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }] },
-      { name: t("growth.pwaShortcutScan"), url: "/app/scan", icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }] },
+      { name: t("growth.pwaShortcutScan"), url: "/app/contacts/scan", icons: [{ src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" }] },
     ],
   };
 }

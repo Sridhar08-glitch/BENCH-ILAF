@@ -1,0 +1,64 @@
+<section class="page" data-no="145" data-name="Ma minimal" data-style="Creative" data-rtl="0">
+<!--recipe {"top":72,"style":"Creative","name":"Ma minimal","slug":"45-ma-minimal","dir":"auto","split":"aw","avatar":null,"drop":["ft-gone"],"lists":[{"c":"acts","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: washi paper, sumi ink and hairlines stay fixed; the vermilion accent (hanko seal, focus ring, hover) follows the card colour via --ac / --ac-on / --ac-t (light page) */
+.p145 .in{--washi:#f5f2ea;--sumi:#1d1b19;--gray:#6d6a63;--hair:#cfc9bc;--sig:#c8321f;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h);--serif:"Shippori Mincho",Amiri,"Hiragino Mincho ProN",Georgia,serif;--sans:Jost,"IBM Plex Sans Arabic",Cairo,"Helvetica Neue",system-ui,sans-serif}
+.p145 *{box-sizing:border-box;margin:0}
+.p145 .in{font-family:var(--sans);color:var(--sumi);background:var(--washi);position:relative;overflow:hidden}
+.p145 a{color:inherit;text-decoration:none}
+.p145 :focus-visible{outline:1px solid var(--ac-t);outline-offset:1.026cqw}
+.p145 .defs{position:absolute;width:0;height:0;overflow:hidden}
+.p145 .grain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5;mix-blend-mode:multiply}
+.p145 .hero{position:relative;min-height:110cqw;padding:7.692cqw 8.718cqw 9cqw;display:flex;flex-direction:column}
+.p145 .x-top{display:flex;justify-content:space-between;gap:4cqw;font-size:max(10px,2.564cqw);letter-spacing:.26em;text-transform:uppercase;color:var(--gray);font-weight:300;line-height:1.4}
+.p145 .x-top span:first-child{flex:1 1 0;min-width:0;overflow-wrap:anywhere}
+.p145 .x-top span:last-child{margin-inline-start:auto;text-align:end;flex:0 0 auto;max-width:42%;overflow-wrap:break-word}
+.p145 .cols{flex:1;display:flex;justify-content:space-between;gap:5cqw;margin-top:9cqw}
+.p145 .lc{display:flex;flex-direction:column;justify-content:space-between;gap:8cqw;flex:0 1 37cqw;min-width:0}
+.p145 .dot{width:4.615cqw;height:0.256cqw;background:var(--sumi);margin-bottom:5cqw}
+.p145 .bio{font-family:var(--serif);font-size:max(10px,3.59cqw);line-height:2;color:var(--sumi);font-weight:400;overflow-wrap:anywhere}
+.p145 .seal{width:19cqw;height:19cqw;border-radius:1.3cqw;background:var(--ac);color:var(--ac-on);display:grid;place-items:center;position:relative;filter:url(#rough);margin-top:auto;flex:none;font-family:var(--serif);font-weight:700;font-size:7.4cqw;letter-spacing:.02em;line-height:1}
+.p145 .seal:before{content:"";position:absolute;inset:1.6cqw;border:0.4cqw solid currentColor;border-radius:.5cqw;opacity:.85}
+.p145 .seal span{position:relative;max-width:78%;text-align:center;overflow:hidden}
+.p145 .vcol{display:flex;gap:7.692cqw;align-items:flex-start;justify-content:flex-end;flex:none;max-width:56cqw}
+.p145 .vcol>*{writing-mode:vertical-rl;max-height:124cqw;overflow-wrap:anywhere}
+.p145 .name{font-family:var(--serif);font-weight:500;font-size:10.4cqw;letter-spacing:.2em;line-height:1.05}
+.p145.nl2 .name{font-size:8cqw}.p145.nl3 .name{font-size:6.6cqw}
+.p145.wl3 .name{font-size:6.4cqw}
+.p145 .role{font-size:max(10px,2.821cqw);letter-spacing:.42em;text-transform:uppercase;color:var(--gray);font-weight:400;padding-top:2.051cqw;line-height:1.5}
+.p145[dir="rtl"] .name{letter-spacing:0;font-weight:700;line-height:1.3}
+.p145[dir="rtl"] .role,.p145[dir="rtl"] .x-top,.p145[dir="rtl"] .h{letter-spacing:0}
+.p145 .aw{position:relative;padding:8cqw 8.718cqw 9cqw}
+.p145 .h{position:relative;font-size:max(10px,2.564cqw);letter-spacing:.38em;text-transform:uppercase;color:var(--gray);padding-bottom:3.077cqw;font-weight:300}
+.p145 .acts{position:relative;display:block;counter-reset:k}
+.p145 .acts a{counter-increment:k;display:grid;grid-template-columns:7.179cqw 6.2cqw minmax(0,auto) minmax(0,1fr);align-items:center;column-gap:1cqw;min-height:13.333cqw;padding-block:1.5cqw;border-top:1px solid var(--hair);font-size:max(10px,3.59cqw);letter-spacing:.06em;font-weight:300;line-height:1.3}
+.p145 .acts a:last-child{border-bottom:1px solid var(--hair)}
+.p145 .acts a:before{content:counter(k,japanese-informal);font-family:var(--serif);font-size:max(10px,3.077cqw);color:var(--gray);letter-spacing:0}
+.p145[dir="rtl"] .acts a{letter-spacing:0}
+.p145[dir="rtl"] .acts a:before{content:counter(k,arabic-indic);font-family:var(--sans)}
+.p145 .acts a:hover{color:var(--ac-t)}
+.p145 .acts a:hover .v{color:inherit}
+.p145 .acts svg{width:3.9cqw;height:3.9cqw;flex:none;display:block}
+.p145 .acts b{font-weight:300;overflow-wrap:anywhere}
+.p145[dir="rtl"] .acts .v{unicode-bidi:plaintext;text-align:left}
+.p145 .acts .v{font-size:max(10px,3.077cqw);color:var(--gray);letter-spacing:.04em;text-align:end;justify-self:end;margin-inline-start:2cqw;overflow-wrap:anywhere}
+</style>
+<div class="pg p145"><div class="in">
+<svg class="defs" width="0" height="0" aria-hidden="true"><defs><filter id="rough" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="2" seed="5" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3"/></filter></defs></svg>
+<svg class="grain" aria-hidden="true"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency=".6" numOctaves="3" seed="9"/><feColorMatrix values="0 0 0 0 .6  0 0 0 0 .56  0 0 0 0 .48  0 0 0 .3 0"/></filter><rect width="100%" height="100%" filter="url(#f)"/></svg>
+<div class="hero">
+ <div class="x-top"><span>{co}</span><span>{city}</span></div>
+ <div class="cols">
+  <div class="lc"><div><div class="dot"></div><p class="bio">{bio}</p></div><div class="seal" aria-hidden="true"><span>{ini}</span></div></div>
+  <div class="vcol"><p class="role">{title}</p><h1 class="name">{name}</h1></div>
+ </div>
+</div>
+<div class="aw">
+ <svg class="grain" aria-hidden="true"><rect width="100%" height="100%" filter="url(#f)"/></svg>
+ <div class="h">[[Contact|تواصل]]</div>
+ <nav class="acts">
+  <a><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.500 1.500a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><b>Telephone</b><span class="v">{phone}</span></a>
+ </nav>
+</div>
+</div></div>
+</section>

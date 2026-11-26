@@ -1,0 +1,64 @@
+<section class="page" data-no="214" data-name="Swatch studio" data-style="Tech and Creative" data-rtl="0">
+<!--recipe {"top":91,"style":"Tech and Creative","name":"Swatch studio","slug":"091-ux-swatch","dir":"auto","split":"bl","avatar":"av","cover":"hero","coverArt":[],"cond":{"bio":"bio","co":"company","ct":"addr","lbl":"title"},"drop":["save","foot"],"lists":[{"c":"chips","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: cream paper, ink type, the sunshine yellow lower card and the swatch palette are the signature and stay fixed; the card colour is mixed into the surname and the first swatch (--ac fill, --ac-t text on cream) */
+.p214 .in{--ink:#171717;--paper:#f7f1e3;--sun:#ffd84d;--sig:#2b49ff;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.48) c h);--disp:Fraunces,"DM Serif Display",Georgia,serif;--body:"Hanken Grotesk","Instrument Sans",system-ui,sans-serif;--mono:"DM Mono","IBM Plex Mono",ui-monospace,monospace}
+.p214[dir="rtl"] .in{--disp:Cairo,Fraunces,sans-serif;--body:Cairo,"Hanken Grotesk",sans-serif;--mono:Cairo,"DM Mono",sans-serif}
+.p214 *{box-sizing:border-box;margin:0}
+.p214 .in{font-family:var(--body);color:var(--ink);background:var(--paper);position:relative;overflow:hidden}
+.p214 a{color:inherit;text-decoration:none}
+.p214 :focus-visible{outline:.8cqw solid var(--sig);outline-offset:.5cqw}
+.p214 .hero{position:relative;min-height:146cqw;display:flex;flex-direction:column;justify-content:flex-end;padding:0 6cqw 7cqw;background:url(/card-library/art/ux-swatch-bg.webp) center top/100% auto no-repeat,var(--paper)}
+.p214 .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--paper) 0,var(--paper) 38%,rgba(247,241,227,.85) 48%,rgba(247,241,227,0) 62%);pointer-events:none}
+.p214 .hero>*{position:relative}
+.p214 .chip{position:absolute;inset-inline-end:7cqw;top:31cqw;width:30cqw;background:#fff;padding:1.6cqw 1.6cqw 3.2cqw;border-radius:1.6cqw;box-shadow:0 1.4cqw 4.4cqw rgba(0,0,0,.25);transform:rotate(7deg)}
+.p214[dir="rtl"] .chip{transform:rotate(-7deg)}
+.p214 .av{width:100%;aspect-ratio:1/1.15;overflow:hidden;border-radius:.8cqw;background:#171717}
+.p214 .av .pic{display:grid;place-items:center;width:100%;height:100%;font-family:var(--disp);font-weight:900;font-size:34cqw;color:#fff;background:#171717}
+.p214 .lbl{margin-top:2.2cqw;font-family:var(--mono);font-size:max(9.5px,2.4cqw);line-height:1.3;text-transform:uppercase;letter-spacing:.06em;color:#555;overflow-wrap:anywhere}
+.p214 .spec{position:relative}
+.p214 h1{font-family:var(--disp);font-weight:900;font-size:17cqw;line-height:1;letter-spacing:-.035em;overflow-wrap:anywhere;background:linear-gradient(180deg,transparent .17em,rgba(255,90,71,.8) .17em,rgba(255,90,71,.8) calc(.17em + 1px),transparent calc(.17em + 1px),transparent .8em,rgba(43,73,255,.85) .8em,rgba(43,73,255,.85) calc(.8em + 1.5px),transparent calc(.8em + 1.5px)) 0 0/100% 1em repeat-y}
+.p214[dir="rtl"] h1{background:none;letter-spacing:0;line-height:1.15;font-size:15cqw}
+.p214 h1 span{display:block;color:var(--ac-t)}
+.p214.wl2 h1{font-size:14cqw}.p214.wl3 h1{font-size:9.6cqw}.p214.nl3 h1{font-size:9.6cqw}
+.p214 .meta{margin-top:4cqw;display:flex;flex-wrap:wrap;gap:1.6cqw 4cqw;font-family:var(--mono);font-size:max(10.5px,2.9cqw);text-transform:uppercase;letter-spacing:.08em;line-height:1.4}
+.p214 .meta span{display:inline-flex;align-items:center;gap:1.8cqw;overflow-wrap:anywhere;min-width:0}
+.p214 .meta .co::before{content:"";flex:none;width:2.8cqw;height:2.8cqw;background:var(--ac);border-radius:50%}
+.p214 .meta .ct::before{content:"";flex:none;width:2.8cqw;height:2.8cqw;background:var(--ink)}
+.p214[dir="rtl"] .meta{letter-spacing:0}
+.p214 .bl{background:var(--sun);padding:6cqw 5cqw 8cqw}
+.p214 .bl{background-image:repeating-linear-gradient(0deg,transparent 0 5.9cqw,rgba(23,23,23,.07) 5.9cqw 6cqw)}
+.p214 .bio{background:#fff;border-radius:1.4cqw;padding:5cqw;font-size:4cqw;line-height:1.5;font-weight:500;margin-bottom:5cqw;box-shadow:.9cqw .9cqw 0 var(--ink);overflow-wrap:anywhere}
+.p214 .bio b{display:block;font-family:var(--mono);font-size:max(10px,2.6cqw);font-weight:500;letter-spacing:.2em;text-transform:uppercase;margin-bottom:2cqw;color:#555}
+.p214[dir="rtl"] .bio b{letter-spacing:0}
+.p214 .chips{display:grid;grid-template-columns:1fr 1fr;gap:3.6cqw}
+.p214 .chips a{display:flex;flex-direction:column;background:#fff;border-radius:1.6cqw;padding:1.6cqw 1.6cqw 3cqw;box-shadow:0 1.2cqw 3.4cqw rgba(0,0,0,.2);min-width:0;transition:transform .15s}
+.p214 .chips a:nth-child(odd){transform:rotate(-1deg)}.p214 .chips a:nth-child(even){transform:rotate(1deg)}
+.p214 .chips a:hover{transform:translateY(-.8cqw) rotate(0)}
+.p214 .chips .ic{height:21cqw;border-radius:.8cqw;display:grid;place-items:center;background:#ff5a47;color:#fff;margin-bottom:2.6cqw}
+.p214 .chips a:nth-child(6n+2) .ic{background:#2b49ff}
+.p214 .chips a:nth-child(6n+3) .ic{background:#171717}
+.p214 .chips a:nth-child(6n+4) .ic{background:#ff93d1;color:#171717}
+.p214 .chips a:nth-child(6n+5) .ic{background:#b6e35a;color:#171717}
+.p214 .chips a:nth-child(6n+6) .ic{background:#ffffff;color:#171717;box-shadow:inset 0 0 0 .4cqw #171717}
+.p214 .chips a:first-child .ic{background:var(--ac);color:var(--ac-on)}
+.p214 .chips .ic svg{width:8cqw;height:8cqw;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.p214 .chips b{display:block;padding-inline:1cqw;font-size:3.8cqw;font-weight:800;line-height:1.2;overflow-wrap:anywhere}
+.p214 .chips small{display:block;padding-inline:1cqw;margin-top:.8cqw;font-family:var(--mono);font-size:max(10px,2.6cqw);color:#555;line-height:1.3;overflow-wrap:anywhere}
+.p214 .chips a>span{display:block;min-width:0}
+.p214 .chips a:last-child:nth-child(odd){grid-column:1/-1}.p214 .chips a:last-child:nth-child(odd) .ic{height:14cqw}
+</style>
+<div class="pg p214"><div class="in">
+<div class="hero">
+ <div class="chip"><div class="av"><svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#171717"/></svg></div><div class="lbl">{title}</div></div>
+ <div class="spec"><h1>{first}<span>{last}</span></h1></div>
+ <div class="meta"><span class="co">{co}</span><span class="ct">{city}</span></div>
+</div>
+<div class="bl">
+ <div class="bio"><b>[[Design notes|ملاحظات]]</b>{bio}</div>
+ <nav class="chips">
+  <a><i class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></i><span><b>Call</b><small>{phone}</small></span></a>
+ </nav>
+</div>
+</div></div>
+</section>

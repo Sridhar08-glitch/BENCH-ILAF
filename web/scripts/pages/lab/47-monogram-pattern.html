@@ -1,0 +1,81 @@
+<section class="page" data-no="147" data-name="Monogram pattern" data-style="Creative" data-rtl="0">
+<!--recipe {"top":74,"style":"Creative","name":"Monogram pattern","slug":"47-monogram-pattern","dir":"auto","split":"bw","avatar":"mono","cond":{"orn":"bio"},"lists":[{"c":"list","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: leather brown + ivory paper + gold are the signature and stay fixed; the accent (--ac = card colour mixed 55% into the gold) drives the rivet, stitching, ornament, medallion ring and row icon rings (decorative only); text colours are fixed browns on ivory */
+.p147 .in{--leather:#3a2517;--tone:#5e3f2a;--ivory:#f1e8d6;--ink:#2a1a10;--gold:#c8a25a;--gold2:#e6c984;--sig:#c8a25a;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h)}
+.p147 *{box-sizing:border-box;margin:0}
+.p147 .in{font-family:Jost,"Helvetica Neue",Cairo,system-ui,sans-serif;color:var(--ink)}
+.p147 a{color:inherit;text-decoration:none}
+.p147 :focus-visible{outline:2px solid var(--gold2);outline-offset:0.769cqw}
+.p147 .in{position:relative;overflow:hidden;background:#3d2718;padding:0 7.179cqw 10.256cqw}
+.p147 .pat{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background-image:radial-gradient(rgba(0,0,0,.16) .6px,transparent 1px);background-size:3px 3px}
+.p147 .mg{position:absolute;top:0;inset-inline-start:-3.8cqw;display:grid;grid-template-columns:repeat(7,15.385cqw);grid-auto-rows:15.385cqw;font-family:"Bodoni Moda",Amiri,Georgia,serif;font-weight:700;font-size:6.9cqw;line-height:1;color:#85593b;letter-spacing:-.04em}
+.p147 .mg b{display:grid;place-items:center;text-shadow:.33cqw .44cqw 0 #1a0d06;white-space:nowrap;overflow:hidden}
+.p147 .mg i{display:block;position:relative}
+.p147 .dm:before{content:"";position:absolute;inset:3.4cqw;background:#85593b;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%)}
+.p147 .rg:before{content:"";position:absolute;inset:4.5cqw;border:.67cqw solid #85593b;border-radius:50%;box-shadow:.26cqw .36cqw 0 #1a0d06,inset .26cqw .36cqw 0 #1a0d06}
+.p147 .vig{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,rgba(0,0,0,0) 40%,rgba(0,0,0,.55) 100%)}
+.p147 .strap{position:relative;z-index:1;margin:0 auto;width:8.718cqw;height:28.205cqw;background:linear-gradient(90deg,#2a1810,#4a3022 50%,#2a1810);border-inline:1px solid #1a0e07;box-shadow:0 0 0 1px rgba(0,0,0,.2)}
+.p147 .strap:before,.p147 .strap:after{content:"";position:absolute;inset-block:0;width:0;border-inline-start:1.5px dashed var(--ac);opacity:.6}
+.p147 .strap:before{inset-inline-start:1.282cqw}
+.p147 .strap:after{inset-inline-end:1.282cqw}
+.p147 .panel,.p147 .card{position:relative;z-index:1;background:linear-gradient(160deg,#f6eedd,#ebdfc7);border-radius:5.641cqw;box-shadow:0 7.692cqw 12.821cqw rgba(0,0,0,.55),0 2px 0 rgba(255,255,255,.4) inset,0 0 0 1px #20120a}
+.p147 .panel{margin-top:-1.538cqw;padding:11.282cqw 6.154cqw 7.5cqw}
+.p147 .card{margin-top:7.179cqw;padding:7cqw 6.154cqw 6.154cqw}
+.p147 .panel:before,.p147 .card:before{content:"";position:absolute;inset:2.308cqw;border:1.5px dashed #a98a52;border-radius:3.846cqw;pointer-events:none}
+.p147 .hole{position:absolute;top:-0.256cqw;inset-inline-start:50%;margin-inline-start:-4.103cqw;width:8.205cqw;height:4.103cqw;border-radius:0 0 4.103cqw 4.103cqw;background:#2a1810}
+.p147 .rivet{position:absolute;top:3.59cqw;inset-inline-start:50%;margin-inline-start:-1.538cqw;width:3.077cqw;height:3.077cqw;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3cc,var(--ac) 50%,#7d5f2a);box-shadow:0 1px 2px rgba(0,0,0,.5)}
+.p147 .mono{display:block;margin:0 auto;width:22cqw;height:22cqw;border-radius:50%;position:relative;border:.6cqw solid transparent;background:linear-gradient(#3a2517,#3a2517) padding-box,linear-gradient(135deg,#f3dc9c,var(--ac) 50%,#8b6428) border-box;overflow:hidden}
+.p147 .mono svg{display:none}
+.p147 .mono .pic{width:100%;height:100%;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:#3a2517;font-family:"Bodoni Moda",Amiri,Georgia,serif;font-weight:700;font-size:40cqw;letter-spacing:-.04em;color:var(--gold2);overflow:hidden;white-space:nowrap}
+.p147 .mono:after{content:"";position:absolute;inset:6%;border-radius:50%;border:1px dashed var(--ac);opacity:.8;pointer-events:none}
+.p147 .brand{text-align:center;font-size:max(10px,2.308cqw);letter-spacing:.42em;text-transform:uppercase;margin-top:3cqw;color:#6f5636;font-weight:500;overflow-wrap:anywhere;line-height:1.5}
+.p147 h1{font-family:"Bodoni Moda",Didot,Amiri,Georgia,serif;font-weight:500;font-size:8.718cqw;line-height:1.08;text-align:center;margin-top:3.59cqw;letter-spacing:.01em;overflow-wrap:anywhere}
+.p147 h1 em{font-style:italic;display:block}
+.p147.wl2 h1{font-size:7cqw}.p147.wl3 h1{font-size:6.2cqw}
+.p147 .role{text-align:center;margin-top:2.564cqw;font-size:max(10px,2.821cqw);letter-spacing:.3em;text-transform:uppercase;font-weight:500;color:#6f5636;line-height:1.55;overflow-wrap:anywhere}
+.p147 .loc{text-align:center;margin-top:1.6cqw;font-size:max(10px,3cqw);color:#6f5636;letter-spacing:.04em;overflow-wrap:anywhere}
+.p147 .orn{display:flex;align-items:center;gap:2.564cqw;margin:4.615cqw 0;color:var(--ac)}
+.p147 .orn:before,.p147 .orn:after{content:"";flex:1;height:0.256cqw;background:linear-gradient(90deg,transparent,#b99650)}
+.p147 .orn:after{transform:scaleX(-1)}
+.p147 .orn svg{flex:none;width:3.6cqw;height:3.6cqw}
+.p147 .orn svg path{fill:currentColor}
+.p147 .bio{font-family:"Bodoni Moda",Amiri,serif;font-style:italic;font-size:4.103cqw;line-height:1.5;text-align:center;color:#3a2a1c;overflow-wrap:anywhere}
+.p147 .list{border-top:1px solid #cdbb98;margin-top:0}
+.p147 .list a{display:flex;align-items:center;gap:3.59cqw;min-height:13.333cqw;border-bottom:1px solid #cdbb98;padding:1.5cqw .513cqw}
+.p147 .list a:hover{background:rgba(200,162,90,.14)}
+.p147 .ic{flex:none;width:8.205cqw;height:8.205cqw;border-radius:50%;border:1px solid var(--ac);display:grid;place-items:center;color:#6a4c22}
+.p147 .ic svg{width:3.846cqw;height:3.846cqw;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.p147 .list a>div{min-width:0}
+.p147 .list b{display:block;font-size:max(10px,2.308cqw);letter-spacing:.3em;text-transform:uppercase;font-weight:500;color:#7a6040}
+.p147 .list span{display:block;font-size:max(10px,3.59cqw);font-weight:400;letter-spacing:.02em;overflow-wrap:anywhere}
+.p147[dir="rtl"] .brand,.p147[dir="rtl"] .role,.p147[dir="rtl"] .list b{letter-spacing:0}
+.p147[dir="rtl"] .in,.p147[dir="rtl"] .list b,.p147[dir="rtl"] .list span{font-family:Cairo,"Segoe UI",Tahoma,sans-serif}
+.p147[dir="rtl"] h1,.p147[dir="rtl"] .bio{font-family:Amiri,"Bodoni Moda",serif;font-style:normal}
+.p147[dir="rtl"] h1{line-height:1.3}
+</style>
+<div class="pg p147"><div class="in">
+<div class="pat" aria-hidden="true"><div class="mg" aria-hidden="true"><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i></div></div>
+<div class="vig"></div>
+<div class="strap" aria-hidden="true"></div>
+<div class="panel">
+ <span class="hole" aria-hidden="true"></span><span class="rivet" aria-hidden="true"></span>
+ <div class="mono"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="37" fill="#3a2517"/></svg></div>
+ <p class="brand">{co}</p>
+ <h1>{first}<em>{last}</em></h1>
+ <p class="role">{title}</p>
+ <p class="loc">{city}</p>
+ <div class="orn"><svg viewBox="-10 -10 20 20"><path d="M0-9C3-3 3-3 9 0 3 3 3 3 0 9-3 3-3 3-9 0-3-3-3-3 0-9z"/></svg></div>
+ <p class="bio">{bio}</p>
+</div>
+<div class="bw">
+<div class="pat" aria-hidden="true"><div class="mg" aria-hidden="true"><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="dm"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i><b>{ini}</b><i class="rg"></i></div></div>
+<div class="card">
+ <nav class="list" aria-label="Contact">
+  <a><i class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.500 1.500a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></i><div><b>Telephone</b><span>{phone}</span></div></a>
+  <a><i class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 7l9 6 9-6"/></svg></i><div><b>Correspondence</b><span>{email}</span></div></a>
+ </nav>
+</div>
+</div>
+</div></div>
+</section>

@@ -1,0 +1,46 @@
+<section class="page" data-no="124" data-name="Soft clay" data-style="Digital" data-rtl="0">
+<!--recipe {"top":51,"style":"Digital","name":"Soft clay","slug":"24-soft-clay","dir":"auto","split":"keys","avatar":"cup","drop":["save","foot","disp","info"],"lists":[{"c":"keys","role":"icons","items":"all","tint":"none"}]}-->
+<style>
+/* colour: warm clay paper and ink are fixed; the card accent replaces the terracotta (LED, pip, key icons, job title) */
+.p124 .in{--clay:#e7dfd6;--hi:#fffaf3;--lo:#b9aa9a;--lo2:#a89887;--ink:#3b3330;--mute:#695e55;--sig:#9a4f35;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h);--acc:var(--ac-t)}
+.p124 *{box-sizing:border-box;margin:0}
+.p124 .in{font-family:"Nunito","Cairo",system-ui,sans-serif;color:var(--ink)}
+.p124 .in{background:var(--clay);padding:6.667cqw 5.641cqw 7.692cqw;position:relative}
+.p124 .raise{box-shadow:2.308cqw 2.308cqw 5.128cqw var(--lo),-2.308cqw -2.308cqw 5.128cqw var(--hi)}
+.p124 .raise-s{box-shadow:1.282cqw 1.282cqw 2.821cqw var(--lo),-1.282cqw -1.282cqw 2.821cqw var(--hi)}
+.p124 .well{box-shadow:inset 1.538cqw 1.538cqw 3.077cqw var(--lo),inset -1.538cqw -1.538cqw 3.077cqw var(--hi)}
+.p124 .x-top{display:flex;justify-content:space-between;align-items:center;gap:3cqw;font-weight:800;font-size:max(10px,2.821cqw);letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.p124 .x-top span:last-child{text-align:end;min-width:0;overflow-wrap:anywhere;max-width:60%;letter-spacing:.1em}
+.p124 .led{display:inline-block;width:2.308cqw;height:2.308cqw;border-radius:50%;background:var(--ac);margin-inline-end:2.051cqw;box-shadow:0 0 0 0.769cqw var(--clay),0 0 0 1.026cqw rgba(0,0,0,.05),0 0 2.564cqw color-mix(in srgb,var(--ac) 60%,transparent)}
+.p124 .dialwrap{display:grid;place-items:center;margin:6.667cqw 0 5.641cqw}
+.p124 .dial{position:relative;width:51.282cqw;height:51.282cqw;border-radius:50%;background:linear-gradient(145deg,#efe7de,#ddd3c9);display:grid;place-items:center}
+.p124 .dial::before{content:"";position:absolute;inset:3.59cqw;border-radius:50%;background:repeating-conic-gradient(from -1deg,var(--lo2) 0 2deg,transparent 2deg 7.5deg);-webkit-mask:radial-gradient(circle,transparent 60%,#000 61%,#000 68%,transparent 69%);mask:radial-gradient(circle,transparent 60%,#000 61%,#000 68%,transparent 69%);opacity:.55}
+.p124 .dial .cup{position:relative;width:33.846cqw;height:33.846cqw;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#dcd2c8,#efe8df)}
+.p124 .dial .cup::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;box-shadow:inset 1.538cqw 1.538cqw 3.077cqw var(--lo),inset -1.538cqw -1.538cqw 3.077cqw var(--hi)}
+.p124 .cup .pic{object-fit:cover;display:grid;place-items:center;font-family:"Nunito","Cairo",sans-serif;font-weight:800;letter-spacing:.02em;color:var(--clay);text-shadow:-1px -1px 1px var(--lo),1px 1px 1px var(--hi);background:transparent}
+.p124 .dial .pip{position:absolute;top:2.564cqw;left:50%;width:2.564cqw;height:2.564cqw;margin-left:-1.282cqw;border-radius:50%;background:var(--ac);box-shadow:0 0 2.051cqw color-mix(in srgb,var(--ac) 55%,transparent);z-index:2}
+.p124 h1{font-size:8.718cqw;line-height:1.1;font-weight:800;text-align:center;letter-spacing:-.01em;overflow-wrap:anywhere}
+.p124.nl2 h1{font-size:7cqw}.p124.nl3 h1{font-size:5.6cqw}
+.p124.wl2 h1{font-size:7cqw}.p124.wl3 h1{font-size:5.6cqw}
+.p124 .role{margin-top:2.051cqw;text-align:center;font-weight:800;font-size:max(12px,3.59cqw);color:var(--acc);line-height:1.35;overflow-wrap:anywhere}
+.p124 .co{margin-top:1cqw;text-align:center;color:var(--mute);font-weight:700;font-size:max(12px,3.59cqw);line-height:1.35;overflow-wrap:anywhere}
+.p124 .bio{margin-top:5.641cqw;padding:5.128cqw 5.641cqw;border-radius:6.154cqw;font-size:max(12px,3.846cqw);line-height:1.55;font-weight:600;color:#4a403a;text-align:center;overflow-wrap:anywhere}
+.p124 .keys{display:flex;flex-wrap:wrap;justify-content:center;gap:4.103cqw}
+.p124 .key{flex:0 0 calc((100% - 8.206cqw)/3);min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.051cqw;min-height:23.59cqw;padding:2cqw 1.5cqw;border-radius:6.154cqw;background:linear-gradient(145deg,#ece4db,#ddd4ca);text-decoration:none;color:var(--ink);font-size:max(10px,3.077cqw);font-weight:800;letter-spacing:.04em;text-align:center;line-height:1.2;overflow-wrap:anywhere;transition:box-shadow .15s}
+.p124 .key svg{width:6.667cqw;height:6.667cqw;fill:none;color:var(--acc);stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.p124 .key:active{box-shadow:inset 1.282cqw 1.282cqw 2.564cqw var(--lo),inset -1.282cqw -1.282cqw 2.564cqw var(--hi);background:var(--clay)}
+.p124 .key:focus-visible{outline:0.769cqw solid var(--acc);outline-offset:0.769cqw}
+.p124[dir="rtl"] *{letter-spacing:0!important}
+</style>
+<div class="pg p124"><div class="in">
+<div class="x-top"><span><i class="led"></i>[[Digital card|بطاقة رقمية]]</span><span>{city}</span></div>
+<div class="dialwrap"><div class="dial raise"><span class="pip"></span><div class="cup well"></div></div></div>
+<h1>{name}</h1>
+<p class="role">{title}</p>
+<p class="co">{co}</p>
+<p class="bio well">{bio}</p>
+<nav class="keys">
+  <a class="key raise-s"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><span>Call</span></a>
+</nav>
+</div></div>
+</section>

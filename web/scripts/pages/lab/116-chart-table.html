@@ -1,0 +1,69 @@
+<section class="page" data-no="239" data-name="Chart table" data-style="Trades and Industry" data-rtl="0">
+<!--recipe {"top":116,"style":"Trades and Industry","name":"Chart table","slug":"116-chart-table","dir":"auto","split":"dk","avatar":"ph","cover":"hero","coverArt":["fx"],"cond":{"log":"bio"},"lists":[{"c":"entries","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: chart parchment, navy ink and brass are the signature and stay fixed; the brass and the chart red take the card accent mixed 30% in, with a darkened copy for ink on parchment */
+.p239 .in{--pa:#efe2bf;--pa2:#e4d2a4;--navy:#1c3350;--brass:#b8862e;--sig:#a8321f;--ac:color-mix(in oklab,var(--cacc) 30%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-d:oklch(from var(--ac) min(l,.42) c h)}
+.p239 *{box-sizing:border-box;margin:0}
+.p239 .in{font-family:"Cormorant Garamond","Old Standard TT",Cairo,Georgia,serif;color:var(--navy);background:var(--pa);overflow:hidden;position:relative}
+.p239 a{color:inherit;text-decoration:none}
+.p239 :focus-visible{outline:0.6cqw solid var(--navy);outline-offset:0.6cqw}
+.p239 .hero{position:relative;min-height:168cqw;background:#e8d6aa url(/card-library/art/chart-compass-bg.webp) 50% 0/cover no-repeat;overflow:hidden}
+.p239 .hero .fx{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 25%,rgba(239,226,191,.0),rgba(60,40,10,.18))}
+.p239 .cart{position:absolute;inset-inline-start:7cqw;top:8cqw;width:78cqw;transform:rotate(-1.4deg);background:var(--pa);padding:5cqw 5cqw 5.4cqw;box-shadow:0 2.4cqw 6cqw rgba(60,40,10,.4),inset 0 0 0 1cqw var(--pa),inset 0 0 0 1.5cqw var(--navy),inset 0 0 0 2cqw var(--pa),inset 0 0 0 2.4cqw var(--navy)}
+.p239 .pos{font-style:italic;font-size:max(12px,3.8cqw);letter-spacing:.06em;color:var(--ac-d);line-height:1.3;overflow-wrap:anywhere;text-align:center}
+.p239 h1{margin-top:2cqw;font-weight:700;font-size:15.6cqw;line-height:.92;letter-spacing:-.01em;text-align:center;color:var(--navy);overflow-wrap:anywhere}
+.p239 h1 span{display:block}
+.p239 h1 span+span{font-style:italic;font-weight:500}
+.p239.wl2 h1{font-size:12cqw}.p239.wl3 h1{font-size:9cqw}.p239.nl3 h1{font-size:8.6cqw}
+.p239[dir="rtl"] h1{font-family:"Noto Naskh Arabic",Amiri,Cairo,serif;font-weight:700;line-height:1.35;font-size:11.6cqw}
+.p239[dir="rtl"] h1 span+span{font-style:normal}
+.p239[dir="rtl"].wl2 h1{font-size:9.4cqw}.p239[dir="rtl"].wl3 h1{font-size:7.6cqw}
+.p239[dir="rtl"] .role,.p239[dir="rtl"] .log h2,.p239[dir="rtl"] .en b{letter-spacing:0;text-transform:none}
+.p239 .rule{margin:3.4cqw auto 2.6cqw;display:flex;align-items:center;gap:2cqw;color:var(--brass)}
+.p239 .rule::before,.p239 .rule::after{content:"";flex:1;border-top:.4cqw solid var(--navy);opacity:.55}
+.p239 .rule svg{width:5cqw;height:5cqw;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.p239 .role{font-family:"Cormorant SC","Cormorant Garamond",Cairo,serif;font-weight:700;font-size:max(13px,4.4cqw);letter-spacing:.16em;text-transform:uppercase;text-align:center;line-height:1.25;overflow-wrap:anywhere}
+.p239 .co{margin-top:.8cqw;font-style:italic;font-size:max(12px,4cqw);text-align:center;color:#3c5675;overflow-wrap:anywhere;line-height:1.3}
+.p239 .port{position:absolute;inset-inline-end:6cqw;bottom:9cqw;width:44cqw;aspect-ratio:1;border-radius:50%;padding:3.2cqw;background:conic-gradient(from 20deg,#ffe9a8,#c9953a 20%,#6d4a14 38%,#e8c26a 56%,#8a5f1c 78%,#ffe9a8);box-shadow:0 3cqw 7cqw rgba(60,40,10,.55),inset 0 0 0 .6cqw rgba(255,255,255,.5)}
+.p239 .port::before{content:"";position:absolute;inset:1.4cqw;border-radius:50%;border:.7cqw dotted rgba(60,35,5,.7)}
+.p239 .ph{width:100%;height:100%;border-radius:50%;border:1.4cqw solid #5a3d10;box-shadow:inset 0 1cqw 3cqw rgba(0,0,0,.6);background:#274566}
+.p239 .ph .pic{display:grid;place-items:center;background:linear-gradient(160deg,#35597f,#16304c);color:var(--pa);font-family:"Cormorant Garamond",serif;font-weight:700}
+.p239 .dk{padding:7cqw 6cqw 9cqw;background:var(--pa) radial-gradient(ellipse at 50% 0,#f6ecd0,var(--pa2))}
+.p239 .log{margin:0 0 7cqw;text-align:center}
+.p239 .log h2{font-family:"Cormorant SC","Cormorant Garamond",Cairo,serif;font-weight:700;font-size:max(12px,3.8cqw);letter-spacing:.3em;text-transform:uppercase;color:var(--ac-d);margin-bottom:2.4cqw}
+.p239 .log p{font-style:italic;font-size:max(17px,5.6cqw);line-height:1.4;color:var(--navy);overflow-wrap:anywhere}
+.p239[dir="rtl"] .log p{font-style:normal}
+.p239 .entries{display:grid;border-top:.5cqw solid var(--navy);border-bottom:.5cqw solid var(--navy);position:relative}
+.p239 .entries::before,.p239 .entries::after{content:"";position:absolute;inset-inline:0;height:0;border-top:.25cqw solid var(--navy)}
+.p239 .entries::before{top:.9cqw}.p239 .entries::after{bottom:.9cqw}
+.p239 .en{position:relative;display:flex;align-items:center;gap:4cqw;min-height:17cqw;padding:3cqw 1cqw;border-bottom:.3cqw dotted rgba(28,51,80,.5)}
+.p239 .en:last-child{border-bottom:0}
+.p239 .en .ic{flex:none;position:relative;width:11.4cqw;height:11.4cqw;border-radius:50%;display:grid;place-items:center;background:var(--pa);border:.5cqw solid var(--navy);color:var(--navy);box-shadow:inset 0 0 0 .7cqw var(--pa),inset 0 0 0 1cqw rgba(184,134,46,.9)}
+.p239 .en .ic svg{width:5cqw;height:5cqw;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.p239 .en .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.p239 .en b{font-family:"Cormorant SC","Cormorant Garamond",Cairo,serif;font-weight:700;font-size:max(14px,4.6cqw);letter-spacing:.14em;text-transform:uppercase;line-height:1.2;overflow-wrap:anywhere}
+.p239 .en small{font-style:italic;font-size:max(13px,4.2cqw);color:#3c5675;margin-top:.4cqw;line-height:1.3;overflow-wrap:anywhere}
+.p239[dir="rtl"] .en small{font-style:normal}
+.p239 .en::after{content:"\2192";flex:none;font-size:max(16px,5cqw);color:var(--brass);font-family:Georgia,serif}
+.p239[dir="rtl"] .en::after{content:"\2190"}
+.p239 .en:hover{background:rgba(184,134,46,.14)}
+.p239 .en:first-child b{color:var(--ac-d)}
+</style>
+<div class="pg p239"><div class="in">
+<div class="hero"><div class="fx"></div>
+ <div class="cart">
+  <div class="pos">{city}</div>
+  <h1><span>{first}</span><span>{last}</span></h1>
+  <div class="rule"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.4"/><path d="M12 7.4V21M7 12h10M4 15c0 4 3.5 6 8 6s8-2 8-6"/></svg></div>
+  <div class="role">{title}</div><div class="co">{co}</div>
+ </div>
+ <div class="port"><div class="ph"></div></div>
+</div>
+<div class="dk">
+ <div class="log"><h2>[[Captain's log|يوميات القبطان]]</h2><p>{bio}</p></div>
+ <nav class="entries">
+  <a class="en"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><span class="tx"><b>Phone</b><small>{phone}</small></span></a>
+ </nav>
+</div>
+</div></div>
+</section>

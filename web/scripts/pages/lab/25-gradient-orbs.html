@@ -1,0 +1,60 @@
+<section class="page" data-no="125" data-name="Gradient orbs" data-style="Digital" data-rtl="0">
+<!--recipe {"top":52,"style":"Digital","name":"Gradient orbs","slug":"25-gradient-orbs","dir":"auto","split":"bgb","avatar":"mono","drop":["save","foot"],"lists":[{"c":"list","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: deep indigo night with blue, teal and violet orbs is fixed; the card accent drives the big warm orb (kept mid-light so white text stays readable) */
+.p125 .in{--bg:#0a0a26;--sig:#ff6a50;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.74,l,.96) c h);--orb:oklch(from var(--ac) clamp(.45,l,.68) c h)}
+.p125 *{box-sizing:border-box;margin:0}
+.p125 .in{font-family:"Bricolage Grotesque","IBM Plex Sans Arabic",system-ui,sans-serif;color:#fff}
+.p125 .in{position:relative;background:var(--bg);overflow:hidden;isolation:isolate;padding:6.667cqw 6.154cqw 7.692cqw}
+.p125 .orbs{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.p125 .orbs::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(10,10,38,0) 0,rgba(10,10,38,.35) 100%)}
+.p125 .o{position:absolute;border-radius:50%;filter:blur(15.385cqw)}
+.p125 .o1{width:97.436cqw;height:97.436cqw;inset-inline-end:-43.59cqw;top:-23.077cqw;background:radial-gradient(circle at 40% 40%,var(--orb),color-mix(in oklab,var(--orb) 55%,#ff3d77) 60%,transparent 72%)}
+.p125 .o2{width:133.333cqw;height:133.333cqw;inset-inline-start:-66.667cqw;top:30cqw;background:radial-gradient(circle at 60% 40%,#5b5bff,#2a2fd6 55%,transparent 72%)}
+.p125 .o3{width:87.179cqw;height:87.179cqw;inset-inline-end:-38.462cqw;top:25cqw;background:radial-gradient(circle,#22d3c5,#1478d6 60%,transparent 72%)}
+.p125 .o4{width:107.692cqw;height:107.692cqw;inset-inline-start:-48.718cqw;bottom:-30.769cqw;background:radial-gradient(circle,#c44bff,#6a2bd9 60%,transparent 72%)}
+.p125 .x-top{display:flex;justify-content:space-between;gap:3cqw;font-size:max(10px,3.077cqw);letter-spacing:.14em;text-transform:uppercase;font-weight:300;text-shadow:0 1px 6px rgba(10,10,38,.5)}
+.p125 .x-top span:last-child{text-align:end;min-width:0;max-width:62%;overflow-wrap:anywhere;letter-spacing:.08em}
+.p125 .hero{min-height:118cqw;display:flex;flex-direction:column;justify-content:flex-end;padding-top:30cqw}
+.p125 .mono{display:block;align-self:flex-start;width:19.5cqw;height:19.5cqw;border-radius:50%;margin-bottom:6.154cqw;background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(3.59cqw);backdrop-filter:blur(3.59cqw);box-shadow:0 0 0 1px rgba(255,255,255,.4),0 0 0 1.4cqw rgba(255,255,255,.12)}
+.p125 .mono .pic{object-fit:cover;display:grid;place-items:center;font-weight:700;font-family:"Bricolage Grotesque","IBM Plex Sans Arabic",sans-serif;letter-spacing:.03em;color:#fff;background:transparent}
+.p125 .mono .pic{font-size:36cqw}
+.p125 h1{font-weight:700;font-size:clamp(13.846cqw,18.4cqw,20.513cqw);line-height:.96;letter-spacing:-.045em;overflow-wrap:anywhere}
+.p125 h1 span{display:block;font-weight:300}
+.p125.nl2 h1{font-size:13.5cqw}.p125.nl3 h1{font-size:9.5cqw}
+.p125.wl2 h1{font-size:13cqw}.p125.wl3 h1{font-size:9cqw}
+.p125.nl3.wl3 h1{font-size:8cqw}
+.p125 .role{margin-top:5.641cqw;font-size:max(14px,4.872cqw);font-weight:700;letter-spacing:-.01em;line-height:1.25;overflow-wrap:anywhere}
+.p125 .co{margin-top:1.5cqw;font-size:max(13px,4.4cqw);font-weight:300;line-height:1.3;opacity:.95;overflow-wrap:anywhere}
+.p125 .bio{margin-top:6.667cqw;font-size:max(13px,4.359cqw);line-height:1.45;font-weight:300;max-width:84.615cqw;letter-spacing:-.005em;overflow-wrap:anywhere}
+.p125 .list{border-top:1px solid rgba(255,255,255,.28)}
+.p125 .r{display:flex;align-items:center;justify-content:space-between;gap:3.59cqw;min-height:21.538cqw;padding:3.59cqw 0;text-decoration:none;color:#fff;border-bottom:1px solid rgba(255,255,255,.28);position:relative}
+.p125 .r .tx{min-width:0}
+.p125 .r b{display:block;font-weight:300;font-size:max(18px,8.462cqw);line-height:1.08;letter-spacing:-.035em;overflow-wrap:anywhere}
+.p125 .r small{display:block;margin-top:1.538cqw;font-size:max(11px,3.333cqw);font-weight:300;letter-spacing:.01em;opacity:.95;overflow-wrap:anywhere}
+.p125 .r svg{flex:none;width:7.692cqw;height:7.692cqw;color:#fff;fill:none;stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.p125 .r:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.p125[dir="rtl"] *{letter-spacing:0!important}
+@media (prefers-reduced-motion:no-preference){.p125 .o2{animation:dr 20s ease-in-out infinite alternate}
+.p125 .o1{animation:dr 16s ease-in-out infinite alternate-reverse}
+}
+@keyframes dr{to{transform:translate(30px,50px) scale(1.06)}}
+</style>
+<div class="pg p125"><div class="in">
+<div class="orbs" aria-hidden="true"><i class="o o1"></i><i class="o o2"></i></div>
+<div class="x-top"><span>[[Digital card|بطاقة رقمية]]</span><span>{city}</span></div>
+<header class="hero">
+  <span class="mono"></span>
+  <h1>{first}<span>{last}</span></h1>
+  <p class="role">{title}</p>
+  <p class="co">{co}</p>
+  <p class="bio">{bio}</p>
+</header>
+<div class="bgb">
+<div class="orbs" aria-hidden="true"><i class="o o3"></i><i class="o o4"></i></div>
+<nav class="list">
+  <a class="r"><span class="tx"><b>Call</b><small>{phone}</small></span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</nav>
+</div>
+</div></div>
+</section>

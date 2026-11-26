@@ -4,13 +4,14 @@
 // (colours and logo, a background, a logo pattern or a company template). Each panel works on the page's working
 // copy of the brand; pictures are uploaded at once, everything else is saved with the page's Save button.
 import { BrandCustomPanel } from "@/components/designs/BrandCustomPanel";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { ToggleRow } from "@/components/app/Switch";
 import { ApiError, api } from "@/lib/api";
 import { prepareArt, prepareLogo } from "@/lib/brand/logo-file";
+import { listenLogoDrag } from "@/lib/brand/logo-drag";
 import { brandProblem } from "@/lib/brand/errors";
-import { startColours, withColours, withMode, type FullBrand } from "@/lib/brand/state";
+import { dragged, logoSpotOf, paletteFor, startColours, textReadability, withColours, withLogoSpot, withMode, type FullBrand } from "@/lib/brand/state";
 import { BG_SAMPLES, TEMPLATE_SAMPLES, ZONES, sampleBgUri, scrimFor, templateInfo, templateUri } from "@/lib/library/company/artwork";
 import { sampleColours } from "@/lib/library/company/brand";
 import { paletteCandidates, readLogoPixels, type PaletteCandidate } from "@/lib/brand/palette-from-logo";
@@ -126,9 +127,24 @@ export function LogoFilesPanel({ b, update, wsId, toast, simple }: Common & { si
 }
 
 /** How the logo is shown on the cards: what it shows, where it goes, its corner and the backing behind it. */
+/** While the logo is placed by hand, dragging it on the live preview moves it (see lib/brand/logo-drag.ts). */
+function useLogoDrag(active: boolean, commit: (x: number, y: number, height: number) => void) {
+  useEffect(() => (active ? listenLogoDrag(commit) : undefined), [active, commit]);
+}
+
 export function LogoLookPanel({ b, update }: Pick<Common, "b" | "update">) {
-  const { t } = useI18n();
+  const { t, number } = useI18n();
   const hasMark = !!(b.logo_url || b.symbol_url);
+  const spot = logoSpotOf(b);
+  const free = !!spot;
+  const commit = useCallback(
+    (x: number, y: number, h: number) => update((cur) => {
+      const now = logoSpotOf(cur);
+      return now ? withLogoSpot(cur, dragged(now, x, y, h)) : cur;
+    }),
+    [update],
+  );
+  useLogoDrag(free, commit);
   return (
     <div className="pane">
       {!hasMark && <div className={s.note}>{t("brand.noLogoYet")}</div>}
@@ -146,6 +162,30 @@ export function LogoLookPanel({ b, update }: Pick<Common, "b" | "update">) {
           <span className={s.lab}>{t("brand.cornerOfCard")}</span>
           <Seg label={t("brand.logoCorner")} value={b.logo_corner} onChange={(v) => update((x) => ({ ...x, logo_corner: v }))} options={[["auto", t("brand.cornerAuto")], ["tl", t("brand.cornerTl")], ["tr", t("brand.cornerTr")], ["bl", t("brand.cornerBl")], ["br", t("brand.cornerBr")]]} />
         </div>
+      </div>
+      <div className={s.fld}>
+        <span className={s.lab}>{t("brand.logoSize")}: {number(b.logo_size)}%</span>
+        <input type="range" min={50} max={150} step={5} value={b.logo_size} aria-label={t("brand.logoSize")} onChange={(e) => update((x) => ({ ...x, logo_size: Number(e.target.value) }))} />
+        <span className={s.note}>{t("brand.logoSizeHint")}</span>
+      </div>
+      <div className={s.fld}>
+        <span className={s.lab}>{t("brand.logoPosition")}</span>
+        <Seg
+          label={t("brand.logoPosition")} value={free ? "free" : "auto"}
+          onChange={(v) => update((x) => withLogoSpot(x, v === "free" ? { x: 6, y: 6, w: 28 } : null))}
+          options={[["auto", t("brand.logoPosAuto")], ["free", t("brand.logoPosFree")]]}
+        />
+        <span className={s.note}>{free ? t("brand.logoPosFreeHint") : t("brand.logoPosAutoHint")}</span>
+        {free && !hasMark && <span className={s.note}>{t("brand.logoFreeNeed")}</span>}
+        {spot && (
+          <>
+            <span className={s.lab}>{t("brand.logoFreeWidth")}: {number(Math.round(spot.w))}%</span>
+            <input
+              type="range" min={10} max={60} step={1} value={spot.w} aria-label={t("brand.logoFreeWidth")}
+              onChange={(e) => update((x) => { const now = logoSpotOf(x); return now ? withLogoSpot(x, { ...now, w: Number(e.target.value), x: Math.min(now.x, 100 - Number(e.target.value)) }) : x; })}
+            />
+          </>
+        )}
       </div>
       <div className={s.fld}>
         <span className={s.lab}>{t("brand.backingBehind")}</span>
@@ -261,12 +301,23 @@ export function ColoursPanel({ b, update }: Common) {
           <Seg label={t("brand.cardColourMode")} value={c.mode} onChange={(v) => setC({ mode: v })} options={[["brand", t("brand.cardBrand")], ["light", t("brand.cardLight")], ["dark", t("brand.cardDark")]]} />
         </div>
         <div className={s.palette} title={t("brand.paletteTitle")} aria-label={t("brand.paletteAria")}>
-          {[d.pal.bg, d.pal.bg2, d.pal.fg, d.pal.acc, d.pal.on].map((x, i) => <i key={i} style={{ background: x }} />)}
+          {[paletteFor(c).bg, paletteFor(c).bg2, paletteFor(c).fg, d.pal.acc, d.pal.on].map((x, i) => <i key={i} style={{ background: x }} />)}
         </div>
         <div className={s.checks} role="group" aria-label={t("brand.readabilityCheck")}>
-          <div className={s.check}><span>{t("brand.checkText")}</span><RatioPill v={d.ratios.text} min={4.5} /></div>
+          <div className={s.check}><span>{t("brand.checkText")}</span><RatioPill v={textReadability(c).onCard} min={4.5} /></div>
           <div className={s.check}><span>{t("brand.checkAccent")}</span><RatioPill v={d.ratios.acc} min={4.5} /></div>
           <div className={s.check}><span>{t("brand.checkOnAccent")}</span><RatioPill v={d.ratios.on} min={3} /></div>
+        </div>
+        <div className={s.fld}>
+          <span className={s.lab}>{t("brand.cardText")}</span>
+          <Seg
+            label={t("brand.cardText")} value={c.text ? "own" : "auto"}
+            onChange={(v) => setC({ text: v === "own" ? paletteFor({ ...c, text: undefined }).fg : undefined })}
+            options={[["auto", t("brand.cardTextAuto")], ["own", t("brand.cardTextOwn")]]}
+          />
+          <span className={s.note}>{c.text ? t("brand.cardTextOwnHint") : t("brand.cardTextAutoHint")}</span>
+          {c.text && <ColourInput label={t("brand.cardText")} value={c.text} onChange={(v) => setC({ text: v })} />}
+          {c.text && !textReadability(c).ok && <div className={s.note} role="alert">{t("brand.cardTextHard")}</div>}
         </div>
         {d.adjusted && <div className={s.note}>{t("brand.adjustedNote")}</div>}
         {d.close && <div className={s.note}>{t("brand.closeNote")}</div>}

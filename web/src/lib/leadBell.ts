@@ -16,6 +16,16 @@ export interface BellItem {
 export interface BellData {
   unread: number;
   latest: BellItem[];
+  /** New orders and bookings since the same last-seen moment as the contacts. */
+  orders?: number;
+  bookings?: number;
+}
+
+/** Everything the badge counts: contacts, orders and bookings. */
+export function bellTotal(d: Pick<BellData, "unread" | "orders" | "bookings"> | undefined | null): number {
+  if (!d) return 0;
+  const n = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Math.floor(Number(v)) : 0);
+  return n(d.unread) + n(d.orders) + n(d.bookings);
 }
 
 /** The count is shown up to this number; more reads "99+". */

@@ -1,0 +1,62 @@
+<section class="page" data-no="220" data-name="Constellation" data-style="Tech and Creative" data-rtl="0">
+<!--recipe {"top":97,"style":"Tech and Creative","name":"Constellation","slug":"097-data-constellation","dir":"auto","split":"bl","avatar":"av","cover":"hero","coverArt":[],"cond":{"bio":"bio","co":"company","ct":"addr","ann":"title"},"drop":["save","foot"],"lists":[{"c":"bub","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: ivory paper with indigo ink and one coral data point is the signature and stays fixed; the card colour is mixed into the indigo (--ac fill, --ac-on, --ac-t text on ivory) */
+.p220 .in{--ink:#14123a;--paper:#f6f3ec;--mute:#5d5a7a;--sig:#3a37d4;--ac:color-mix(in oklab,var(--cacc) 40%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.46) c h);--disp:Newsreader,"Playfair Display",Georgia,serif;--body:"Instrument Sans","Hanken Grotesk",system-ui,sans-serif;--mono:"DM Mono","IBM Plex Mono",ui-monospace,monospace}
+.p220[dir="rtl"] .in{--disp:"Noto Naskh Arabic",Newsreader,serif;--body:Cairo,"Instrument Sans",sans-serif;--mono:Cairo,"DM Mono",sans-serif}
+.p220 *{box-sizing:border-box;margin:0}
+.p220 .in{font-family:var(--body);color:var(--ink);background:var(--paper);position:relative;overflow:hidden}
+.p220 a{color:inherit;text-decoration:none}
+.p220 :focus-visible{outline:.8cqw solid var(--ac-t);outline-offset:.5cqw}
+.p220 .hero{position:relative;min-height:150cqw;display:flex;flex-direction:column;justify-content:flex-end;padding:0 6cqw 7cqw;background:url(/card-library/art/data-constellation-bg.webp) center top/100% auto no-repeat,var(--paper)}
+.p220 .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--paper) 0,var(--paper) 36%,rgba(246,243,236,.8) 46%,rgba(246,243,236,0) 62%);pointer-events:none}
+.p220 .hero>*{position:relative}
+.p220 .eb{position:absolute;inset-inline:6cqw;top:5.5cqw;display:flex;justify-content:space-between;gap:3cqw;font-family:var(--mono);font-size:max(10px,2.7cqw);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);line-height:1.4}
+.p220 .eb span{display:flex;align-items:center;gap:1.8cqw;min-width:0;max-width:50%;overflow-wrap:anywhere}
+.p220 .eb .co::before{content:"";flex:none;width:2.4cqw;height:2.4cqw;border-radius:50%;background:var(--ac)}
+.p220[dir="rtl"] .eb{letter-spacing:0}
+.p220 .av{position:absolute;top:21cqw;inset-inline-start:14cqw;width:27cqw;height:27cqw;border-radius:50%;overflow:hidden;border:1cqw solid var(--paper);background:var(--ac);box-shadow:0 0 0 .5cqw var(--ac),0 0 0 4cqw rgba(246,243,236,.85),0 0 0 4.5cqw rgba(58,55,212,.4),0 0 0 9cqw rgba(246,243,236,.5),0 0 0 9.4cqw rgba(58,55,212,.22)}
+.p220 .av .pic{display:grid;place-items:center;width:100%;height:100%;font-family:var(--disp);font-weight:600;font-size:40cqw;color:#fff;background:linear-gradient(150deg,#3a37d4,#7d7bff)}
+.p220 h1{font-family:var(--disp);font-weight:600;font-size:21cqw;line-height:.94;letter-spacing:-.03em;overflow-wrap:anywhere}
+.p220 h1 span{display:block;font-style:italic;font-weight:400;color:var(--ac-t)}
+.p220.wl2 h1{font-size:16cqw}.p220.wl3 h1{font-size:11cqw}.p220.nl3 h1{font-size:11cqw}
+.p220[dir="rtl"] h1{font-weight:700;line-height:1.3;font-size:15cqw;letter-spacing:0}
+.p220[dir="rtl"] h1 span{font-style:normal;font-weight:700}
+.p220 .ann{margin-top:5cqw;display:flex;align-items:center;gap:2.6cqw;font-family:var(--mono);font-size:max(11px,3.1cqw);line-height:1.35;color:var(--ink)}
+.p220 .ann::before{content:"";flex:none;width:14cqw;height:4cqw;background:radial-gradient(circle,#ff6a4d 0 1.3cqw,rgba(255,106,77,.28) 1.4cqw 2cqw,transparent 2.1cqw) 0 50%/4cqw 4cqw no-repeat,linear-gradient(var(--ink),var(--ink)) 3.4cqw 50%/10.6cqw 1px no-repeat}
+.p220[dir="rtl"] .ann::before{background-position:100% 50%,0 50%}
+.p220 .bl{padding:2cqw 5cqw 9cqw}
+.p220 .bio{padding-top:5cqw;border-top:1px solid var(--ink);font-family:var(--disp);font-size:5cqw;line-height:1.42;margin-bottom:7cqw;color:var(--ink);overflow-wrap:anywhere}
+.p220[dir="rtl"] .bio{font-size:4.4cqw;line-height:1.7}
+.p220 .bio b{display:block;font-family:var(--mono);font-weight:400;font-size:max(10px,2.6cqw);letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin-bottom:2.4cqw}
+.p220[dir="rtl"] .bio b{letter-spacing:0}
+.p220 .bub{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;padding:2cqw 0}
+.p220 .bub a{position:relative;flex:none;width:34cqw;height:34cqw;margin:-1.2cqw;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8cqw;text-align:center;padding:3cqw;background:linear-gradient(160deg,#e9e8fb,#d4d2f6);color:var(--ink);min-width:0;transition:transform .15s}
+.p220 .bub a:nth-child(5n+2){width:29cqw;height:29cqw;background:linear-gradient(160deg,#c7c4f4,#a9a5ec)}
+.p220 .bub a:nth-child(5n+3){width:26cqw;height:26cqw;background:transparent;box-shadow:inset 0 0 0 .5cqw var(--ac)}
+.p220 .bub a:nth-child(5n+4){width:31cqw;height:31cqw;background:linear-gradient(160deg,#f3d6cf,#ffc2b2)}
+.p220 .bub a:nth-child(5n+5){width:27cqw;height:27cqw;background:linear-gradient(160deg,#dedcfa,#bdbaf2)}
+.p220 .bub a:first-child{width:40cqw;height:40cqw;background:var(--ac);color:var(--ac-on)}
+.p220 .bub a:hover{transform:scale(1.05);z-index:2}
+.p220 .bub .ic svg{width:6.4cqw;height:6.4cqw;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.p220 .bub a:first-child .ic svg{width:8cqw;height:8cqw}
+.p220 .bub a>span{display:block;min-width:0;max-width:100%}
+.p220 .bub b{display:block;font-size:max(10.5px,3cqw);font-weight:700;line-height:1.15;overflow-wrap:anywhere}
+.p220 .bub small{display:none;font-family:var(--mono);font-size:max(9.5px,2.3cqw);opacity:.8;line-height:1.2;margin-top:.5cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p220 .bub a:first-child small,.p220 .bub a:nth-child(5n+4) small{display:block}
+</style>
+<div class="pg p220"><div class="in">
+<div class="hero">
+ <div class="eb"><span class="co">{co}</span><span class="ct">{city}</span></div>
+ <div class="av"><svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#3a37d4"/></svg></div>
+ <h1>{first}<span>{last}</span></h1>
+ <div class="ann">{title}</div>
+</div>
+<div class="bl">
+ <div class="bio"><b>[[Summary|ملخص]]</b>{bio}</div>
+ <nav class="bub">
+  <a><i class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></i><span><b>Call</b><small>{phone}</small></span></a>
+ </nav>
+</div>
+</div></div>
+</section>

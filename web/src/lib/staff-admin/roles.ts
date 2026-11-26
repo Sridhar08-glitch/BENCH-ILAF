@@ -42,6 +42,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/staff", label: "Overview", icon: "home", group: "Overview" },
   { href: "/staff/companies", label: "Companies", icon: "users", group: "Customers" },
   { href: "/staff/people", label: "People and cards", icon: "card", group: "Customers" },
+  { href: "/staff/enterprise", label: "Enterprise requests", icon: "crown", group: "Customers" },
   { href: "/staff/support-view", label: "Support view", icon: "eye", group: "Customers", perm: "support" },
   { href: "/staff/abuse", label: "Abuse and safety", icon: "alert", group: "Trust and safety" },
   { href: "/staff/data-requests", label: "Data requests", icon: "download", group: "Trust and safety" },

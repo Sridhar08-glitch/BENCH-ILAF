@@ -147,4 +147,8 @@ export const security: Messages<typeof en> = {
   "security.evReplyTo": "غيّر عنوان الرد لرسائل الشركة الإلكترونية",
   "security.evDomainVerified": "وثّق نطاق الشركة {domain}",
   "security.evDomainRemoved": "أزال نطاق الشركة {domain}",
+  "security.evCustomDomainAdded": "أضاف العنوان {domain} للبطاقات",
+  "security.evCustomDomainVerified": "وثّق العنوان {domain}",
+  "security.evCustomDomainBroken": "سجلات DNS الخاصة بـ {domain} مفقودة",
+  "security.evCustomDomainRemoved": "أزال العنوان {domain}",
 };

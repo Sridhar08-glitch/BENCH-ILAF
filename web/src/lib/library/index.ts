@@ -1,7 +1,7 @@
-// The card design library: 500 faces (401 to 500 are Design Pack 2), 400 layouts below the card and 400 opening
+// The card design library: 500 faces (401 to 500 are Design Pack 2), 77 page-style headers, 477 layouts below the card (401 to 477 go with the headers) and 400 opening
 // animations, in number order. This module holds the names, tags and colours (small). The code that draws them is in ./render.
 // Rebuild with `npm run build:library` and `npm run build:pack2` (see README).
-import { BELOW_META, CSS_URL, FACE_META, INTRO_META, PALETTES } from "./generated/meta";
+import { BELOW_META, CSS_URL, FACE_META, INTRO_META, PAGES_CSS_URL, PALETTES, TOP_META } from "./generated/meta";
 import { OLD_DETAILS, OLD_FACES, OLD_INTROS } from "./legacy";
 import type { Design } from "@/lib/types";
 import type { CompanyPalette } from "./company/colour";
@@ -10,6 +10,10 @@ import { FONT_FACE, TEXT_SIZE_DEFAULT, normalizeFont, normalizeSize } from "./te
 
 export const FACE_COUNT = FACE_META.length;
 export const BELOW_COUNT = BELOW_META.length;
+/** The page-style headers (design.top 1 to TOP_COUNT; 0 is the classic face card). */
+export const TOP_COUNT = TOP_META.length;
+/** Layouts 1 to 400 are Pack 1; 401 and up are the button sets of the page styles. */
+export const PACK1_BELOW_COUNT = 400;
 export const INTRO_COUNT = INTRO_META.length;
 /** The colourways each face brings. */
 export const COLOUR_COUNT = 4;
@@ -17,7 +21,7 @@ export const COLOUR_COUNT = 4;
 export const COMPANY_COLOUR = 4;
 
 /** The stylesheet of every face, layout and opening. (The fonts they use are self-hosted: see scripts/copy-card-fonts.mjs.) */
-export { CSS_URL };
+export { CSS_URL, PAGES_CSS_URL };
 
 export interface Palette {
   name: string;
@@ -81,7 +85,7 @@ export function resolveColours(design: Pick<Design, "face" | "colour">, palette?
 
 /** A new card: classic face in the BENCH colours, the list below it, fade-up opening. */
 export function defaultDesign(): Design {
-  return { face: 1, custom_face: null, colour: 0, below: 1, intro: 1, font: FONT_FACE, size: TEXT_SIZE_DEFAULT, photo: true, brand_colors: false, foot: true };
+  return { face: 1, custom_face: null, colour: 0, top: 0, below: 1, intro: 1, font: FONT_FACE, size: TEXT_SIZE_DEFAULT, photo: true, brand_colors: false, foot: true };
 }
 
 /** A whole number in range, or null. A number given as text is not accepted. */
@@ -109,6 +113,7 @@ export function normalizeDesign(raw: unknown): Design {
     face: whole(r.face, 1, FACE_COUNT) ?? position(r.face, OLD_FACES) ?? d.face,
     custom_face: whole(r.custom_face, 1, 2147483647),
     colour: whole(r.colour, 0, COMPANY_COLOUR) ?? d.colour,
+    top: whole(r.top, 0, TOP_COUNT) ?? d.top,
     below: whole(r.below, 1, BELOW_COUNT) ?? position(r.details, OLD_DETAILS) ?? d.below,
     intro: intro ?? d.intro,
     font: normalizeFont(r.font),
@@ -118,3 +123,25 @@ export function normalizeDesign(raw: unknown): Design {
     foot: typeof r.foot === "boolean" ? r.foot : d.foot,
   };
 }
+
+export interface TopInfo {
+  name: string;
+  description: string;
+  /** The group of the header: an app pattern (Popl, Blinq, HiHello, Wave, Mobilo, Linq, Dot, Arabic) or a design family (Editorial, Objects, Digital, Gulf, Creative). */
+  style: string;
+  /** The header shows the chosen face card inside its card block. */
+  face: boolean;
+  /** The header is drawn right to left. */
+  rtl: boolean;
+  /** Name and description in Arabic (the hand-made styles 28 and up; the first 27 have English names only). */
+  ar: [string, string] | null;
+}
+
+/** A page-style header by number (1 to TOP_COUNT). */
+export function topInfo(n: number): TopInfo {
+  const t = TOP_META[clampTo(n, 1, TOP_COUNT, 1) - 1];
+  return { name: t.n, description: t.d, style: t.s, face: t.b, rtl: t.rtl, ar: (t as { a?: [string, string] }).a ?? null };
+}
+
+/** The layout below the card that belongs to a header (its own button set). */
+export const belowOfTop = (top: number): number => PACK1_BELOW_COUNT + top;

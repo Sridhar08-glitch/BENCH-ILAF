@@ -18,6 +18,8 @@ import { NO_FILTERS, SOURCES, STATUSES, bulkSummary, filterCount, leadQuery, ran
 import type { Person } from "@/lib/crm/types";
 import { useDebounced } from "@/lib/icons-client";
 import { useCards } from "@/lib/hooks";
+import { ShareHint } from "@/components/app/ShareHint";
+import { showSharedBadge } from "@/lib/sharing/contacts";
 import { apiErrorText } from "@/lib/i18n/api-error";
 import { useI18n } from "@/lib/i18n/client";
 import { reachedBy } from "@/lib/leads";
@@ -128,8 +130,11 @@ export default function ContactsPage() {
     <div className="view">
       <PageHead title={isManager ? t("contacts.title") : t("contacts.titleMine")} sub={t("contacts.sub")}>
         <TourButton />
+        <AddContactMenu />
         {isManager && <button type="button" className="btn ghost" data-guide="contacts-export" onClick={() => { setTruncated(false); setExportError(""); setExporting(true); }}><Icon name="download" size="s" />{t("contacts.exportCsv")}</button>}
       </PageHead>
+
+      <ShareHint />
 
       {isCompany && (
         <div className="seg" role="group" aria-label={t("contacts.view")} style={{ alignSelf: "flex-start" }} data-guide="contacts-tabs">
@@ -210,7 +215,7 @@ export default function ContactsPage() {
           <EmptyState
             title={emptyTitle}
             helpSlug={filtered ? undefined : "exchange-contacts-and-leads"}
-            action={filtered ? undefined : <Link className="btn sm" href="/app/qr">{t("guide.empty.contactsAction")}</Link>}
+            action={filtered ? undefined : <Link className="btn sm" href="/app/share">{t("guide.empty.contactsAction")}</Link>}
           >{filtered ? t("contacts.emptyFilteredText") : t("contacts.emptyNoneText")}</EmptyState>
         ) : (
           rows.map((l) => (
@@ -273,8 +278,25 @@ export default function ContactsPage() {
 
 const initials = (name: string) => name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
+/** "Add contact": the ways to put a contact in the list by hand. For now: scan a paper card (it opens inside Contacts). */
+function AddContactMenu() {
+  const { t } = useI18n();
+  return (
+    <details className="addmenu" style={{ position: "relative" }}>
+      <summary className="btn" style={{ listStyle: "none", cursor: "pointer" }} data-guide="contacts-add"><Icon name="adduser" size="s" />{t("contacts.addMenu")}</summary>
+      <div className="panel card" style={{ position: "absolute", insetInlineEnd: 0, zIndex: 20, minWidth: 260, marginBlockStart: 6, padding: 8 }}>
+        <Link href="/app/contacts/scan" className="btn ghost block" style={{ justifyContent: "flex-start", textAlign: "start" }}>
+          <Icon name="scan" size="s" />
+          <span><b style={{ display: "block" }}>{t("contacts.addScan")}</b><small className="hint">{t("contacts.addScanHint")}</small></span>
+        </Link>
+      </div>
+    </details>
+  );
+}
+
 function LeadRow({ lead: l, checked, onCheck, onOpen, onStatus }: { lead: Lead; checked: boolean; onCheck: () => void; onOpen: () => void; onStatus: (s: LeadStatus) => void }) {
   const { t, date } = useI18n();
+  const { role, isCompany } = useWs();
   const meta = [
     l.card_name,
     date(l.created_at, { day: "numeric", month: "short" }),
@@ -290,6 +312,7 @@ function LeadRow({ lead: l, checked, onCheck, onOpen, onStatus }: { lead: Lead; 
           <div className="hint"><bdi>{meta[0]}</bdi>{meta.slice(1).map((m) => <span key={m}> &middot; {m}</span>)}</div>
           <div className="only-sm hint" style={{ overflowWrap: "anywhere" }} dir="auto">{[l.company, l.email, l.phone].filter(Boolean).join(" · ")}</div>
           {l.assignee && <div className="only-sm hint">{t("contacts.assignedToName", { name: l.assignee.name })}</div>}
+          {showSharedBadge(l, role, isCompany) && <div style={{ marginBlockStart: 2 }}><span className="pill accent" title={t("contacts.sharedBadgeTip")}>{t("contacts.sharedBadge")}</span></div>}
           {l.note && <div className="hint" style={{ overflowWrap: "anywhere" }} dir="auto">{t("contacts.quoted", { text: l.note })}</div>}
         </div>
       </div>

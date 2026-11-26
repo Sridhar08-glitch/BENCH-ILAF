@@ -1,0 +1,59 @@
+<section class="page" data-no="212" data-name="Island dev" data-style="Tech and Creative" data-rtl="0">
+<!--recipe {"top":89,"style":"Tech and Creative","name":"Island dev","slug":"089-eng-iso","dir":"auto","split":"bl","avatar":"av","cover":"hero","coverArt":[],"cond":{"bio":"bio","co":"company","ct":"addr","say":"title"},"drop":["save","foot"],"lists":[{"c":"carts","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: the lime and sunshine isometric world, the ink outlines and the cartridge colours are the signature and stay fixed; the card colour fills the first cartridge (--ac, --ac-on) and the focus ring */
+.p212 .in{--ink:#1d3a2a;--sun:#fff1b8;--sig:#ff6b6b;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h);--disp:"Bagel Fat One","Lilita One","Arial Rounded MT Bold",system-ui,sans-serif;--body:Nunito,"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif}
+.p212[dir="rtl"] .in{--disp:Cairo,"Bagel Fat One",sans-serif;--body:Cairo,Nunito,sans-serif}
+.p212 *{box-sizing:border-box;margin:0}
+.p212 .in{font-family:var(--body);color:var(--ink);background:var(--sun);position:relative;overflow:hidden;font-weight:700}
+.p212 a{color:inherit;text-decoration:none}
+.p212 :focus-visible{outline:.9cqw solid var(--ink);outline-offset:.6cqw}
+.p212 .hero{position:relative;min-height:152cqw;display:flex;flex-direction:column;justify-content:flex-end;padding:0 5.5cqw 6cqw;background:url(/card-library/art/eng-iso-bg.webp) center top/100% auto no-repeat,linear-gradient(180deg,#8fe0a0,#d7f5a8 60%,#fff1b8)}
+.p212 .hero::before{content:"";position:absolute;inset:auto 0 0;height:60%;background:linear-gradient(0deg,rgba(255,241,184,.96) 0,rgba(255,241,184,.7) 35%,rgba(255,241,184,0) 100%);pointer-events:none}
+.p212 .hero>*{position:relative}
+.p212 .tp{position:absolute;inset-inline:5cqw;top:5cqw;display:flex;align-items:flex-start;gap:3cqw}
+.p212 .av{flex:none;width:26cqw;height:26cqw;border-radius:50%;overflow:hidden;border:1.1cqw solid var(--ink);background:#fff;box-shadow:1.4cqw 1.6cqw 0 var(--ink)}
+.p212 .av .pic{display:grid;place-items:center;width:100%;height:100%;font-family:var(--disp);font-weight:400;font-size:38cqw;color:#fff;background:linear-gradient(140deg,#ff6b6b,#ffb347)}
+.p212 .say{position:relative;margin-top:2cqw;background:#fff;border:1.1cqw solid var(--ink);border-radius:5cqw;padding:2.6cqw 4cqw;font-size:max(12px,3.7cqw);line-height:1.25;box-shadow:1.2cqw 1.4cqw 0 var(--ink);max-width:56cqw;overflow-wrap:anywhere}
+.p212 .say::before{content:"";position:absolute;inset-inline-start:-3.2cqw;top:5cqw;width:4.6cqw;height:4.6cqw;background:#fff;border-inline-start:1.1cqw solid var(--ink);border-bottom:1.1cqw solid var(--ink);transform:rotate(45deg)}
+.p212[dir="rtl"] .say::before{transform:rotate(-135deg)}
+.p212 h1{font-family:var(--disp);font-weight:400;font-size:17.5cqw;line-height:.92;color:#fff;-webkit-text-stroke:1.5cqw var(--ink);paint-order:stroke fill;text-shadow:0 1.6cqw 0 var(--ink);letter-spacing:.005em;overflow-wrap:anywhere}
+.p212 h1 span{display:block}
+.p212.wl2 h1{font-size:14cqw}.p212.wl3 h1{font-size:10.5cqw}.p212.nl3 h1{font-size:10.5cqw}
+.p212[dir="rtl"] h1{font-weight:800;line-height:1.2;font-size:15cqw;text-shadow:0 1.2cqw 0 var(--ink);-webkit-text-stroke:1.2cqw var(--ink)}
+.p212 .pills{display:flex;flex-wrap:wrap;gap:2cqw;margin-top:4.5cqw}
+.p212 .pills span{background:#fff;border:.9cqw solid var(--ink);border-radius:99cqw;padding:1.2cqw 3.6cqw;font-size:max(11px,3.2cqw);box-shadow:.8cqw 1cqw 0 var(--ink);line-height:1.25;overflow-wrap:anywhere;max-width:100%}
+.p212 .pills .ct{background:#ffd23f;transform:rotate(-2deg)}
+.p212 .pills .co{transform:rotate(1.5deg)}
+.p212 .bl{padding:1cqw 5cqw 7cqw;background-image:radial-gradient(rgba(29,58,42,.14) .35cqw,transparent .5cqw);background-size:4.4cqw 4.4cqw}
+.p212 .bio{position:relative;background:#fff;border:1.1cqw solid var(--ink);border-radius:5cqw;padding:4.4cqw 5cqw;font-size:4cqw;line-height:1.45;box-shadow:1.4cqw 1.6cqw 0 var(--ink);margin-bottom:6cqw;overflow-wrap:anywhere}
+.p212 .bio b{display:inline-block;background:var(--ink);color:#fff;border-radius:99cqw;font-size:max(10px,2.8cqw);padding:.6cqw 3cqw;margin-bottom:2cqw}
+.p212 .carts{display:grid;grid-template-columns:1fr 1fr;gap:3.6cqw}
+.p212 .carts a{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:2.4cqw;min-height:30cqw;padding:3.4cqw 3.6cqw;background:#ff9b8a;border:1.1cqw solid var(--ink);border-radius:5cqw;box-shadow:1.3cqw 1.6cqw 0 var(--ink);min-width:0;transition:transform .12s}
+.p212 .carts a:hover{transform:translate(.6cqw,.8cqw);box-shadow:.7cqw .8cqw 0 var(--ink)}
+.p212 .carts a:nth-child(6n+2){background:#ffd23f}.p212 .carts a:nth-child(6n+3){background:#8fd8ff}.p212 .carts a:nth-child(6n+4){background:#c9a8ff}.p212 .carts a:nth-child(6n+5){background:#8ee3a0}.p212 .carts a:nth-child(6n+6){background:#ffb3da}
+.p212 .carts a:first-child{background:var(--ac);color:var(--ac-on)}
+.p212 .carts a:last-child:nth-child(odd){grid-column:1/-1}
+.p212 .carts .ic{width:10.5cqw;height:10.5cqw;border-radius:50%;background:#fff;color:var(--ink);border:.9cqw solid var(--ink);display:grid;place-items:center}
+.p212 .carts .ic svg{width:5.4cqw;height:5.4cqw;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.p212 .carts b{display:block;font-size:4.2cqw;font-weight:800;line-height:1.15;overflow-wrap:anywhere}
+.p212 .carts small{display:block;font-size:max(11px,2.9cqw);font-weight:700;opacity:.82;line-height:1.25;margin-top:.6cqw;overflow-wrap:anywhere}
+.p212 .carts a>span{display:block;min-width:0}
+</style>
+<div class="pg p212"><div class="in">
+<div class="hero">
+ <div class="tp">
+  <div class="av"><svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#ff6b6b"/></svg></div>
+  <div class="say">{title}</div>
+ </div>
+ <h1>{first}<span>{last}</span></h1>
+ <div class="pills"><span class="co">{co}</span><span class="ct">{city}</span></div>
+</div>
+<div class="bl">
+ <div class="bio"><b>[[Hi there|مرحباً]]</b><br>{bio}</div>
+ <nav class="carts">
+  <a><i class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></i><span><b>Call</b><small>{phone}</small></span></a>
+ </nav>
+</div>
+</div></div>
+</section>

@@ -147,4 +147,8 @@ export const security = {
   "security.evReplyTo": "Changed the reply-to address of the company e-mails",
   "security.evDomainVerified": "Verified the company domain {domain}",
   "security.evDomainRemoved": "Removed the company domain {domain}",
+  "security.evCustomDomainAdded": "Added the web address {domain} for the cards",
+  "security.evCustomDomainVerified": "Verified the web address {domain}",
+  "security.evCustomDomainBroken": "The DNS records of {domain} went missing",
+  "security.evCustomDomainRemoved": "Removed the web address {domain}",
 } satisfies Record<string, string>;

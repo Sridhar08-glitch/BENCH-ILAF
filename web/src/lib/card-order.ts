@@ -30,3 +30,9 @@ export function cardListName(card: Pick<Card, "label" | "name">, fallback: strin
 export function cardAllowance(used: number, max: number | null | undefined): { used: number; max: number | null; canAdd: boolean } {
   return { used, max: max ?? null, canAdd: max == null || used < max };
 }
+
+/** The cards whose orders and bookings a person may see: their own, and the company's own card for owners and admins. Nobody sees what came in
+ * on another person's card, an admin included. */
+export function commerceCards<T extends { is_company?: boolean; owner: { id: string } | null }>(cards: readonly T[], userId: string, isManager: boolean): T[] {
+  return cards.filter((c) => (c.is_company ? isManager : c.owner?.id === userId));
+}

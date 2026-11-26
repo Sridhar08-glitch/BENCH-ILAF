@@ -3,11 +3,12 @@
 // A card page drawn exactly like the public one (same frame, footer, area below the card and
 // opening), but in the browser from data the editor hands over, and with nothing sent anywhere. Used by the
 // "Open preview in a new tab" pages.
-import { useCallback, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import styles from "@/app/c/[code]/PublicCard.module.css";
 import { Icon } from "@/components/Icon";
 import { SaveSheet } from "@/components/card/SaveSheet";
 import { CardView, type CardViewData } from "@/components/card/CardView";
+import { CardTail } from "@/components/card/CardTail";
 import { useBrandInfo } from "@/lib/brand-info-client";
 import { previewFromCard } from "@/lib/card/vcard";
 import { buildInput, drawPage } from "@/lib/library/render";
@@ -28,7 +29,7 @@ const PREVIEW_EXCHANGE: PublicFeatures["exchange"] = {
   privacy_url: null,
 };
 
-export function LivePage({ data }: { data: CardViewData }) {
+export function LivePage({ data, extra }: { data: CardViewData; /** The extras under the card (video, products, hours ...), when the page has them. */ extra?: ReactNode }) {
   // The preview page speaks the card's language, like the public page does.
   const ct = cardI18n(data.locale ?? "en").t;
   const { t } = useI18n();
@@ -53,11 +54,13 @@ export function LivePage({ data }: { data: CardViewData }) {
   return (
     <div className={styles.wrap} lang={data.locale ?? "en"} dir={dirOf(data.locale ?? "en")} style={{ ...vars, "--tools-h": "64px" } as CSSProperties}>
       <div className={styles.col}>
-        <CardView data={data} mode="live" fullHeight onSave={() => setSheet(true)} />
+        <CardView data={data} mode="live" fullHeight onSave={() => setSheet(true)} noTail />
+        {extra}
         <div className={styles.tools}>
           <button type="button" className={styles.tool} onClick={() => say(t("card.previewShare"))}><Icon name="share" size="s" /> {ct("card.share")}</button>
           <button type="button" className={styles.tool} onClick={() => setLeadOpen(true)}><Icon name="adduser" size="s" /> {ct("card.shareDetails")}</button>
         </div>
+        <CardTail data={full} />
       </div>
       {sheet && <SaveSheet position="fixed" contact={contact} photoUrl={data.photoUrl} onAdd={() => undefined} onClose={() => setSheet(false)} />}
       {leadOpen && (

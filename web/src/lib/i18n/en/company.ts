@@ -99,6 +99,7 @@ export const company = {
   "company.wordTitle": "job title",
   "company.wordCompany": "company line",
   "company.wordAddress": "address",
+  "company.wordBio": "bio",
   "company.wordPhoto": "photo",
   "company.wordButtons": "buttons",
   "company.hintPending": "Your new {word} is waiting for an admin to approve it. Your card still shows the current one.",
@@ -415,4 +416,9 @@ export const company = {
   "company.evCardSuspendedSupport": "{app} support suspended the card of {who}",
   "company.evCardRestoredSupport": "{app} support restored the card of {who}",
   "company.groupSupport": "Support team",
+  "company.extrasSection": "Extras under the cards",
+  "company.extrasHint": "Video, shop, opening hours, booking, team, gallery, event and map. You choose which of them people may add, in the Brand page under Your team.",
+  "company.extrasOpen": "Choose the extras",
+  "company.evShareOn": "{who} started sharing new contacts with the company",
+  "company.evShareOff": "{who} stopped sharing new contacts with the company",
 } satisfies Record<string, string>;

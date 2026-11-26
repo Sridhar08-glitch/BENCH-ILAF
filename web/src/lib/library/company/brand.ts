@@ -2,7 +2,7 @@
 // pictures that have to be measured before the card can be drawn exactly (logo shape and colours, how light a background is).
 import { asPalette, okHex, normHex } from "./colour";
 import { BG_IDS, TEMPLATE_SAMPLES } from "./artwork";
-import type { BrandArtwork, BrandColours, BrandLook, LogoChip, LogoCorner, LogoDisplay, LogoPlacement, TemplateZone } from "@/lib/types";
+import type { BrandArtwork, BrandColours, BrandLook, LogoChip, LogoCorner, LogoDisplay, LogoFree, LogoPlacement, TemplateZone } from "@/lib/types";
 import type { CompanyBrand } from "../types";
 
 export function defaultArtwork(): BrandArtwork {
@@ -53,7 +53,29 @@ function asColours(v: unknown): BrandColours | null {
   if (!v || typeof v !== "object") return null;
   const r = v as Record<string, unknown>;
   if (!okHex(r.primary) || !okHex(r.accent)) return null;
-  return { primary: normHex(r.primary as string).toLowerCase(), accent: normHex(r.accent as string).toLowerCase(), mode: pick(r.mode, ["brand", "light", "dark"] as const, "brand") };
+  const out: BrandColours = { primary: normHex(r.primary as string).toLowerCase(), accent: normHex(r.accent as string).toLowerCase(), mode: pick(r.mode, ["brand", "light", "dark"] as const, "brand") };
+  if (okHex(r.text)) out.text = normHex(r.text as string).toLowerCase();
+  return out;
+}
+
+/** The logo size: a whole percentage from 50 to 150, else 100. */
+export function asLogoSize(v: unknown): number {
+  return typeof v === "number" && Number.isFinite(v) ? Math.min(150, Math.max(50, Math.round(v))) : 100;
+}
+
+/** The places the owner gave the logo: only well formed entries are kept. */
+export function asLogoFree(v: unknown): LogoFree {
+  const out: LogoFree = {};
+  if (!v || typeof v !== "object" || Array.isArray(v)) return out;
+  for (const [key, raw] of Object.entries(v as Record<string, unknown>)) {
+    if (!/^[ft][0-9]{1,3}$/.test(key) || !raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const [x, y, w] = [r.x, r.y, r.w];
+    if (typeof x !== "number" || typeof y !== "number" || typeof w !== "number") continue;
+    if (![x, y, w].every(Number.isFinite) || w < 10 || w > 60) continue;
+    out[key] = { x: Math.min(100 - w, Math.max(0, x)), y: Math.min(100, Math.max(0, y)), w };
+  }
+  return out;
 }
 
 /** The renderer's brand from the API's brand keys (workspace brand or public card brand). Returns null without a company name and logo or palette. */
@@ -70,6 +92,8 @@ export function toCompanyBrand(b: (BrandLook & { company_name: string }) | null 
     logoCorner: pick(b.logo_corner, ["auto", "tl", "tr", "bl", "br"] as readonly LogoCorner[], "auto"),
     logoChip: pick(b.logo_chip, ["auto", "always", "never", "white", "black"] as readonly LogoChip[], "auto"),
     showName: b.show_company_name !== false,
+    logoSize: asLogoSize(b.logo_size),
+    logoFree: asLogoFree(b.logo_free),
     artwork: normalizeArtwork(b.artwork),
     backgroundUrl: url(b.background_url),
     templateFrontUrl: url(b.template_front_url),

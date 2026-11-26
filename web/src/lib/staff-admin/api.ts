@@ -63,7 +63,16 @@ export interface LeadRow {
 export interface BrandInfo {
   company_name: string; website: string; design: unknown; lock_design: boolean; show_footer: boolean; logo_url: string | null; symbol_url: string | null;
   background_url: string | null; require_google_signin: boolean; allowed_email_domains: string[]; directory_enabled: boolean; directory_slug: string | null; custom_domain: string | null;
-  colours?: { primary: string; accent: string; mode: string } | null; palette?: Record<string, string> | null; font?: string;
+  /** The company's domain claim (pending, verified, failed, expired, dns_broken) without the DNS token. */
+  custom_domain_info?: { domain: string; status: string; serving: boolean; last_checked_at: string | null; last_error: string | null } | null;
+  colours?: { primary: string; accent: string; mode: string; text?: string } | null; palette?: Record<string, string> | null; font?: string;
+  logo_display?: string; logo_placement?: string; logo_corner?: string; logo_chip?: string; show_company_name?: boolean;
+  /** Percent of the automatic size, and the places the owner gave the logo on some designs (f12 = card face 12, t3 = page style 3). */
+  logo_size?: number; logo_free?: Record<string, { x: number; y: number; w: number }>; artwork_mode?: string; template_front_url?: string | null;
+  /** What employees may add under their cards, and the rights they have on their own. */
+  extras?: { mode: string; kinds: string[] }; rights?: Record<string, string>;
+  /** The public code of the company's own card, when it has one. */
+  company_card?: string | null;
 }
 export interface ActivityRow { id: string; action: string; label: string; actor_email: string; actor_name: string; target_label: string; details: Record<string, unknown>; created_at: string }
 export interface Note { id: string; author_email: string; body: string; created_at: string }
@@ -183,6 +192,14 @@ export interface BillingData {
   invoices: unknown[]; grants: { company_id: string; company: string; plan: string; seats: number; until: string; at: string }[];
 }
 
+export interface EnterpriseRequestRow {
+  id: string; status: "requested" | "quoted" | "accepted" | "declined" | "cancelled"; company_id: string; company: string;
+  requested_by: { full_name: string; email: string } | null; seats_wanted: number; seats_used: number; message: string; phone: string;
+  quoted_seats: number | null; quoted_price_per_seat_minor: number | null; quoted_total_minor: number | null; currency: string; staff_note: string;
+  quoted_by: string; created_at: string; quoted_at: string | null; decided_at: string | null;
+}
+export interface EnterpriseRequestsData extends Paged<EnterpriseRequestRow> { counts: Record<string, number> }
+
 export interface StaffPerson {
   id: string; email: string; full_name: string; staff_role: StaffRole; totp_enrolled: boolean; is_active: boolean; last_sign_in: string | null; recovery_codes_left: number;
   sessions: { id: string; method: string; started_at: string; expires_at: string; last_seen_at: string | null; new_address_seen: boolean; device?: string; country?: string }[];
@@ -262,6 +279,9 @@ export const sa = {
   setFlag: (key: string, body: { state?: string; rollout_percent?: number; company_ids?: string[]; reason?: string }) => send<Flag>("PATCH", `staff/flags/${key}`, body),
   billing: () => get<BillingData>("staff/billing"),
   grantPlan: (b: { company_id: string; plan_code?: string; seats?: number; reason: string }) => send<{ company: string; plan: string; seats: number; until: string }>("POST", "staff/billing/grant", b),
+  enterpriseRequests: (q: Q) => get<EnterpriseRequestsData>("staff/enterprise-requests", q),
+  quoteEnterprise: (id: string, b: { seats: number; price_per_seat_minor: number; note?: string }) => send<EnterpriseRequestRow>("POST", `staff/enterprise-requests/${id}/quote`, b),
+  declineEnterprise: (id: string, b: { note?: string }) => send<EnterpriseRequestRow>("POST", `staff/enterprise-requests/${id}/decline`, b),
   // staff
   permissions: () => get<PermissionMatrix>("staff/permissions"),
   team: () => get<{ people: StaffPerson[]; session_hours: number }>("staff/team"),

@@ -45,6 +45,8 @@ interface ThumbProps {
   /** The design is passed as plain values so a thumbnail only redraws when one of them changes. */
   face: number;
   colour: number;
+  /** 0 draws the face card; 1 to 27 a page-style header in its place. */
+  top?: number;
   below: number;
   photo: boolean;
   brand_colors: boolean;
@@ -57,11 +59,11 @@ interface ThumbProps {
 }
 
 /** One small live card. It is only drawn while it is near the screen, so a long list stays light. */
-export const Thumb = memo(function Thumb({ base, face, colour, below, photo, brand_colors, foot, font, size, width, ratio }: ThumbProps) {
+export const Thumb = memo(function Thumb({ base, face, colour, top = 0, below, photo, brand_colors, foot, font, size, width, ratio }: ThumbProps) {
   const [ref, seen] = useSeen();
   const data = useMemo<CardPageData>(
-    () => ({ ...base, design: { face, colour, below, intro: 0, font, size, photo, brand_colors, foot } }),
-    [base, face, colour, below, font, size, photo, brand_colors, foot],
+    () => ({ ...base, design: { face, colour, top, below, intro: 0, font, size, photo, brand_colors, foot } }),
+    [base, face, colour, top, below, font, size, photo, brand_colors, foot],
   );
   return (
     <div ref={ref} aria-hidden="true">

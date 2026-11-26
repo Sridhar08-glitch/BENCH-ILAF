@@ -181,11 +181,11 @@ describe("what next", () => {
 
   it("inviting a team is only suggested to a company manager", () => {
     const personal = allDoneSuggestions(ctx());
-    expect(personal.map((s) => s.id)).toEqual(["qr", "signature", "background"]);
+    expect(personal.map((s) => s.id)).toEqual(["qr", "signature"]);
     const owner = allDoneSuggestions(ctx({ is_company: true, is_manager: true }));
-    expect(owner.map((s) => s.id)).toEqual(["qr", "signature", "background", "team"]);
+    expect(owner.map((s) => s.id)).toEqual(["qr", "signature", "team"]);
     const invited = allDoneSuggestions(ctx({ is_company: true, is_manager: true, invites_sent: 3 }));
-    expect(invited.map((s) => s.id)).toEqual(["qr", "signature", "background"]);
+    expect(invited.map((s) => s.id)).toEqual(["qr", "signature"]);
   });
 
   it("every follow-up points at a known suggestion and every step has an entry", () => {
@@ -204,7 +204,7 @@ describe("what next", () => {
 describe("prompts", () => {
   it("each key event has a prompt and is shown once", () => {
     expect(PROMPTS.map((p) => p.event)).toEqual(["card_published", "first_invite_sent", "brand_saved", "first_lead", "export_done"]);
-    expect(promptFor("card_published")?.route).toBe("/app/qr");
+    expect(promptFor("card_published")?.route).toBe("/app/share");
     expect(promptFor("nope")).toBeNull();
     expect(promptDue([], "card_published")).toBe(true);
     expect(promptDue([row("next", "card_published", "shown")], "card_published")).toBe(false);

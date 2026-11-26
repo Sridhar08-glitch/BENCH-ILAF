@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardAllowance, cardListName, defaultFirst, moveId } from "./card-order";
+import { cardAllowance, cardListName, commerceCards, defaultFirst, moveId } from "./card-order";
 
 type C = { id: string; is_default?: boolean };
 
@@ -31,5 +31,20 @@ describe("several cards", () => {
     expect(cardAllowance(1, 5)).toEqual({ used: 1, max: 5, canAdd: true });
     expect(cardAllowance(5, 5).canAdd).toBe(false);
     expect(cardAllowance(9, undefined).canAdd).toBe(true);
+  });
+});
+
+describe("cards whose orders a person may see", () => {
+  const cards = [
+    { id: "a", owner: { id: "me" } },
+    { id: "b", owner: { id: "eve" } },
+    { id: "c", owner: { id: "me" }, is_company: true },
+  ];
+  it("shows a person their own cards only", () => {
+    expect(commerceCards(cards, "me", false).map((c) => c.id)).toEqual(["a"]);
+    expect(commerceCards(cards, "eve", false).map((c) => c.id)).toEqual(["b"]);
+  });
+  it("gives owners and admins the company card as well, never an employee's card", () => {
+    expect(commerceCards(cards, "me", true).map((c) => c.id)).toEqual(["a", "c"]);
   });
 });

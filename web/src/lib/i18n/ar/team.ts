@@ -91,4 +91,8 @@ export const team: Messages<typeof en> = {
   "team.suspend": "إيقاف",
   "team.remove": "إزالة...",
   "team.removeAria": "إزالة {name}",
+  "team.sharesContacts": "يشارك جهات الاتصال",
+  "team.privateContacts": "خاصة",
+  "team.sharesHint": "يشارك هذا الشخص جهات الاتصال التي تصل من الآن فصاعدًا مع الشركة. هو وحده من يستطيع تغيير ذلك.",
+  "team.privateHint": "يُبقي هذا الشخص جهات اتصاله خاصة. هو وحده من يستطيع تغيير ذلك.",
 };

@@ -13,6 +13,8 @@ import { useCard, useWorkspaceDetail } from "@/lib/hooks";
 import { useResolvedIcons } from "@/lib/icons-client";
 import { normalizeDesign } from "@/lib/library";
 import { toCompanyBrand } from "@/lib/library/company/brand";
+import { ExtrasPreview } from "@/components/editor/ExtrasPreview";
+import { resolveColours } from "@/lib/library";
 import { readDraft, subscribeDraft } from "@/lib/preview-bridge";
 import { useI18n } from "@/lib/i18n/client";
 import { cardLocale, type Locale } from "@/lib/i18n";
@@ -68,7 +70,8 @@ function CardPreview({ id, draft }: { id: string; draft: CardViewData | null }) 
     if (q.error) return <ErrorBox error={q.error} onRetry={() => void q.refetch()} />;
     return q.isLoading ? <SkeletonBlocks rows={3} /> : <Empty title={t("editor.notFound")} />;
   }
-  return <LivePage data={data} />;
+  const extra = card ? <ExtrasPreview card={card} name={data.name} language={card.language ?? "auto"} pageVars={resolveColours(data.design, data.brand?.palette ?? null).pageVars} /> : null;
+  return <LivePage data={data} extra={extra} />;
 }
 
 function savedView(card: Card, brand: Parameters<typeof toCompanyBrand>[0], icons: ReturnType<typeof useResolvedIcons>, dashboardLocale: Locale): CardViewData {

@@ -6,6 +6,8 @@ describe("feature switches in the customer app", () => {
     expect(mergeFlags(undefined)).toEqual(FLAG_DEFAULTS);
     expect(FLAG_KEYS.every((k) => FLAG_DEFAULTS[k])).toBe(true);
     expect(FLAG_KEYS).toContain("pack2_faces");
+    expect(FLAG_KEYS).toContain("page_styles");
+    expect(FLAG_DEFAULTS.page_styles).toBe(true);
   });
   it("takes booleans from the server and ignores everything else", () => {
     const out = mergeFlags({ directory: false, api_keys: "no", wallet_google: null, unknown_switch: false });

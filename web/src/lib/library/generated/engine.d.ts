@@ -4,4 +4,5 @@ export function renderPage(input: EngineInput): EngineResult;
 export function renderTab(input: EngineInput, group: "c" | "s" | "w"): string;
 export const FACE_COUNT: number;
 export const BELOW_COUNT: number;
+export const TOP_COUNT: number;
 export const INTRO_COUNT: number;

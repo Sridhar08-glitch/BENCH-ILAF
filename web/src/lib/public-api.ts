@@ -16,17 +16,110 @@ export function publicCardCacheInit(): RequestInit & { next?: { revalidate: numb
   return Number.isFinite(seconds) && seconds > 0 ? { next: { revalidate: seconds } } : { cache: "no-store" };
 }
 
+// ---------------------------------------------------------------- rich content under the card
+// The sections a card owner adds below the card (see components/card/sections). Each kind carries its own `data`;
+// the public API expands team cards, gallery images and products into `data` so the page needs no second call.
+
+export type SectionKind = "video" | "products" | "hours" | "booking" | "team" | "gallery" | "event" | "map";
+export const SECTION_KINDS: readonly SectionKind[] = ["video", "products", "hours", "booking", "team", "gallery", "event", "map"];
+export type ProductsLayout = "grid" | "carousel" | "menu" | "listings";
+export const PRODUCTS_LAYOUTS: readonly ProductsLayout[] = ["grid", "carousel", "menu", "listings"];
+
+/** One day of opening hours. `d` counts from Monday (0) to Sunday (6); times are "HH:MM" in the section's time zone. */
+export interface HoursDay {
+  d: number;
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
+export interface VideoSectionData { title: string }
+export interface HoursSectionData { title: string; timezone: string; days: HoursDay[]; note: string }
+export interface BookingSectionData { title: string }
+export interface EventSectionData {
+  title: string;
+  event_name: string;
+  /** ISO date-time; the countdown runs towards it. */
+  starts_at: string;
+  ends_at: string | null;
+  venue: string;
+  hall: string;
+  stand: string;
+  talk_title: string;
+  talk_time: string;
+  slides_url: string;
+}
+export interface MapSectionData { title: string; address: string; maps_url: string; directions_note: string }
+
+/** A product as the public page receives it inside a products section. */
+export interface PublicProduct {
+  id: string;
+  title: string;
+  description: string;
+  /** Decimal as text ("320.00") or a number. */
+  price: string | number;
+  currency: string;
+  image_url: string | null;
+  badge: string;
+  /** Free fields: beds, baths, size for listings; category for menus; tags. */
+  meta: Record<string, unknown>;
+  stock?: number | null;
+  /** The API answers this instead of the stock figure: true when nothing is left. */
+  sold_out?: boolean;
+}
+export interface ProductsSectionData { title: string; layout: ProductsLayout; items?: PublicProduct[] }
+
+/** A colleague's card inside a team section (expanded by the API from the public code). */
+export interface TeamMember { code: string; name: string; title: string; photo_url: string | null; url: string }
+export interface TeamSectionData {
+  title: string;
+  /** Expanded members on the public page; the editor sends public codes instead. */
+  cards: TeamMember[];
+}
+export interface GalleryImage { id: string; url: string; caption: string; order: number }
+export interface GallerySectionData { title: string; images?: GalleryImage[] }
+
+export type SectionData = {
+  video: VideoSectionData;
+  products: ProductsSectionData;
+  hours: HoursSectionData;
+  booking: BookingSectionData;
+  team: TeamSectionData;
+  gallery: GallerySectionData;
+  event: EventSectionData;
+  map: MapSectionData;
+};
+
+export type PublicSection = { [K in SectionKind]: { id: string; kind: K; order: number; data: SectionData[K] } }[SectionKind];
+
+/** The rich fields of a live card (all optional: an older API answer simply has none). */
+export interface PublicRichContent {
+  bio?: string;
+  video_url?: string | null;
+  video_poster_url?: string | null;
+  sections?: PublicSection[];
+}
+
+export type PublicCardWithContent = PublicCardResponse extends infer R
+  ? R extends { state: "live"; card: infer C }
+    ? Omit<R, "card"> & { card: C & PublicRichContent }
+    : R
+  : never;
+
 /** Fetch a public card on the server. Returns null for an unknown code (404). */
-export async function fetchPublicCard(code: string): Promise<PublicCardResponse | null> {
-  const res = await fetch(`${API_SERVER_URL}/public/cards/${encodeURIComponent(code)}`, publicCardCacheInit());
+export async function fetchPublicCard(code: string, customHost?: string | null): Promise<PublicCardWithContent | null> {
+  // On a company's own domain the API is told which one (?host=) and answers 404 for any card that is not that company's.
+  const scope = customHost ? `?host=${encodeURIComponent(customHost)}` : "";
+  const res = await fetch(`${API_SERVER_URL}/public/cards/${encodeURIComponent(code)}${scope}`, publicCardCacheInit());
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Card request failed with ${res.status}`);
-  return (await res.json()) as PublicCardResponse;
+  return (await res.json()) as PublicCardWithContent;
 }
 
 /** Fetch one page of a company directory on the server. Returns null when the directory is off or unknown (404). */
-export async function fetchDirectory(slug: string, params: { q?: string; department?: string; page?: number }): Promise<DirectoryPage | null> {
+export async function fetchDirectory(slug: string, params: { q?: string; department?: string; page?: number }, customHost?: string | null): Promise<DirectoryPage | null> {
   const sp = new URLSearchParams();
+  if (customHost) sp.set("host", customHost);
   if (params.q) sp.set("q", params.q);
   if (params.department) sp.set("department", params.department);
   if (params.page && params.page > 1) sp.set("page", String(params.page));

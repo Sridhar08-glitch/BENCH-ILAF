@@ -91,10 +91,6 @@ export const growth: Messages<typeof en> = {
   "growth.offlineContact": "جهة الاتصال داخل الرمز",
   "growth.offlineSaved": "حُفظ في {date}",
   // ---- navigation
-  "growth.navNfc": "كاتب بطاقة NFC",
-  "growth.barNfc": "NFC",
-  "growth.navEvent": "وضع الفعاليات",
-  "growth.barEvent": "فعالية",
   // ---- NFC writer
   "growth.nfcTitle": "كاتب بطاقة NFC",
   "growth.nfcSub": "ضع بطاقتك على وسم أو بطاقة NFC: يكفي أن يقرّب أي شخص هاتفه منها لتُفتح بطاقتك.",

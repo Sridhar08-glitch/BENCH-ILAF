@@ -177,7 +177,7 @@ describe("links and domains", () => {
 describe("rules matrix", () => {
   const rules: FieldRules = {
     name: "free", title: "free", photo: "free", company: "free", address: "free", slug: "free", features: "free", vcard: "free", button_add: "free", button_edit: "free", button_remove: "free",
-    allowed_kinds: null, banned_domains: [], mandatory_buttons: [],
+    allowed_kinds: null, banned_domains: [], mandatory_buttons: [], extras: "all", extra_kinds: ["video", "products", "hours", "booking", "team", "gallery", "event", "map"],
   };
   it("sends only what changed", () => {
     const draft: FieldRules = { ...rules, title: "locked", banned_domains: ["bad.com"] };

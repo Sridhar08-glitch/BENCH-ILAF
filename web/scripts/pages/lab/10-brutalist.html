@@ -1,0 +1,97 @@
+<section class="page" data-no="110" data-name="Brutalist" data-style="Editorial" data-rtl="0">
+<!--recipe {"top":37,"style":"Editorial","name":"Brutalist","slug":"10-brutalist","dir":"auto","split":"w2","avatar":"phw","drop":["save","foot"],"cond":{"readme":"bio"},"lists":[{"c":"grid","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: lilac grid paper, black ink/borders and the sun/sky/orange/pink/white tiles are the signature and stay fixed; the lime accent (title bars, name highlight, ticker text, one tile in six) follows the card accent via --ac (fills, with --ac-on text) and --ac-t (text on the black ticker). */
+.p110 .in{--k:#0a0a0a;--lilac:#c7b5ff;--pink:#ff6fb5;--sun:#ffd83a;--sky:#6fd3ff;--w:#fffdf6;--org:#ff8a3a;
+ --sig:#b8ff3a;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.74,l,.96) c h);--lime:var(--ac);
+ --gro:"Space Grotesk","Cairo","Helvetica Neue",Arial,sans-serif;--mono:"JetBrains Mono","Cairo",ui-monospace,Menlo,Consolas,monospace;--b:0.769cqw solid var(--k);--sh:1.538cqw 1.538cqw 0 var(--k)}
+.p110 *{box-sizing:border-box;margin:0;padding:0}
+.p110 .in{font-family:var(--gro);color:var(--k)}
+.p110 .in{background:var(--lilac);position:relative;overflow:hidden;
+  background-image:linear-gradient(var(--k) 1px,transparent 1px),linear-gradient(90deg,var(--k) 1px,transparent 1px);background-size:8.205cqw 8.205cqw;background-blend-mode:soft-light;padding-bottom:5.641cqw}
+.p110 a{color:inherit;text-decoration:none}
+.p110 a:focus-visible{outline:1.026cqw solid var(--k);outline-offset:0.769cqw;box-shadow:0 0 0 1.795cqw var(--sun)}
+.p110 .bar{background:var(--k);color:var(--ac-t);font-family:var(--mono);font-weight:700;font-size:max(10px,3.333cqw);letter-spacing:.06em;white-space:nowrap;overflow:hidden;height:8.718cqw;display:flex;align-items:center;text-transform:uppercase}
+.p110 .bar>span{display:inline-block;padding-inline-start:100%;animation:m 24s linear infinite}
+.p110 .bar .tk{display:inline}
+.p110 .bar .tk::after{content:" ✱ "}
+@keyframes m{to{transform:translateX(-100%)}}
+@keyframes mr{to{transform:translateX(100%)}}
+.p110[dir="rtl"] .bar>span{animation-name:mr}
+@media (prefers-reduced-motion:reduce){.p110 .bar>span{animation:none;padding-inline-start:3.077cqw}}
+.p110 .wrap{padding:4.615cqw 3.59cqw 0;display:grid;gap:5.128cqw}
+.p110 .win{background:var(--w);border:var(--b);box-shadow:var(--sh);position:relative;min-width:0}
+.p110 .tb{display:flex;align-items:center;gap:1.538cqw;border-bottom:var(--b);padding:1.538cqw 2.051cqw;font-family:var(--mono);font-weight:700;font-size:max(10px,3.077cqw);background:var(--ac);color:var(--ac-on);text-transform:lowercase;min-height:8.718cqw}
+.p110 .tb i{width:3.59cqw;height:3.59cqw;border:0.641cqw solid var(--k);display:block;background:var(--w);flex:none}
+.p110 .tb i:nth-child(2){background:var(--sun)}
+.p110 .tb i:nth-child(3){background:var(--pink)}
+.p110 .tb>span{margin-inline-start:1.538cqw;flex:1}
+.p110 .shot{border-bottom:var(--b);background:var(--pink);position:relative;line-height:0}
+.p110 .phw{display:block;position:relative;width:100%;aspect-ratio:360/230;background:var(--pink);overflow:hidden}
+.p110 .phw svg{display:block;width:100%;height:100%}
+.p110 .phw .pic{object-fit:cover;object-position:50% 22%;filter:grayscale(1) contrast(1.25) brightness(1.05);mix-blend-mode:multiply}
+.p110 .phw::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(rgba(10,10,10,.28) 0.5px,transparent 1.2px) 0 0/1.3cqw 1.3cqw}
+.p110 .phw span.pic{display:grid;place-items:center;mix-blend-mode:normal;filter:none;background:var(--pink);color:transparent;-webkit-text-stroke:3px var(--k);font-family:var(--gro);font-weight:700;letter-spacing:-.06em;font-size:46cqw;line-height:1}
+.p110 .sticker{position:absolute;inset-inline-end:2.564cqw;top:2.564cqw;line-height:1.05;font-family:var(--mono);font-weight:700;font-size:max(10px,3.077cqw);text-transform:uppercase;background:var(--sun);border:var(--b);padding:2.308cqw 2.564cqw;transform:rotate(8deg);box-shadow:1.026cqw 1.026cqw 0 var(--k);text-align:center;border-radius:50%;width:21.538cqw;height:21.538cqw;display:grid;place-items:center;letter-spacing:.02em;z-index:2}
+.p110[dir="rtl"] .sticker{transform:rotate(-8deg);letter-spacing:0}
+.p110 .id{padding:3.59cqw 3.59cqw 4.103cqw}
+.p110 h1{font-weight:700;font-size:12.6cqw;line-height:.95;letter-spacing:-.045em;text-transform:uppercase;overflow-wrap:anywhere}
+.p110 h1 .la{display:inline-block;max-width:100%;background:var(--ac);color:var(--ac-on);border:var(--b);padding:0.513cqw 2.051cqw 0;margin-top:1.538cqw;box-shadow:1.026cqw 1.026cqw 0 var(--k)}
+.p110.nl2 h1{font-size:9cqw}
+.p110.nl3 h1{font-size:6.8cqw}
+.p110[dir="rtl"] h1{letter-spacing:0;line-height:1.35;font-weight:700}
+.p110 .chips{display:flex;flex-wrap:wrap;gap:2.051cqw;margin-top:4.103cqw}
+.p110 .chips:not(:has(b)){display:none}
+.p110 .chips b{font-family:var(--mono);font-weight:700;font-size:max(10px,3.077cqw);border:var(--b);padding:1.282cqw 2.308cqw 1.026cqw;background:var(--sky);text-transform:uppercase;line-height:1.2;overflow-wrap:anywhere;min-width:0}
+.p110 .chips b:nth-child(2){background:var(--org)}
+.p110 .chips b:nth-child(3){background:var(--w)}
+.p110 .readme .body{padding:3.077cqw 3.59cqw 4.103cqw;font-family:var(--mono);font-size:3.718cqw;line-height:1.55;font-weight:500;overflow-wrap:anywhere}
+.p110[dir="rtl"] .readme .body{line-height:1.8}
+.p110 .readme .body .h{font-weight:700;color:#5a3ad0;margin-bottom:1.538cqw}
+.p110 .grid{display:grid;grid-template-columns:1fr 1fr;gap:3.59cqw}
+.p110 .btn{display:flex;flex-direction:column;justify-content:space-between;gap:2.564cqw;min-height:26.667cqw;padding:2.564cqw 2.821cqw 2.821cqw;border:var(--b);box-shadow:var(--sh);transition:transform .08s,box-shadow .08s;position:relative;min-width:0;background:var(--sun)}
+.p110 .btn::after{content:"↗";position:absolute;top:2.2cqw;inset-inline-end:2.8cqw;font-family:var(--mono);font-weight:700;font-size:5.128cqw;line-height:1}
+.p110[dir="rtl"] .btn::after{content:"↖"}
+.p110 .btn:last-child:nth-child(odd){grid-column:1/-1}
+.p110 .btn:nth-child(6n+2){background:var(--ac);color:var(--ac-on)}
+.p110 .btn:nth-child(6n+3){background:var(--sky)}
+.p110 .btn:nth-child(6n+4){background:var(--w)}
+.p110 .btn:nth-child(6n+5){background:var(--org)}
+.p110 .btn:nth-child(6n+6){background:var(--pink)}
+.p110 .btn:hover{transform:translate(0.769cqw,0.769cqw);box-shadow:0.769cqw 0.769cqw 0 var(--k)}
+.p110 .btn:active{transform:translate(1.538cqw,1.538cqw);box-shadow:0 0 0 var(--k)}
+.p110 .btn .ic{width:9.231cqw;height:9.231cqw;border:var(--b);background:var(--w);display:grid;place-items:center;color:var(--k)}
+.p110 .btn .ic svg{width:5.128cqw;height:5.128cqw;stroke-width:2.4}
+.p110 .btn .l{display:block;font-weight:700;font-size:4.872cqw;line-height:1.05;text-transform:uppercase;letter-spacing:-.02em;overflow-wrap:anywhere}
+.p110[dir="rtl"] .btn .l{letter-spacing:0;line-height:1.3}
+.p110 .btn .v{display:block;font-family:var(--mono);font-size:max(10px,2.821cqw);font-weight:500;margin-top:1.026cqw;line-height:1.25;overflow-wrap:anywhere;unicode-bidi:plaintext}
+</style>
+<div class="pg p110"><div class="in">
+<div class="bar" aria-hidden="true"><span><span class="tk">{name}</span><span class="tk">{title}</span><span class="tk">{co}</span><span class="tk">{city}</span><span class="tk">{name}</span><span class="tk">{title}</span><span class="tk">{co}</span><span class="tk">{city}</span><span class="tk">{name}</span><span class="tk">{title}</span><span class="tk">{co}</span><span class="tk">{city}</span></span></div>
+
+  <div class="wrap w1">
+    <div class="win" aria-label="Profile">
+      <div class="tb"><i></i><i></i><i></i><span>[[profile|الملف]]</span></div>
+      <div class="shot">
+        <div class="phw"><svg viewBox="0 0 360 230" aria-hidden="true"><rect width="360" height="230" fill="#ff6fb5"/></svg></div>
+        <div class="sticker">[[say hi!|قل مرحباً]]</div>
+      </div>
+      <div class="id">
+        <h1><span class="f">{first}</span><br><span class="la">{last}</span></h1>
+        <div class="chips"><b>{title}</b><b>{co}</b><b>{city}</b></div>
+      </div>
+    </div>
+
+    <div class="win readme" aria-label="About">
+      <div class="tb"><i></i><i></i><i></i><span>[[about|نبذة]]</span></div>
+      <div class="body"><div class="h">[[# about|# نبذة]]</div>{bio}</div>
+    </div>
+  </div>
+
+  <div class="wrap w2">
+    <nav class="grid" aria-label="Contact">
+      <a class="btn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 3h5l2 6-3 2a12 12 0 0 0 5 5l2-3 6 2v5h-3A16 16 0 0 1 3 6z"/></svg></span><span class="tx"><span class="l">Call</span><span class="v">{phone}</span></span></a>
+    </nav>
+  </div>
+</div></div>
+</section>

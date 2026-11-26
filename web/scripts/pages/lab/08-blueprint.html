@@ -1,0 +1,135 @@
+<section class="page" data-no="108" data-name="Blueprint" data-style="Editorial" data-rtl="0">
+<!--recipe {"top":35,"style":"Editorial","name":"Blueprint","slug":"08-blueprint","dir":"auto","split":"sh2","avatar":"phw","drop":["save","foot"],"cond":{"n1":"bio","ttl":"title","cmp":"company","loc":"addr"},"lists":[{"c":"parts","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: blueprint blue paper, white linework and grid are the signature and stay fixed; the cyan accent (labels, dimension lines, hatching, hover) follows the card accent via --ac (fills/lines) and --ac-t (text, dark page). */
+.p108 .in{--bp:#10408a;--bp2:#0b3270;--w:#eef6ff;--dim:rgba(238,246,255,.7);
+ --sig:#7fe0ff;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.74,l,.96) c h);--cy:var(--ac-t);
+ --cond:"Barlow Condensed","Arial Narrow",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;--ar:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif}
+.p108 *{box-sizing:border-box;margin:0;padding:0}
+.p108 .in{color:var(--w);font-family:var(--mono)}
+.p108[dir="rtl"] .in{font-family:var(--ar)}
+.p108[dir="rtl"] .p .r{font-family:var(--mono)}
+.p108 .in{background:
+  linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px) 0 0/20.513cqw 20.513cqw,
+  linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px) 0 0/20.513cqw 20.513cqw,
+  linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px) 0 0/4.103cqw 4.103cqw,
+  linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px) 0 0/4.103cqw 4.103cqw,
+  radial-gradient(120% 80% at 50% 0%,#1a54ad,transparent 70%),var(--bp);
+  padding:3.077cqw;position:relative}
+.p108 .border{border:2px solid var(--w);position:relative;padding:0;outline:1px solid var(--dim);outline-offset:1.026cqw;margin:1.026cqw}
+.p108 a{color:inherit;text-decoration:none}
+.p108 a:focus-visible{outline:2px dashed var(--ac-t);outline-offset:-1.026cqw}
+.p108 .zones{display:flex;justify-content:space-between;font-size:max(10px,2.308cqw);color:var(--dim);padding:0.513cqw 5.641cqw;border-bottom:1px solid var(--dim);letter-spacing:.2em}
+.p108 .zones.zb{border-bottom:0;border-top:1px solid var(--dim)}
+.p108 .drawing{padding:2.051cqw 1.538cqw 0;position:relative}
+.p108 .fig{position:relative}
+.p108 .phw{display:block;position:relative;width:100%;aspect-ratio:6/5;background:var(--bp2);overflow:hidden}
+.p108 .phw svg{display:block;width:100%;height:100%}
+.p108 .phw .pic{object-fit:cover;object-position:50% 25%;filter:grayscale(1) contrast(1.1) brightness(.72);mix-blend-mode:luminosity;opacity:.95}
+.p108 .phw span.pic{display:grid;place-items:center;mix-blend-mode:normal;opacity:1;filter:none;background:transparent;color:transparent;-webkit-text-stroke:1.5px var(--w);font-family:var(--cond);font-weight:700;letter-spacing:.04em;line-height:1}
+.p108 .phw::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 100% at 50% 45%,transparent 55%,rgba(5,28,76,.55)),repeating-linear-gradient(45deg,transparent 0 1.5cqw,color-mix(in oklab,var(--ac) 14%,transparent) 1.5cqw 1.8cqw)}
+.p108 .ovl{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.p108[dir="rtl"] .ovl{transform:scaleX(-1)}
+.p108 .figlabel{display:flex;justify-content:space-between;gap:2cqw;font-size:max(10px,2.564cqw);letter-spacing:.08em;text-transform:uppercase;padding:1.5cqw 2.564cqw 2.051cqw;color:var(--cy)}
+.p108 .figlabel b{font-weight:600}
+.p108 .figlabel>span{overflow-wrap:anywhere}
+.p108 .sec{border-top:2px solid var(--w)}
+.p108 .sec h2{font-family:var(--cond);font-weight:700;font-size:3.59cqw;letter-spacing:.2em;text-transform:uppercase;padding:1.282cqw 2.564cqw;background:rgba(238,246,255,.1);border-bottom:1px solid var(--dim);display:flex;justify-content:space-between}
+.p108 .notes{padding:2.564cqw 3.077cqw 3.077cqw;font-size:3.333cqw;line-height:1.55}
+.p108 .notes ol{list-style:none;counter-reset:n}
+.p108 .notes li{counter-increment:n;display:grid;grid-template-columns:10.769cqw minmax(0,1fr);gap:1.026cqw;overflow-wrap:anywhere}
+.p108 .notes li::before{content:"N" counter(n) ".";color:var(--cy);font-weight:600}
+.p108 .parts{display:block}
+.p108 .cols,.p108 .p{display:grid;grid-template-columns:11.282cqw 6cqw minmax(0,1fr) minmax(0,1.25fr);align-items:center}
+.p108 .cols{font-size:max(10px,2.436cqw);letter-spacing:.1em;color:var(--dim);padding:1.026cqw 0;border-bottom:1px solid var(--dim);text-transform:uppercase}
+.p108 .cols>span:first-child{text-align:center}
+.p108 .cols>span:nth-child(2){grid-column:2/4;padding-inline-start:1.2cqw}
+.p108 .p{min-height:13.333cqw;border-bottom:1px solid rgba(238,246,255,.35);padding:0 2.564cqw 0 0;transition:background .15s,color .15s;position:relative}
+.p108[dir="rtl"] .p{padding:0 0 0 2.564cqw}
+.p108 .p::after{content:"›";position:absolute;inset-inline-end:1cqw;top:50%;transform:translateY(-52%);font-size:3.59cqw;color:var(--cy)}
+.p108[dir="rtl"] .p::after{content:"‹"}
+.p108 .p:hover{background:var(--w);color:var(--bp2)}
+.p108 .p:hover::after{color:var(--bp2)}
+.p108 .p:hover .bal{border-color:var(--bp2)}
+.p108 .bal{width:7.179cqw;height:7.179cqw;border:1.5px solid currentColor;border-radius:50%;display:grid;place-items:center;font-size:max(10px,2.7cqw);font-weight:600;justify-self:center;letter-spacing:-.05em}
+.p108 .p .ic{display:grid;place-items:center;width:4.359cqw;height:4.359cqw;margin-inline:0.8cqw}
+.p108 .p .ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:square;stroke-linejoin:miter}
+.p108 .p .d{font-family:var(--cond);font-weight:700;font-size:4.615cqw;letter-spacing:.08em;text-transform:uppercase;overflow-wrap:anywhere;line-height:1.1;padding-inline:1.2cqw}
+.p108[dir="rtl"] .p .d,.p108[dir="rtl"] .cols,.p108[dir="rtl"] .sec h2,.p108[dir="rtl"] .figlabel,.p108[dir="rtl"] .tb small,.p108[dir="rtl"] .tb .ttl>span,.p108[dir="rtl"] .tb .name strong{font-family:var(--ar);letter-spacing:0;text-transform:none}
+.p108 .p .r{font-size:max(10px,3.077cqw);overflow-wrap:anywhere;line-height:1.25;color:inherit;opacity:.95;unicode-bidi:plaintext}
+/* title block */
+.p108 .tb{display:block;border-top:2px solid var(--w)}
+.p108 .tb>div{border-bottom:1px solid var(--w);padding:1.026cqw 2.051cqw 1.538cqw;position:relative}
+.p108 .tb>div:last-child{border-bottom:0}
+.p108 .tb small{display:block;font-size:max(10px,2.179cqw);letter-spacing:.14em;color:var(--cy);text-transform:uppercase;line-height:1.3}
+.p108 .tb>div>span{display:block;font-size:max(10px,3.205cqw);line-height:1.3;font-weight:500;margin-top:0.256cqw;overflow-wrap:anywhere}
+.p108 .tb .name{padding:1.538cqw 2.564cqw 2.051cqw}
+.p108 .tb .name strong{display:block;font-family:var(--cond);font-weight:700;font-size:11cqw;letter-spacing:.04em;text-transform:uppercase;line-height:1.02;margin-top:0.769cqw;overflow-wrap:anywhere}
+.p108.nl2 .tb .name strong{font-size:8.4cqw}
+.p108.nl3 .tb .name strong{font-size:6.6cqw}
+.p108 .tb .ttl>span{font-family:var(--cond);font-size:5.385cqw;letter-spacing:.14em;text-transform:uppercase;font-weight:700;line-height:1.2}
+.p108 .tb .pair{display:flex;padding:0}
+.p108 .tb .pair>div{padding:1.026cqw 2.051cqw 1.538cqw;min-width:0;flex:1 1 0}
+.p108 .tb .pair>.cmp{flex:2 1 0}
+.p108 .tb .pair>div+div{border-inline-start:1px solid var(--w)}
+.p108 .tb .pair>div>span{display:block;font-size:max(10px,3.4cqw);line-height:1.3;font-weight:500;margin-top:0.256cqw;overflow-wrap:anywhere}
+</style>
+<div class="pg p108"><div class="in">
+<div class="border sh1">
+    <div class="zones" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span></div>
+
+    <div class="drawing" aria-label="Front elevation drawing">
+      <div class="fig">
+        <div class="phw"><svg viewBox="0 0 6 5" aria-hidden="true"><rect width="6" height="5" fill="#0b3270"/></svg></div>
+        <svg class="ovl" viewBox="0 0 360 300" aria-hidden="true">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#eef6ff"/></marker>
+          </defs>
+          <g fill="none" stroke="#eef6ff" stroke-width="1" stroke-linecap="round">
+            <path d="M180 8V292" stroke="#7fe0ff" stroke-dasharray="14 3 2 3"/>
+            <path d="M6 150H354" stroke="#7fe0ff" stroke-dasharray="14 3 2 3" opacity=".6"/>
+            <circle cx="180" cy="150" r="64" stroke="#7fe0ff" stroke-dasharray="4 4"/>
+            <path d="M60 22V40M300 22V40" opacity=".8"/>
+            <path d="M60 31H300" marker-start="url(#ar)" marker-end="url(#ar)"/>
+            <path d="M318 40H346M318 262H346" opacity=".8"/>
+            <path d="M338 40V262" marker-start="url(#ar)" marker-end="url(#ar)"/>
+            <path d="M226 104L262 74H300" opacity=".9"/>
+            <path d="M150 196L100 238" opacity=".9"/>
+            <path d="M10 18H34M10 18V42M350 282H326M350 282V258M10 282H34M10 282V258" stroke-width="1.5"/>
+          </g>
+          <g fill="#10408a" stroke="#eef6ff" stroke-width="1.2"><circle cx="312" cy="74" r="12"/><circle cx="88" cy="248" r="12"/></g>
+          <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600" fill="#eef6ff" text-anchor="middle"><text x="312" y="78">A</text><text x="88" y="252">B</text></g>
+        </svg>
+      </div>
+      <div class="figlabel"><b>[[Fig. 1 — Front elevation|شكل ١ — واجهة أمامية]]</b><span>{ini}</span></div>
+    </div>
+
+    <div class="sec n1" aria-label="General notes">
+      <h2>[[General notes|ملاحظات عامة]]</h2>
+      <div class="notes"><ol>
+        <li><span>{bio}</span></li>
+      </ol></div>
+    </div>
+
+    <div class="tb" aria-label="Title block">
+      <div class="name"><small>[[Drawing title|عنوان الرسم]]</small><strong>{name}</strong></div>
+      <div class="ttl"><small>[[Description|الوصف]]</small><span>{title}</span></div>
+      <div class="pair">
+        <div class="cmp"><small>[[Company|الشركة]]</small><span>{co}</span></div>
+        <div class="loc"><small>[[Location|الموقع]]</small><span>{city}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="border sh2">
+    <div class="sec" style="border-top:0" aria-label="Schedule of connections">
+      <h2>[[Schedule of connections|جدول الاتصال]]</h2>
+      <div class="cols"><span>[[Item|البند]]</span><span>[[Designation|التسمية]]</span><span>[[Reference|المرجع]]</span></div>
+      <nav class="parts">
+        <a class="p"><span class="bal">01</span><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 3h5l2 6-3 2a12 12 0 0 0 5 5l2-3 6 2v5h-3A16 16 0 0 1 3 6z"/></svg></span><span class="d">Phone</span><span class="r">{phone}</span></a>
+      </nav>
+    </div>
+    <div class="zones zb" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
+  </div>
+</div></div>
+</section>

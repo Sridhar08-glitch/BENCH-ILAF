@@ -19,6 +19,8 @@ These terms apply when you use {{APP_NAME}}, a digital business card service off
 
 Some features need a paid plan. Prices, the billing period and what each plan includes are shown in the app before you buy. [PAYMENT TERMS, TAXES, RENEWAL, CANCELLATION AND REFUND RULES TO BE COMPLETED.]
 
+**Automatic renewal.** Personal and Company plans are bought as a yearly subscription that renews automatically. The price and "per year, renews until you cancel" are shown before you pay. About a week before each renewal we e-mail you the renewal date, and on that date we charge the card you used for another year. You can change the card or turn the renewal off at any time with "Manage billing" on the Plan and billing page; the plan then ends on the date it was paid until. If a renewal payment fails, we e-mail you so you can fix the payment method, and the plan keeps running until its end date plus the grace days below. Enterprise is offered by request: our team sets the number of seats and the yearly price for your company, you accept the quote, and it then renews every year in the same way.
+
 When a plan ends, cards may stay online for a short grace period and are then switched off. Your data is kept so that you can renew.
 
 ## 4. Your content

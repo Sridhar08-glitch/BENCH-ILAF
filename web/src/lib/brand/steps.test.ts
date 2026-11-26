@@ -14,9 +14,9 @@ const base: Brand = {
 } as Brand;
 
 describe("brand steps", () => {
-  it("has six steps for a company and the three that apply to a personal workspace", () => {
-    expect(stepsFor(true).map((s) => s.id)).toEqual(["company", "colours", "logo", "artwork", "style", "finish"]);
-    expect(stepsFor(false).map((s) => s.id)).toEqual(["company", "style", "finish"]);
+  it("starts with the look, like a personal card: five steps for a company, three for a personal workspace", () => {
+    expect(stepsFor(true).map((s) => s.id)).toEqual(["style", "company", "logo", "team", "more"]);
+    expect(stepsFor(false).map((s) => s.id)).toEqual(["style", "company", "more"]);
   });
 
   it("moves forward and back and never leaves the range", () => {

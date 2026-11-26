@@ -33,4 +33,8 @@ export const cards = {
   "cards.copyLink": "Copy link",
   "cards.copyLinkFor": "Copy link for {name}",
   "cards.duplicate": "Duplicate",
+  "cards.companyCardTitle": "The company's own card.",
+  "cards.companyCardText": "Make one card for the company itself, with its own shop, hours or bookings. Only owners and admins can see and edit it.",
+  "cards.companyCardMake": "Make the company card",
+  "cards.companyCardPill": "Company card",
 } satisfies Record<string, string>;

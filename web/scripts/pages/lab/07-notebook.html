@@ -1,0 +1,116 @@
+<section class="page" data-no="107" data-name="Notebook" data-style="Editorial" data-rtl="0">
+<!--recipe {"top":34,"style":"Editorial","name":"Notebook","slug":"07-notebook","dir":"auto","split":"todo","avatar":"phw","drop":["save","foot"],"cond":{"note":"bio","co":"company","ttl":"title"},"lists":[{"c":"lst","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: cream paper, navy ink, yellow marker and sticky stay fixed (the style's identity); the red pen (margin rule, date, ticks, underlines) follows the card accent via --ac / --ac-t (light page). */
+.p107 .in{--paper:#fbf7ea;--line:rgba(60,110,185,.28);--ink:#1f2f55;--pen:#273b73;--hl:#ffe36a;--teal:#1f8a82;--sticky:#ffe98a;
+ --sig:#d9503f;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h);--red:var(--ac-t);
+ --cav:"Caveat","Aref Ruqaa","Segoe Print","Bradley Hand",cursive;--pat:"Patrick Hand","Cairo","Segoe UI",cursive;--gut:10.256cqw;--gd:90deg;--hx:3.9cqw}
+.p107[dir="rtl"] .in{--gd:270deg;--hx:calc(100% - 3.9cqw)}
+.p107 *{box-sizing:border-box;margin:0;padding:0}
+.p107 .in{font-family:var(--pat);color:var(--ink)}
+.p107 .in{position:relative;overflow:hidden;padding-block:6.154cqw 7.179cqw;padding-inline-start:calc(var(--gut) + 3.59cqw);padding-inline-end:4.615cqw;
+ background:
+  radial-gradient(circle at var(--hx) 14cqw,#6a523b 0 1.7cqw,#8a6f55 1.8cqw 2.3cqw,transparent 2.4cqw),
+  radial-gradient(circle at var(--hx) calc(100% - 14cqw),#6a523b 0 1.7cqw,#8a6f55 1.8cqw 2.3cqw,transparent 2.4cqw),
+  linear-gradient(var(--gd),transparent calc(var(--gut) + 1.538cqw),color-mix(in oklab,var(--ac) 55%,transparent) calc(var(--gut) + 1.538cqw) calc(var(--gut) + 2.051cqw),transparent calc(var(--gut) + 2.051cqw)),
+  repeating-linear-gradient(180deg,transparent 0 7.949cqw,var(--line) 7.949cqw 8.205cqw),var(--paper)}
+.p107 a{color:inherit;text-decoration:none}
+.p107 a:focus-visible{outline:0.769cqw dashed var(--ac-t);outline-offset:0.769cqw}
+.p107 .date{font-family:var(--cav);font-weight:600;font-size:5.641cqw;color:var(--red);display:flex;justify-content:space-between;gap:3cqw;line-height:8.205cqw;min-height:8.205cqw}
+.p107 .date span:last-child{color:var(--pen);font-size:5.128cqw;margin-inline-start:auto;overflow-wrap:anywhere;text-align:end}
+.p107 .x-top{display:grid;grid-template-columns:38.462cqw 1fr;gap:1.538cqw 3.59cqw;margin-top:5.128cqw;align-items:start}
+.p107 .polaroid{position:relative;background:#fff;padding:1.795cqw 1.795cqw 7.692cqw;box-shadow:0 0.769cqw 2.051cqw rgba(0,0,0,.25),0 1px 0 rgba(0,0,0,.1);transform:rotate(-3.5deg);margin-top:1.026cqw;margin-inline-start:0.513cqw}
+.p107[dir="rtl"] .polaroid{transform:rotate(3.5deg)}
+.p107 .phw{display:block;width:100%;aspect-ratio:136/150;background:#e8f1ef;position:relative}
+.p107 .phw .pic{object-fit:cover;display:grid;place-items:center;background:#e8f1ef;color:var(--pen);font-family:var(--cav);font-weight:700;line-height:1}
+.p107 img.pic{filter:saturate(.92) contrast(1.03)}
+.p107 .polaroid .cap{position:absolute;inset-inline:0;bottom:0.769cqw;text-align:center;font-family:var(--cav);font-weight:600;font-size:5.128cqw;color:var(--pen);line-height:6.154cqw}
+.p107 .tape{position:absolute;width:16.41cqw;height:5.641cqw;opacity:.88;background:repeating-linear-gradient(45deg,rgba(255,255,255,.55) 0 1.026cqw,transparent 1.026cqw 2.051cqw),#f08a7a;box-shadow:0 1px 2px rgba(0,0,0,.2);z-index:2}
+.p107 .tape::before,.p107 .tape::after{content:"";position:absolute;top:0;bottom:0;width:1.282cqw;background:inherit;clip-path:polygon(0 0,100% 15%,0 30%,100% 45%,0 60%,100% 75%,0 100%)}
+.p107 .tape::before{inset-inline-start:-1.026cqw}
+.p107 .tape::after{inset-inline-end:-1.026cqw;transform:scaleX(-1)}
+.p107 .tape.a{top:-3.077cqw;inset-inline-start:8.718cqw;transform:rotate(-6deg)}
+.p107 .tape.b{background:repeating-linear-gradient(90deg,rgba(255,255,255,.5) 0 1.282cqw,transparent 1.282cqw 2.564cqw),#8fd0c5;width:13.846cqw;bottom:-2.051cqw;inset-inline-end:-4.615cqw;transform:rotate(38deg)}
+.p107[dir="rtl"] .tape.a{transform:rotate(6deg)}
+.p107[dir="rtl"] .tape.b{transform:rotate(-38deg)}
+.p107 .who{padding-top:0.513cqw;min-width:0}
+.p107 .who .hi{font-family:var(--cav);font-weight:600;font-size:6.154cqw;line-height:8.205cqw;color:var(--red);display:flex;align-items:center;gap:1.026cqw}
+.p107 .who h1{font-family:var(--cav);font-weight:700;font-size:11.4cqw;line-height:.95;color:var(--pen);letter-spacing:-.01em;margin-top:0.513cqw;transform:rotate(-2deg);transform-origin:0 50%;overflow-wrap:anywhere;hyphens:auto}
+.p107[dir="rtl"] .who h1{transform:rotate(2deg);transform-origin:100% 50%;line-height:1.3;letter-spacing:0}
+.p107 .who h1 span{display:block}
+.p107.nl2 .who h1{font-size:8cqw}
+.p107.nl3 .x-top{grid-template-columns:1fr}
+.p107.nl3 .polaroid{width:46cqw}
+.p107.nl3 .who h1{font-size:10cqw}
+.p107 .scrib{display:block;width:100%;max-width:51.282cqw;height:3.59cqw;margin-top:1.538cqw;overflow:visible}
+.p107 .scrib path{stroke:var(--ac)}
+.p107[dir="rtl"] .scrib{transform:scaleX(-1)}
+.p107 .title{margin-top:2.564cqw;font-size:4.872cqw;line-height:6.154cqw;overflow-wrap:anywhere}
+.p107 .title b{background:linear-gradient(transparent 55%,var(--hl) 55% 92%,transparent 92%);font-weight:400;padding:0 0.769cqw;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.p107 .coo .at{font-family:var(--cav);font-weight:700;color:var(--red)}
+.p107 .coo{font-size:4.872cqw;line-height:6.154cqw;margin-top:0.513cqw;overflow-wrap:anywhere}
+.p107[dir="rtl"] .title,.p107[dir="rtl"] .coo{line-height:1.6}
+.p107 .note{position:relative;margin:7.692cqw 2.051cqw 0 0.513cqw;padding:4.615cqw 4.103cqw 4.103cqw;background:var(--sticky);transform:rotate(1.4deg);box-shadow:0.769cqw 1.282cqw 2.564cqw rgba(0,0,0,.2);font-size:5.385cqw;line-height:6.923cqw;border-radius:2px 2px 7.179cqw 2px;overflow-wrap:anywhere;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.4),transparent 25%)}
+.p107[dir="rtl"] .note{transform:rotate(-1.4deg);margin:7.692cqw 0.513cqw 0 2.051cqw;border-radius:2px 2px 2px 7.179cqw;line-height:1.5}
+.p107 .note .tape{top:-3.077cqw;inset-inline-start:calc(50% - 8.205cqw);transform:rotate(2deg);background:repeating-linear-gradient(135deg,rgba(255,255,255,.5) 0 1.026cqw,transparent 1.026cqw 2.051cqw),#7fb0e8}
+.p107 .note q{quotes:none}
+.p107 .note small{display:block;font-family:var(--cav);font-weight:600;font-size:5.641cqw;color:#b53a2a;margin-top:1.538cqw;text-align:end;line-height:6.154cqw}
+.p107 .todo{display:block}
+.p107 .todo h2{font-family:var(--cav);font-size:8.718cqw;line-height:8.205cqw;font-weight:700;color:var(--pen);display:inline-block;position:relative}
+.p107[dir="rtl"] .todo h2{line-height:1.3}
+.p107 .todo h2 svg{position:absolute;inset-inline:-1.026cqw;bottom:-2.051cqw;width:calc(100% + 2.051cqw);height:2.564cqw;overflow:visible}
+.p107 .todo h2 path{stroke:var(--ac)}
+.p107 .lst{display:block;margin-top:3.077cqw}
+.p107 .it{display:grid;grid-template-columns:8.718cqw minmax(0,1fr) auto;align-items:center;gap:2.564cqw;min-height:14.359cqw;padding:1.538cqw 0;position:relative}
+.p107 .cb{position:relative;display:block;width:7.692cqw;height:7.692cqw;border:0.8cqw solid var(--pen);border-radius:1.4cqw 1cqw 1.6cqw 0.9cqw/1cqw 1.6cqw 0.9cqw 1.4cqw;transform:rotate(-2deg)}
+.p107 .cb::after{content:"";position:absolute;inset:-2.2cqw -1.8cqw 0.4cqw -0.6cqw;background:var(--ac);
+ -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path d='M7 16l6 7L28 4' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat;
+ mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path d='M7 16l6 7L28 4' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat;
+ clip-path:inset(0 100% 0 0);transition:clip-path .3s}
+.p107[dir="rtl"] .cb::after{inset:-2.2cqw -0.6cqw 0.4cqw -1.8cqw}
+.p107 .it:hover .cb::after,.p107 .it:focus-visible .cb::after{clip-path:inset(0 0 0 0)}
+.p107 .it .l{display:block;font-family:var(--cav);font-weight:700;font-size:7.179cqw;line-height:7.4cqw;color:var(--pen);overflow-wrap:anywhere}
+.p107 .it .v{display:block;font-size:4.103cqw;line-height:5.128cqw;color:#52638f;overflow-wrap:anywhere;margin-top:0.256cqw;unicode-bidi:plaintext}
+.p107[dir="rtl"] .it .l{line-height:1.4}
+.p107 .it:hover .l{background:linear-gradient(transparent 55%,var(--hl) 55%)}
+.p107 .it .gl{display:grid;place-items:center;width:7cqw;height:7cqw;color:var(--pen);opacity:.75}
+.p107 .it .gl svg{width:100%;height:100%}
+.p107 .thx{margin-top:5.641cqw;font-family:var(--cav);font-weight:600;font-size:5.385cqw;color:#6c789c;line-height:8.205cqw}
+</style>
+<div class="pg p107"><div class="in">
+  <div class="date"><span>[[my notes|ملاحظاتي]]</span><span>{city}</span></div>
+
+  <div class="x-top">
+    <div class="polaroid">
+      <span class="tape a" aria-hidden="true"></span><span class="tape b" aria-hidden="true"></span>
+      <div class="phw"><svg viewBox="0 0 136 150" aria-hidden="true"><rect width="136" height="150" fill="#e6f0ee"/></svg></div>
+      <div class="cap">[[me|أنا]] ✦</div>
+    </div>
+
+    <div class="who">
+      <div class="hi">[[hi, I'm|مرحباً، أنا]]</div>
+      <h1><span>{first}</span><span>{last}</span></h1>
+      <svg class="scrib" viewBox="0 0 200 14" aria-hidden="true"><path d="M2 8Q30 2 60 7T120 6T198 5" fill="none" stroke="#d9503f" stroke-width="3" stroke-linecap="round"/><path d="M14 13Q70 8 150 11" fill="none" stroke="#d9503f" stroke-width="2" stroke-linecap="round"/></svg>
+      <p class="title ttl"><b>{title}</b></p>
+      <p class="coo co"><span class="at">@</span> {co}</p>
+    </div>
+  </div>
+
+  <div class="note" aria-label="About">
+    <span class="tape" aria-hidden="true"></span>
+    <q>{bio}</q>
+    <small>[[~ my job in one line|~ عملي في سطر]]</small>
+  </div>
+
+  <div class="todo">
+    <h2>[[to do today:|مهامي اليوم:]]
+      <svg viewBox="0 0 160 10" preserveAspectRatio="none" aria-hidden="true"><path d="M1 6Q40 1 80 6T159 4" fill="none" stroke="#d9503f" stroke-width="3" stroke-linecap="round"/></svg>
+    </h2>
+    <nav class="lst" aria-label="Links">
+      <a class="it"><span class="cb" aria-hidden="true"></span><span><span class="l">Phone</span><span class="v">{phone}</span></span><span class="gl"><svg viewBox="0 0 24 24"><path d="M4 3h5l2 6-3 2a12 12 0 0 0 5 5l2-3 6 2v5h-3A16 16 0 0 1 3 6z"/></svg></span></a>
+    </nav>
+    <div class="thx" aria-hidden="true">[[thanks!|شكراً!]] ♡</div>
+  </div>
+</div></div>
+</section>

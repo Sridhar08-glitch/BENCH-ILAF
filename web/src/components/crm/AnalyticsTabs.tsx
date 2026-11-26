@@ -203,7 +203,7 @@ export function PeopleTab({ ws, q }: TabProps) {
               <div className="panel kpi" key={x.key}>
                 <div className="t"><span>{t("analytics.rankByViews", { rank: number(i + 1) })}</span><span className="pill accent">{t("analytics.toLeads", { pct: percentText(conversion(x.totals), number) })}</span></div>
                 <b dir="auto" style={{ fontSize: 22 }}>{x.name}</b>
-                <span className="hint">{[t("analytics.nViews", { n: x.totals.views }), t("analytics.nLeads", { n: x.totals.leads }), x.department ?? ""].filter(Boolean).join(" · ")}</span>
+                <span className="hint">{[t("analytics.nViews", { n: x.totals.views }), x.leads_visible === false ? "" : t("analytics.nLeads", { n: x.totals.leads }), x.department ?? ""].filter(Boolean).join(" · ")}</span>
               </div>
             ))}
           </div>
@@ -221,8 +221,8 @@ export function PeopleTab({ ws, q }: TabProps) {
                 <div className="trow keep" key={x.key} style={{ ["--cols" as string]: cols }}>
                   <span className="hint">{number(i + 1)}</span>
                   <div style={{ minWidth: 0 }}><b dir="auto" style={{ overflowWrap: "anywhere" }}>{x.name}</b>{(x.department || by === "card") && <div className="hint" dir="auto">{by === "card" ? x.person : x.department}{by === "card" && x.department ? ` · ${x.department}` : ""}</div>}</div>
-                  {COLUMNS.map((c) => <span className={s.num} key={c.k}>{number(x.totals[c.k])}<Delta now={x.totals[c.k]} prev={x.prev[c.k]} /></span>)}
-                  <span className={s.num}>{percentText(conversion(x.totals), number)}</span>
+                  {COLUMNS.map((c) => (c.k === "leads" && x.leads_visible === false ? <span className={s.num} key={c.k} title={t("analytics.contactsHidden")}>&ndash;</span> : <span className={s.num} key={c.k}>{number(x.totals[c.k])}<Delta now={x.totals[c.k]} prev={x.prev[c.k]} /></span>))}
+                  <span className={s.num}>{x.leads_visible === false ? <>&ndash;</> : percentText(conversion(x.totals), number)}</span>
                 </div>
               ))}
             </div>

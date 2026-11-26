@@ -1,0 +1,98 @@
+<section class="page" data-no="119" data-name="Film contact sheet" data-style="Objects" data-rtl="0">
+<!--recipe {"top":46,"style":"Objects","name":"Film contact sheet","slug":"19-film-contact-sheet","dir":"auto","split":"s2","avatar":"f1","drop":["made"],"cond":{"bfr":"bio","t1":"title","t2":"company","t3":"addr"},"lists":[{"c":"grid","template":"fa","role":"tiles","items":"all"}]}-->
+<style>
+/* colour: black film, amber edge print and contact-sheet paper are the signature; amber text and the first slide follow the card colour (--ac-t on dark, --ac / --ac-on on the slide), the other slides and the red grease pencil stay fixed */
+.p119 .in{--film:#0c0b0a;--sig:#f2a431;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.74,l,.96) c h);--grease:#ee3b2c;--paper:#d9d4c7;--ink:#e9e3d2;--cond:"Oswald","Cairo","Arial Narrow",Impact,sans-serif;--mono:"Space Mono","Cairo",ui-monospace,Consolas,monospace;--mk:"Permanent Marker","Cairo","Segoe Print","Bradley Hand",cursive}
+.p119 *{box-sizing:border-box;margin:0}
+.p119 .in{font-family:var(--mono);color:var(--ink);padding:5cqw 2.564cqw;background:radial-gradient(ellipse at 50% 0,#3a332a,#1c1814 75%)}
+.p119 a{color:inherit;text-decoration:none}
+.p119 a:focus-visible{outline:0.769cqw solid var(--grease);outline-offset:-0.769cqw}
+.p119 .sheetlabel{display:flex;justify-content:space-between;gap:3cqw;font-size:max(10px,2.564cqw);letter-spacing:.14em;color:#b3ab98;padding:0 1.538cqw 2.564cqw;text-transform:uppercase}
+.p119 .sheetlabel span{min-width:0;overflow-wrap:anywhere}
+.p119 .strip{position:relative;background:var(--film);padding:9cqw 7.692cqw 9cqw;border-radius:0.769cqw;box-shadow:0 4.615cqw 7.692cqw rgba(0,0,0,.6);overflow:hidden;
+  --hole:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='22'%3E%3Crect x='1' y='4' width='12' height='14' rx='3' fill='%23d9d4c7'/%3E%3C/svg%3E")}
+.p119 .strip::before,.p119 .strip::after{content:"";position:absolute;top:0;bottom:0;width:4.103cqw;background:var(--hole) repeat-y center top;background-size:3.59cqw 5.641cqw;opacity:.95}
+.p119 .strip::before{inset-inline-start:1.795cqw}
+.p119 .strip::after{inset-inline-end:1.795cqw}
+.p119 .s1{counter-reset:fr}
+.p119 .s1{padding-bottom:12cqw}
+.p119 .s2{padding-top:11cqw;padding-bottom:16cqw}
+.p119 .edge{position:absolute;inset-inline:7.692cqw;font-family:var(--mono);font-size:max(10px,2.436cqw);letter-spacing:.14em;color:var(--ac-t);display:flex;justify-content:space-between;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.p119 .edge.t{top:3.6cqw}
+.p119 .edge.b{bottom:3.6cqw}
+.p119 .frame{position:relative;background:#1b1916;border:1px solid #2b2824;margin-bottom:8.718cqw;counter-increment:fr}
+.p119 .frame::before{content:counter(fr);position:absolute;inset-inline-start:0;top:-4.615cqw;font-size:max(10px,2.564cqw);color:var(--ac-t);letter-spacing:.1em;font-weight:700;line-height:1.2}
+.p119 .frame::after{content:"\25B7  " counter(fr) "A";position:absolute;inset-inline-end:0;bottom:-4.615cqw;font-size:max(10px,2.564cqw);color:var(--ac-t);letter-spacing:.1em;line-height:1.2;white-space:pre}
+.p119 .s1 .frame:last-child{margin-bottom:0}
+.p119 .fr1{margin-top:4.615cqw}
+.p119 .f1{aspect-ratio:3/2;overflow:hidden;position:relative}
+.p119 .f1 svg{display:block;width:100%;height:100%}
+.p119 .f1 .pic{object-fit:cover;object-position:50% 25%;filter:sepia(.3) saturate(1.15) contrast(1.05)}
+.p119 .f1 span.pic{display:grid;place-items:center;filter:none;background:linear-gradient(180deg,#f4c07a,#e0805a 65%,#8f3f5c);color:#fbe3b1;font-family:var(--cond);font-weight:700;font-size:38cqw;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.p119 .cap{position:absolute;font-family:var(--mk);color:#fff;font-size:5.641cqw;transform:rotate(-5deg);text-shadow:0 2px 0 rgba(0,0,0,.6);inset-inline-end:2.564cqw;bottom:2.051cqw;z-index:2;line-height:1.1;max-width:70%;text-align:end;background:rgba(0,0,0,.6);padding:0.8cqw 2cqw;border-radius:1cqw}
+.p119 .g{position:absolute;pointer-events:none;z-index:4;fill:none;stroke:var(--grease);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;opacity:.92;overflow:visible;inset:-6% -4% -9% -4%;width:108%;height:115%}
+.p119 .title{padding:5.641cqw 4.103cqw;text-align:center;background:linear-gradient(160deg,#1c1a17,#0f0e0c);display:grid;place-items:center;min-height:51.282cqw}
+.p119 .title h1{font-family:var(--cond);font-weight:700;font-size:14.5cqw;line-height:.95;text-transform:uppercase;letter-spacing:.01em;color:var(--ink);overflow-wrap:anywhere}
+.p119.nl2 .title h1{font-size:10.5cqw}.p119.nl3 .title h1{font-size:8cqw}.p119.wl3 .title h1{font-size:7.4cqw}
+.p119 .title h1 span{color:var(--ac-t);display:block}
+.p119 .title .t{font-size:max(10px,2.821cqw);letter-spacing:.22em;text-transform:uppercase;color:#c4bba7;margin-top:3.077cqw;line-height:1.7;overflow-wrap:anywhere}
+.p119 .title .t+.t{margin-top:0}
+.p119 .bio{padding:5.128cqw 4.615cqw;display:grid;gap:2.564cqw;background:#14120f;min-height:30cqw;align-content:center}
+.p119 .bio .k{font-size:max(10px,2.564cqw);letter-spacing:.22em;color:var(--ac-t);text-transform:uppercase}
+.p119 .bio p{font-family:var(--cond);font-weight:500;font-size:5.641cqw;line-height:1.22;color:var(--ink);overflow-wrap:anywhere}
+.p119 .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8.718cqw 3.077cqw;counter-reset:fr 3}
+.p119 .fa{display:flex;flex-direction:column;justify-content:space-between;gap:3cqw;min-height:38.462cqw;padding:2.821cqw 2.564cqw 2.308cqw;background:var(--bg);color:var(--fg);overflow:visible;margin-bottom:0;border-color:transparent}
+.p119 .fa .gl{position:absolute;inset:0;background:radial-gradient(circle at 25% 15%,rgba(255,255,255,.28),transparent 55%),repeating-linear-gradient(0deg,rgba(0,0,0,.06) 0 1px,transparent 1px 0.769cqw);pointer-events:none}
+.p119 .fa:hover{filter:brightness(1.12)}
+.p119 .fa .ic{position:relative;display:block;width:8.718cqw;height:8.718cqw}
+.p119 .fa .ic svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.p119 .fa .tx{position:relative;min-width:0}
+.p119 .fa .w{display:block;font-family:var(--cond);font-weight:700;font-size:5.6cqw;line-height:1.05;text-transform:uppercase;overflow-wrap:break-word}
+.p119 .fa .v{display:block;margin-top:1.2cqw;font-size:max(10px,2.692cqw);letter-spacing:.02em;line-height:1.25;overflow-wrap:anywhere;font-weight:700}
+.p119 .fa:last-child:nth-child(odd){grid-column:1/-1;min-height:28cqw}
+.p119 .fa:nth-child(6n+1){--bg:var(--ac);--fg:var(--ac-on)}
+.p119 .fa:nth-child(6n+2){--bg:#2f9e63;--fg:#0d0d0b}
+.p119 .fa:nth-child(6n+3){--bg:#3b6fd1;--fg:#fff}
+.p119 .fa:nth-child(6n+4){--bg:#e2c545;--fg:#0d0d0b}
+.p119 .fa:nth-child(6n+5){--bg:#8a56c5;--fg:#fbf5ff}
+.p119 .fa:nth-child(6n+6){--bg:#c64a5a;--fg:#fff4f4}
+.p119[dir="rtl"] *{letter-spacing:0!important}
+.p119[dir="rtl"] .title .t,.p119[dir="rtl"] .bio .k,.p119[dir="rtl"] .sheetlabel{font-size:max(12px,3.2cqw)}
+.p119[dir="rtl"] .title h1,.p119[dir="rtl"] .fa .w,.p119[dir="rtl"] .bio p{font-family:"Cairo",var(--cond);font-weight:800;line-height:1.25}
+</style>
+<div class="pg p119"><div class="in">
+<div class="sheetlabel"><span>[[Contact sheet|ورقة الاتصال]]</span><span>{name}</span></div>
+  <main class="strip s1">
+    <div class="edge t"><span>&#9655; Bench 400</span><span>[[Safety film|فيلم آمن]]</span><span>&#9655;</span></div>
+
+    <div class="frame fr1">
+      <div class="f1"><svg viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Portrait">
+        <rect width="300" height="200" fill="#c98e6c"/>
+        <circle cx="150" cy="80" r="40" fill="#272c4a"/><path d="M60 200c4-38 30-52 90-52s86 14 90 52z" fill="#1d2440"/>
+      </svg></div>
+      <span class="cap">[[Say hello!|قل مرحباً!]]</span>
+      <svg class="g" viewBox="0 0 300 190" preserveAspectRatio="none" aria-hidden="true"><path d="M30 20C80 -4 230 -2 282 26c24 30 6 130-18 150C210 196 60 196 24 170 -4 140 -2 60 30 20 55 2 110 -2 150 4"/></svg>
+    </div>
+
+    <div class="frame">
+      <div class="title">
+        <div><h1>{first}<span>{last}</span></h1>
+        <div class="t t1">{title}</div>
+        <div class="t t2">{co}</div>
+        <div class="t t3">{city}</div></div>
+      </div>
+    </div>
+
+    <div class="frame bfr">
+      <div class="bio"><span class="k">[[Caption / notes|ملاحظات]]</span><p>{bio}</p></div>
+    </div>
+  </main>
+  <main class="strip s2">
+    <div class="grid">
+      <a class="frame fa"><span class="gl"></span><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><span class="tx"><span class="w">Call</span><span class="v">{phone}</span></span></a>
+      <a class="frame fa"><span class="gl"></span><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20l1.2-4A8 8 0 1 1 8 18.8z"/></svg></span><span class="tx"><span class="w">Chat</span><span class="v">{phone}</span></span></a>
+    </div>
+    <div class="edge b"><span>&#9655;</span><span>[[Safety film|فيلم آمن]]</span><span>&#9655;</span></div>
+  </main>
+</div></div>
+</section>

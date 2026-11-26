@@ -47,13 +47,13 @@ const CARD_LABEL: Record<CardState, { t: MessageKey; c: string }> = {
 };
 
 export default function TeamPage() {
-  const { current, isManager } = useWs();
+  const { current, isManager, has } = useWs();
   const { t, number } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
   const members = useMembers(current.id, isManager);
   const cards = useCards(isManager ? current.id : "");
-  const departments = useDepartments(current.id, isManager && current.kind === "company");
+  const departments = useDepartments(current.id, isManager && current.kind === "company" && has("departments"));
   const sub = current.subscription;
   const isOwner = current.role === "owner";
   const [text, setText] = useState("");
@@ -453,6 +453,11 @@ function MemberRow({ m, card, canChangeRole, canManage, selectable, checked, dep
         <div style={{ minWidth: 0 }}>
           <b dir="auto">{name}</b>
           <div className="hint ltr" style={{ overflowWrap: "anywhere" }}>{m.email}</div>
+          {m.role === "employee" && m.status === "active" && typeof m.share_contacts === "boolean" && (
+            <div style={{ marginBlockStart: 4 }}>
+              <span className={`pill ${m.share_contacts ? "accent" : ""}`} title={t(m.share_contacts ? "team.sharesHint" : "team.privateHint")}>{t(m.share_contacts ? "team.sharesContacts" : "team.privateContacts")}</span>
+            </div>
+          )}
           <div className="only-sm row" style={{ marginBlockStart: 4 }}>
             <span className="pill">{roleText}</span>
             <span className={`pill ${statusClass(m.status)}`}>{statusText}</span>

@@ -21,6 +21,7 @@ import { APP_NAME } from "@/lib/config";
 import { apiErrorText } from "@/lib/i18n/api-error";
 import { useI18n } from "@/lib/i18n/client";
 import { tk, type MessageKey } from "@/lib/i18n";
+import type { EnterpriseFeature } from "@/lib/types";
 import { GuideRoot } from "@/components/guide/GuideRoot";
 import { PwaRoot } from "@/components/app/PwaRoot";
 import { clearOfflineData } from "@/lib/pwa/store";
@@ -41,29 +42,26 @@ interface NavItem {
   group?: MessageKey;
 }
 
-/** Navigation for the current role: employees only see their card, QR and contacts. */
+/** Navigation for the current role: employees only see their card, Share and contacts. */
 function navFor(isManager: boolean, isCompany: boolean): NavItem[] {
   const base: NavItem[] = isManager
     ? [
         { href: "/app", label: tk("shell.navOverview"), bar: tk("shell.barHome"), icon: "home" },
         { href: "/app/cards", label: tk("shell.navCards"), bar: tk("shell.barCards"), icon: "card" },
-        { href: "/app/qr", label: tk("shell.navQr"), bar: tk("shell.barQr"), icon: "qr" },
+        { href: "/app/share", label: tk("shell.navShare"), bar: tk("shell.barShare"), icon: "share" },
         { href: "/app/contacts", label: tk("shell.navContacts"), bar: tk("shell.barPeople"), icon: "users" },
+        { href: "/app/orders", label: tk("commerce.navOrders"), bar: tk("commerce.barOrders"), icon: "gem" },
+        { href: "/app/bookings", label: tk("commerce.navBookings"), bar: tk("commerce.barBookings"), icon: "clock" },
         { href: "/app/analytics", label: tk("shell.navAnalytics"), bar: tk("shell.barStats"), icon: "chart" },
       ]
     : [
         { href: "/app/cards", label: tk("shell.navMyCard"), bar: tk("shell.barCard"), icon: "card" },
-        { href: "/app/qr", label: tk("shell.navQr"), bar: tk("shell.barQr"), icon: "qr" },
+        { href: "/app/share", label: tk("shell.navShare"), bar: tk("shell.barShare"), icon: "share" },
         { href: "/app/contacts", label: tk("shell.navMyContacts"), bar: tk("shell.barPeople"), icon: "users" },
+        { href: "/app/orders", label: tk("commerce.navOrders"), bar: tk("commerce.barOrders"), icon: "gem" },
+        { href: "/app/bookings", label: tk("commerce.navBookings"), bar: tk("commerce.barBookings"), icon: "clock" },
       ];
-  // Tools for everyone: the e-mail signature, the video-call background and the paper-card scanner.
-  base.push(
-    { href: "/app/signature", label: tk("shell.navSignature"), bar: tk("shell.barSignature"), icon: "mail", group: tk("shell.groupTools") },
-    { href: "/app/background", label: tk("shell.navBackground"), bar: tk("shell.barBackground"), icon: "camera" },
-    { href: "/app/scan", label: tk("shell.navScan"), bar: tk("shell.barScan"), icon: "scan" },
-    { href: "/app/nfc", label: tk("growth.navNfc"), bar: tk("growth.barNfc"), icon: "nfc" },
-    { href: "/app/event", label: tk("growth.navEvent"), bar: tk("growth.barEvent"), icon: "pin" },
-  );
+  // QR code, NFC, e-mail signature, wallet pass and event mode live together under Share; the paper-card scanner is in Contacts.
   if (isManager && isCompany) {
     base.push(
       { href: "/app/team", label: tk("shell.navTeam"), bar: tk("shell.barTeam"), icon: "adduser", group: tk("shell.groupCompany") },
@@ -80,6 +78,10 @@ function navFor(isManager: boolean, isCompany: boolean): NavItem[] {
   return base;
 }
 
+const LOCKED_BY: Record<string, EnterpriseFeature> = {
+  "/app/departments": "departments", "/app/fields": "field_rules", "/app/directory": "directory", "/app/activity": "activity_log",
+};
+
 function isActive(pathname: string, href: string): boolean {
   return href === "/app" ? pathname === "/app" : pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -93,18 +95,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function ShellInner({ children }: { children: React.ReactNode }) {
-  const { user, workspaces, current, setCurrent, isManager, isCompany, role, closed, closingDue, suspended } = useWs();
+  const { user, workspaces, current, setCurrent, isManager, isCompany, role, closed, closingDue, suspended, has } = useWs();
+  // Menu entries that belong to the Enterprise plan show a lock on a company that does not have it; the page explains.
+  const locked = (href: string) => isCompany && LOCKED_BY[href] !== undefined && !has(LOCKED_BY[href]);
   const { t, locale } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
   const qc = useQueryClient();
   const toast = useToast();
   const [more, setMore] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<{ name: string } | null>(null);
   const { guard, dialog: signOutDialog } = useSignOutGuard();
   const flags = useFlags(current.id);
+  // The Orders and Bookings pages show once the person has a shop or a booking page (and may have one), or already has orders or bookings.
+  const commerce = useQuery({ queryKey: ["commerce-access", current.id], queryFn: () => api.commerceAccess(current.id), staleTime: 60000 }).data;
   // A feature the product team switched off for this company has no menu entry.
-  const nav = navFor(isManager, isCompany).filter((n) => (n.href !== "/app/directory" || flags.directory) && (n.href !== "/app/requests" || flags.custom_designs));
+  const nav = navFor(isManager, isCompany).filter((n) => (n.href !== "/app/directory" || flags.directory) && (n.href !== "/app/requests" || flags.custom_designs) && (n.href !== "/app/orders" || commerce?.orders !== false) && (n.href !== "/app/bookings" || commerce?.bookings !== false));
   const waiting = useChangeRequests(current.id, "pending", isManager && isCompany).data?.pending_count ?? 0;
   const designUnread = useQuery({ queryKey: ["design-requests-summary", current.id], queryFn: () => designsApi.summary(current.id), enabled: isManager && isCompany, refetchInterval: 60000 }).data;
   const designBadge = (designUnread?.unread ?? 0) + (designUnread?.in_review ?? 0);
@@ -116,7 +122,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
   // The getting-started checklist can ask for the "new company" form.
   useEffect(() => {
-    const open = () => setCreating(true);
+    const open = (e: Event) => setCreating({ name: (e as CustomEvent<{ name?: string } | undefined>).detail?.name ?? "" });
     window.addEventListener(NEW_COMPANY_EVENT, open);
     return () => window.removeEventListener(NEW_COMPANY_EVENT, open);
   }, []);
@@ -125,6 +131,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isManager && (pathname === "/app" || /^\/app\/(analytics|team|brand|billing|departments|fields|directory|activity|requests)/.test(pathname))) router.replace("/app/cards");
   }, [isManager, pathname, router]);
+
+  // Someone with no shop has no Orders page: typing its address leads back to their cards.
+  useEffect(() => {
+    if (commerce && ((commerce.orders === false && pathname.startsWith("/app/orders")) || (commerce.bookings === false && pathname.startsWith("/app/bookings")))) router.replace("/app/cards");
+  }, [commerce, pathname, router]);
 
   // The account's language wins over this device's cookie: when it was changed elsewhere, follow it.
   useEffect(() => {
@@ -167,6 +178,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 <Link href={n.href} aria-current={isActive(pathname, n.href) ? "page" : undefined}>
                   <Icon name={n.icon} />
                   {t(n.label)}
+                  {locked(n.href) && <span className="count" title={t("billing.entLockedNav")} aria-label={t("billing.entLockedNav")}><Icon name="lock" size="s" /></span>}
                   {n.href === "/app/requests" && designBadge > 0 && <span className="count" aria-label={t("designs.badge", { n: designBadge })}>{designBadge}</span>}
                   {n.href === "/app/fields" && waiting > 0 && <span className="count" aria-label={t("shell.changesWaiting", { n: waiting })}>{waiting}</span>}
                 </Link>
@@ -213,7 +225,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               aria-label={t("shell.workspacePick")}
               value={current.id}
               onChange={(e) => {
-                if (e.target.value === "__new") setCreating(true);
+                if (e.target.value === "__new") setCreating({ name: "" });
                 else setCurrent(e.target.value);
               }}
             >
@@ -266,7 +278,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       {more && (
         <div className="morepanel" ref={moreRef}>
           {moreItems.map((n) => (
-            <Link key={n.href} href={n.href}><Icon name={n.icon} />{t(n.label)}</Link>
+            <Link key={n.href} href={n.href}><Icon name={n.icon} />{t(n.label)}{locked(n.href) && <Icon name="lock" size="s" />}</Link>
           ))}
           {staff && <Link href={staff.href} data-testid="staff-link-more"><Icon name="shield" />{t("shell.staffLink")} · {t(staff.roleKey)}</Link>}
           <button type="button" onClick={signOut}><Icon name="logout" className="flip-rtl" />{t("shell.signOut")}</button>
@@ -280,11 +292,12 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
       {creating && (
         <NewCompany
-          onClose={() => setCreating(false)}
+          initialName={creating.name}
+          onClose={() => setCreating(null)}
           onCreated={async (id) => {
             await qc.invalidateQueries({ queryKey: keys.workspaces });
             setCurrent(id);
-            setCreating(false);
+            setCreating(null);
             toast(t("shell.companyCreated", { app: APP_NAME }));
             router.push("/app/billing");
           }}
@@ -314,6 +327,20 @@ function SubscriptionBanner() {
   const sub = current.subscription;
   if (!isManager) return null;
   const fmt = (d: string | null) => (d ? date(d) : "");
+  if (sub.plan_code === "free") {
+    // The 7 free days: counting down while they last, and the offline notice once they are over.
+    const over = sub.status === "expired" || !sub.live;
+    return (
+      <div className={`notice ${over ? "bad" : "warn"}`} role="status">
+        <Icon name={over ? "alert" : "crown"} />
+        <div className="grow">
+          <b>{over ? t("shell.bannerTrialOverTitle") : t("shell.bannerTrialTitle")}</b>
+          {over ? t("shell.bannerTrialOverText") : t("shell.bannerTrialText", { date: fmt(sub.ends_at) })}
+          <div style={{ marginBlockStart: 8 }}><Link className="btn sm" href="/app/billing">{t("shell.seePlans")}</Link></div>
+        </div>
+      </div>
+    );
+  }
   if (sub.status === "expired") {
     return (
       <div className={`notice ${sub.live ? "warn" : "bad"}`} role="status">
@@ -343,9 +370,9 @@ function SubscriptionBanner() {
   return null;
 }
 
-function NewCompany({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+function NewCompany({ initialName = "", onClose, onCreated }: { initialName?: string; onClose: () => void; onCreated: (id: string) => void }) {
   const { t } = useI18n();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [country, setCountry] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);

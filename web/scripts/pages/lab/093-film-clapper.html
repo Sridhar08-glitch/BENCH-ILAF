@@ -1,0 +1,88 @@
+<section class="page" data-no="216" data-name="Clapper" data-style="Tech and Creative" data-rtl="0">
+<!--recipe {"top":93,"style":"Tech and Creative","name":"Clapper","slug":"093-film-clapper","dir":"auto","split":"bl","avatar":"av","cover":"win","coverArt":[],"cond":{"bio":"bio","co":"company","ct":"addr","fco":"company","fct":"addr","frl":"title"},"drop":["save","foot"],"lists":[{"c":"scenes","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: blue-black night with an anamorphic warm flare is the signature and stays fixed; the card colour is mixed into the warm accent (--ac fill, --ac-t text on black) */
+.p216 .in{--ink:#05070f;--board:#10131d;--line:rgba(255,255,255,.18);--txt:#f2f3f7;--mute:#9aa3bd;--sig:#ffa857;--ac:color-mix(in oklab,var(--cacc) 40%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.74,l,.92) c h);--disp:Anton,"Bebas Neue",Impact,"Arial Narrow",sans-serif;--body:"Instrument Sans","Plus Jakarta Sans",system-ui,sans-serif;--mono:"DM Mono","IBM Plex Mono",ui-monospace,monospace}
+.p216[dir="rtl"] .in{--disp:Cairo,Anton,sans-serif;--body:Cairo,"Instrument Sans",sans-serif;--mono:Cairo,"DM Mono",sans-serif}
+.p216 *{box-sizing:border-box;margin:0}
+.p216 .in{font-family:var(--body);color:var(--txt);background:var(--ink);position:relative;overflow:hidden}
+.p216 a{color:inherit;text-decoration:none}
+.p216 :focus-visible{outline:.7cqw solid var(--ac-t);outline-offset:.5cqw}
+.p216 .hero{padding:5cqw 0 8cqw}
+.p216 .hud{display:flex;justify-content:space-between;gap:3cqw;padding:0 5cqw 3cqw;font-family:var(--mono);font-size:max(10px,2.6cqw);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);line-height:1.4}
+.p216 .hud span{display:flex;align-items:center;gap:1.8cqw;min-width:0;max-width:50%;overflow-wrap:anywhere}
+.p216 .hud i{flex:none;width:2.4cqw;height:2.4cqw;border-radius:50%;background:#ff4d3d;box-shadow:0 0 2.4cqw #ff4d3d}
+.p216[dir="rtl"] .hud{letter-spacing:0}
+.p216 .win{background-position:50% 22%!important;position:relative;aspect-ratio:2.39/1;background:url(/card-library/art/film-flare-bg.webp) center/cover no-repeat,#0c1c4a;box-shadow:0 0 0 .3cqw rgba(255,255,255,.12)}
+.p216 .win::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,7,15,.55),rgba(5,7,15,0) 55%),linear-gradient(0deg,rgba(5,7,15,.4),rgba(5,7,15,0) 30%);pointer-events:none}
+.p216 .board{position:relative;margin:7cqw 5cqw 0}
+.p216 .clap{position:relative;height:13cqw}
+.p216 .clap i{position:absolute;inset-inline:0;height:6cqw;background:repeating-linear-gradient(115deg,#f2f3f7 0 5cqw,#0b0d14 5cqw 10cqw);border:.5cqw solid #f2f3f7;border-radius:.8cqw}
+.p216 .clap .lo{bottom:0}
+.p216 .clap .hi{bottom:6.6cqw;transform:rotate(-7deg);transform-origin:0 100%}
+.p216[dir="rtl"] .clap .hi{transform:rotate(7deg);transform-origin:100% 100%}
+.p216 .slate{background:var(--board);border:.5cqw solid #f2f3f7;border-top:0;border-radius:0 0 1.4cqw 1.4cqw}
+.p216 .row1{display:flex;align-items:stretch;gap:4cqw;padding:5cqw 5cqw 4cqw;border-bottom:.4cqw solid rgba(242,243,247,.5)}
+.p216 .nm{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.p216 .tag{font-family:var(--mono);font-size:max(10px,2.5cqw);letter-spacing:.22em;text-transform:uppercase;color:var(--ac-t);margin-bottom:2cqw}
+.p216[dir="rtl"] .tag{letter-spacing:0}
+.p216 h1{font-family:var(--disp);font-weight:400;font-size:13.2cqw;line-height:1.04;text-transform:uppercase;letter-spacing:.01em}
+.p216 h1 span,.p216 h1{white-space:nowrap}
+.p216.nl2 h1,.p216.nl3 h1{white-space:normal;overflow-wrap:anywhere}.p216.nl2 h1 span,.p216.nl3 h1 span{white-space:normal}
+.p216 h1 span{display:block;color:var(--ac-t)}
+.p216.wl2 h1{font-size:10.4cqw}.p216.wl3 h1{font-size:8cqw}.p216.nl3 h1{font-size:8.6cqw}.p216.nl2 h1{font-size:10cqw}
+.p216[dir="rtl"] h1{font-weight:800;line-height:1.2;font-size:11cqw}
+.p216 .ph{flex:none;width:21.5cqw;align-self:flex-start;padding:1.2cqw;background:#f2f3f7;transform:rotate(3deg);box-shadow:0 1.4cqw 3cqw rgba(0,0,0,.5)}
+.p216[dir="rtl"] .ph{transform:rotate(-3deg)}
+.p216 .av{width:100%;aspect-ratio:1/1.12;overflow:hidden;background:#222a40}
+.p216 .av .pic{display:grid;place-items:center;width:100%;height:100%;font-family:var(--disp);font-weight:400;font-size:38cqw;color:#fff;background:linear-gradient(160deg,#1b2a66,#ff8a3c)}
+.p216 .row2{display:grid;grid-template-columns:1fr 1fr 1fr}
+.p216 .row2>div{padding:3cqw 3cqw 3.4cqw;border-inline-end:.4cqw solid rgba(242,243,247,.5);min-width:0}
+.p216 .row2>div:last-child{border-inline-end:0}
+.p216 .row2 small{display:block;font-family:var(--mono);font-size:max(9px,2.2cqw);letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-bottom:1.2cqw}
+.p216[dir="rtl"] .row2 small{letter-spacing:0}
+.p216 .row2 b{display:block;font-size:max(11px,3.1cqw);font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.p216 .bl{padding:2cqw 5cqw 8cqw}
+.p216 .bio{padding:5cqw 0 6cqw;font-size:4.1cqw;line-height:1.5;color:#dfe3ef;overflow-wrap:anywhere;border-bottom:1px solid var(--line);margin-bottom:6cqw}
+.p216 .bio b{display:block;font-family:var(--mono);font-weight:400;font-size:max(10px,2.5cqw);letter-spacing:.22em;text-transform:uppercase;color:var(--ac-t);margin-bottom:2cqw}
+.p216[dir="rtl"] .bio b{letter-spacing:0}
+.p216 .scenes{display:grid;grid-template-columns:1fr 1fr;gap:3.2cqw}
+.p216 .scenes a{position:relative;min-height:27cqw;display:flex;flex-direction:column;justify-content:flex-end;padding:2cqw 3cqw 2cqw;border-block:2cqw solid #000;background:radial-gradient(ellipse 22% 38% at 78% 46%,rgba(255,200,130,.9),rgba(255,140,60,.35) 45%,rgba(255,140,60,0) 100%),linear-gradient(90deg,rgba(90,150,255,0) 30%,rgba(120,170,255,.55) 78%,rgba(90,150,255,0) 96%) 0 46%/100% .5cqw no-repeat,linear-gradient(160deg,#0b1a44,#101a38);min-width:0;overflow:hidden}
+.p216 .scenes a:nth-child(4n+2){background:radial-gradient(ellipse 22% 38% at 24% 54%,rgba(255,200,130,.9),rgba(255,140,60,.35) 45%,rgba(255,140,60,0) 100%),linear-gradient(90deg,rgba(90,150,255,0) 4%,rgba(120,170,255,.55) 24%,rgba(90,150,255,0) 70%) 0 54%/100% .5cqw no-repeat,linear-gradient(200deg,#0b1a44,#142048)}
+.p216 .scenes a:nth-child(4n+3){background:radial-gradient(ellipse 22% 38% at 52% 40%,rgba(255,200,130,.9),rgba(255,140,60,.35) 45%,rgba(255,140,60,0) 100%),linear-gradient(90deg,rgba(90,150,255,0) 10%,rgba(120,170,255,.55) 52%,rgba(90,150,255,0) 90%) 0 40%/100% .5cqw no-repeat,linear-gradient(180deg,#0a1536,#18204a)}
+.p216 .scenes a:hover{filter:brightness(1.25)}
+.p216 .scenes a:first-child{outline:.5cqw solid var(--ac);outline-offset:-.5cqw}
+.p216 .scenes .ic{position:absolute;top:2.6cqw;inset-inline-start:3cqw;width:5.2cqw;height:5.2cqw;color:var(--ac-t)}
+.p216 .scenes .ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1px #000)}
+.p216 .scenes a>span{display:block;min-width:0;text-align:center}
+.p216 .scenes b{display:block;font-size:max(11px,3.2cqw);font-weight:700;line-height:1.15;color:#fff;text-shadow:0 0 .4cqw #000,0 0 1.2cqw #000,.2cqw .2cqw 0 #000;overflow-wrap:anywhere}
+.p216 .scenes small{display:block;font-family:var(--mono);font-size:max(9.5px,2.3cqw);color:#d4daee;line-height:1.25;text-shadow:0 0 .4cqw #000,0 0 1.2cqw #000;overflow-wrap:anywhere}
+.p216 .scenes a:last-child:nth-child(odd){grid-column:1/-1;min-height:24cqw}
+</style>
+<div class="pg p216"><div class="in">
+<div class="hero">
+ <div class="hud"><span class="co"><i></i>{co}</span><span class="ct">{city}</span></div>
+ <div class="win"></div>
+ <div class="board">
+  <div class="clap" aria-hidden="true"><i class="lo"></i><i class="hi"></i></div>
+  <div class="slate">
+   <div class="row1">
+    <div class="nm"><div class="tag">[[Starring|بطولة]]</div><h1>{first}<span>{last}</span></h1></div>
+    <div class="ph"><div class="av"><svg viewBox="0 0 10 10"><rect width="10" height="10" fill="#222a40"/></svg></div></div>
+   </div>
+   <div class="row2">
+    <div class="frl"><small>[[Role|الدور]]</small><b>{title}</b></div>
+    <div class="fco"><small>[[Studio|الاستوديو]]</small><b>{co}</b></div>
+    <div class="fct"><small>[[Location|الموقع]]</small><b>{city}</b></div>
+   </div>
+  </div>
+ </div>
+</div>
+<div class="bl">
+ <div class="bio"><b>[[Logline|ملخص]]</b>{bio}</div>
+ <nav class="scenes">
+  <a><i class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></i><span><b>Call</b><small>{phone}</small></span></a>
+ </nav>
+</div>
+</div></div>
+</section>

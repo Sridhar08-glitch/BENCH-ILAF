@@ -16,6 +16,7 @@ export const keys = {
   members: (ws: string) => ["members", ws] as const,
   plans: ["plans"] as const,
   invoices: (ws: string) => ["invoices", ws] as const,
+  enterprise: (ws: string) => ["enterprise-request", ws] as const,
   subscription: (ws: string) => ["subscription", ws] as const,
   departments: (ws: string) => ["departments", ws] as const,
   audit: (ws: string, q: object) => ["audit", ws, q] as const,
@@ -30,6 +31,8 @@ export const useCards = (ws: string) => useQuery({ queryKey: keys.cards(ws), que
 export const useCard = (id: string) => useQuery({ queryKey: keys.card(id), queryFn: () => api.card(id), enabled: !!id });
 export const usePlans = () => useQuery({ queryKey: keys.plans, queryFn: api.plans, staleTime: 5 * 60_000 });
 export const useInvoices = (ws: string) => useQuery({ queryKey: keys.invoices(ws), queryFn: () => api.invoices(ws), enabled: !!ws });
+export const useEnterpriseRequest = (ws: string, enabled = true) =>
+  useQuery({ queryKey: keys.enterprise(ws), queryFn: () => api.enterpriseRequest(ws), enabled: !!ws && enabled });
 export const useMembers = (ws: string, enabled = true) => useQuery({ queryKey: keys.members(ws), queryFn: () => api.members(ws), enabled: !!ws && enabled });
 export const useAnalytics = (ws: string, days: number, card?: string) =>
   useQuery({ queryKey: keys.analytics(ws, days, card), queryFn: () => api.analytics(ws, days, card), enabled: !!ws });

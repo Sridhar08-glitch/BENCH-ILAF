@@ -144,4 +144,11 @@ export const apiError: Messages<typeof en> = {
   "apiError.two_factor_required_by_company": "شركتك تشترط التحقق بخطوتين، لذلك لا يمكن إيقافه.",
   "apiError.domain_free_mail": "لا يمكن توثيق نطاقات البريد المجانية مثل gmail.com. استخدم نطاق شركتك الخاص.",
   "apiError.domain_invalid": "أدخل نطاق الشركة مثل northgate.com.",
+  "apiError.already_subscribed": "يتجدد اشتراكك تلقائيًا. استخدم «إدارة الفوترة» لتغييره أو إلغائه.",
+  "apiError.enterprise_not_quoted": "لا يوجد عرض سعر لقبوله بعد.",
+  "apiError.enterprise_request_closed": "تم إغلاق طلب Enterprise هذا بالفعل.",
+  "apiError.enterprise_request_open": "لديك طلب Enterprise مفتوح بالفعل. انتظر ردّنا أو ألغِه أولًا.",
+  "apiError.invalid_domain": "هذا ليس اسم نطاق يمكننا استخدامه. أدخل اسمًا مثل cards.example.com.",
+  "apiError.domain_not_found": "ليس لهذه الشركة نطاق مخصص بعد. أضف نطاقًا أولًا.",
+  "apiError.no_billing_account": "لا توجد دفعة بالبطاقة لإدارتها بعد.",
 };

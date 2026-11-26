@@ -16,6 +16,7 @@ import { platformOf } from "@/lib/card/catalogue";
 import { KIND_SHORT } from "@/lib/card/label-keys";
 import { cardI18n, cardLabels, localiseChrome } from "@/lib/card/labels";
 import { wrapArabicRuns } from "@/lib/card/bidi";
+import { withoutRepeatedButtons } from "./dedupe";
 import type { TFunction } from "@/lib/i18n";
 
 /** Text shown under a button's label: addresses without the scheme and the trailing slash. */
@@ -65,7 +66,7 @@ export function buildInput(data: CardPageData, mode: CardMode = "live", flipped 
   const { first, last } = splitName(data.name);
   return {
     person: {
-      name: data.name.trim(), first, last, title: data.title.trim(), company: data.company.trim(), address: data.address.trim(),
+      name: data.name.trim(), first, last, title: data.title.trim(), company: data.company.trim(), address: data.address.trim(), bio: (data.bio ?? "").trim(),
       initials: initials(data.name), photoUrl: data.photoUrl, coverUrl: data.coverUrl ?? null,
     },
     items: entries.map((e) => engineItem(e, page["--pgbg"], ci.t)),
@@ -87,6 +88,19 @@ export function buildInput(data: CardPageData, mode: CardMode = "live", flipped 
   };
 }
 
+/**
+ * A card face has its QR code on the back. A page style has no back, so its QR code is drawn at the end of the page,
+ * above the footer. Inline styles only, with the page colours, so it needs no new stylesheet.
+ */
+export function pageQr(input: EngineInput): string {
+  const q = input.qr;
+  if (!q || !q.d || input.design.top <= 0 || input.mode === "thumb") return "";
+  const caption = input.labels?.back ?? "Scan to save my contact";
+  const aria = input.labels?.qr ?? "QR code";
+  const svg = `<svg viewBox="0 0 ${q.size} ${q.size}" shape-rendering="crispEdges" role="img" aria-label="${aria.replace(/"/g, "&quot;")}" style="width:132px;height:132px;display:block;border-radius:10px"><rect width="${q.size}" height="${q.size}" fill="#fff"/><path d="${q.d}" fill="#0B1020"/></svg>`;
+  return `<div class="pg-qr" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:20px auto 6px;color:var(--pgfg);font-size:12px;text-align:center">${svg}<span style="opacity:.75">${caption}</span></div>`;
+}
+
 export interface DrawnPage extends EngineResult {
   /** Classes for the `.cfl` wrapper (company artwork switches). */
   wrapClass: string;
@@ -95,6 +109,10 @@ export interface DrawnPage extends EngineResult {
 /** Draw a built card page and, for a company card, lay the company brand on it. */
 export function drawPage(input: EngineInput, data: Pick<CardPageData, "brand">, mode: CardMode = "live"): DrawnPage {
   const raw = renderPage(input);
+  // A header and the list under it must not both show the same button.
+  raw.html = withoutRepeatedButtons(raw.html);
+  const qr = pageQr(input);
+  if (qr) raw.html = raw.html.includes('<div class="foot">') ? raw.html.replace('<div class="foot">', qr + '<div class="foot">') : raw.html + qr;
   // The typeface and size of the name, title and contact lines are a class and a few variables on the card wrapper.
   const text = textClasses(input.design);
   if (text) raw.pageVars = { ...raw.pageVars, ...textVars(input.design) };

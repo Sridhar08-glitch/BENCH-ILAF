@@ -2,12 +2,12 @@
 title: Add your card to your email signature
 summary: Pick a style, copy it, paste it into Gmail, Outlook or Apple Mail.
 audience: personal, company_owner, company_admin, employee
-pages: /app/signature
+pages: /app/share/signature
 related: publish-and-share
 updated: 2026-11-22
 ---
 
-Open Signature in the Tools section.
+Open Share and choose the Email signature tab.
 
 ## Make it
 1. Pick a style: Compact, Classic with photo, Banner with logo or Minimal text.

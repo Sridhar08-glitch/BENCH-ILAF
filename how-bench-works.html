@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How Bench works</title>
+<style>
+:root{
+  --bg:#F4F2EC; --panel:#FFFFFF; --ink:#16171B; --mute:#5F6470; --line:#DEDACF;
+  --acc:#E8470F; --acc-ink:#FFFFFF; --soft:#FBEBE3;
+  --ok:#18794E; --ok-bg:#E3F4EA; --part:#9A6700; --part-bg:#FFF1CC; --plan:#4C4FC2; --plan-bg:#E9EAFB;
+  --shadow:0 1px 2px rgba(20,20,30,.06),0 6px 20px rgba(20,20,30,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#121316; --panel:#1B1D22; --ink:#F0F0F3; --mute:#A2A7B3; --line:#2D3039;
+  --acc:#FF6A3A; --acc-ink:#1A0A04; --soft:#2A1B15;
+  --ok:#5FD39A; --ok-bg:#17301F; --part:#F2C14E; --part-bg:#33290E; --plan:#9FA2FF; --plan-bg:#23244A;
+  --shadow:none; color-scheme:dark}}
+:root[data-theme=dark]{
+  --bg:#121316; --panel:#1B1D22; --ink:#F0F0F3; --mute:#A2A7B3; --line:#2D3039;
+  --acc:#FF6A3A; --acc-ink:#1A0A04; --soft:#2A1B15;
+  --ok:#5FD39A; --ok-bg:#17301F; --part:#F2C14E; --part-bg:#33290E; --plan:#9FA2FF; --plan-bg:#23244A;
+  --shadow:none; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif;padding-inline:16px}
+.wrap{max-width:980px;margin-inline:auto;padding-block:28px 64px}
+header h1{font-size:clamp(1.8rem,4.5vw,2.8rem);line-height:1.08;margin:0 0 10px;text-wrap:balance;letter-spacing:-.02em}
+header p{margin:0;color:var(--mute);max-width:62ch;font-size:1.05rem}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:18px;font-size:.9rem;color:var(--mute)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:650;padding:3px 10px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.ok{color:var(--ok);background:var(--ok-bg)} .part{color:var(--part);background:var(--part-bg)} .plan{color:var(--plan);background:var(--plan-bg)}
+nav.tabs{position:sticky;top:0;z-index:5;background:var(--bg);padding-block:12px;margin-top:22px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+nav.tabs button{font:inherit;font-weight:650;padding:10px 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+nav.tabs button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+nav.tabs button:focus-visible,a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+section.flow{display:none;padding-top:26px}
+section.flow.on{display:block}
+.intro{background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:26px}
+.intro b{display:block;margin-bottom:2px}
+h2{font-size:1.35rem;margin:34px 0 4px;letter-spacing:-.01em}
+h2 small{display:block;font-size:.95rem;font-weight:400;color:var(--mute);margin-top:2px}
+ol.steps{list-style:none;margin:20px 0 0;padding:0;position:relative}
+ol.steps::before{content:"";position:absolute;inset-block:8px;inset-inline-start:21px;width:2px;background:var(--line)}
+ol.steps>li{position:relative;padding-inline-start:64px;padding-bottom:20px;counter-increment:s}
+ol.steps>li::before{content:counter(s);position:absolute;inset-inline-start:0;top:0;width:44px;height:44px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:800;font-size:1.05rem;box-shadow:0 0 0 6px var(--bg)}
+ol.steps{counter-reset:s}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);min-width:0}
+.card h3{margin:0 0 8px;font-size:1.12rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rows{display:grid;gap:8px 18px;grid-template-columns:96px 1fr}
+.rows dt{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);font-weight:700;padding-top:3px}
+.rows dd{margin:0;min-width:0}
+.where{font-family:Consolas,"Courier New",monospace;font-size:.86rem;background:var(--bg);border:1px solid var(--line);padding:1px 7px;border-radius:6px}
+.fork{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.opt{border-radius:14px;padding:14px 16px;border:1.5px solid var(--line);background:var(--bg)}
+.opt.good{border-color:var(--ok)} .opt.bad{border-color:var(--part)}
+.opt h4{margin:0 0 4px}
+.table{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.93rem}
+th,td{padding:10px 14px;text-align:start;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.76rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mute)}
+tr:last-child td{border-bottom:0}
+.models{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.note{margin-top:30px;padding:14px 18px;border-radius:14px;border:1px dashed var(--line);color:var(--mute);font-size:.92rem}
+@media(max-width:720px){
+  .fork,.models{grid-template-columns:1fr}
+  .rows{grid-template-columns:1fr;gap:2px}.rows dt{padding-top:8px}
+  ol.steps>li{padding-inline-start:56px}
+  ol.steps::before{inset-inline-start:17px}
+  ol.steps>li::before{width:36px;height:36px;font-size:.95rem}
+}
+@media print{nav.tabs{display:none}section.flow{display:block!important;break-before:page}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>How Bench works, step by step</h1>
+  <p>A simple walk through making a card, running a company, and using Bench at an event or exhibition. Each step says what you do, what happens, and where to find it in the app.</p>
+  <div class="legend" aria-label="What the labels mean">
+    <span><span class="chip ok">Ready today</span> built and tested</span>
+    <span><span class="chip part">Partly built</span> some pieces exist</span>
+    <span><span class="chip plan">Planned</span> an idea, not built yet</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Choose a flow">
+  <button role="tab" aria-selected="true" aria-controls="personal" id="t-personal">1. One person (Personal)</button>
+  <button role="tab" aria-selected="false" aria-controls="company" id="t-company">2. A company (Company and Enterprise)</button>
+  <button role="tab" aria-selected="false" aria-controls="events" id="t-events">3. Events and exhibitions</button>
+</nav>
+
+<!-- ============ PERSONAL ============ -->
+<section class="flow on" id="personal" role="tabpanel" aria-labelledby="t-personal">
+  <div class="intro"><b>The short version</b>You can build a card for free. The first time you publish it, you get 7 free days. After that it needs a paid Personal plan, or it goes offline. Nothing is deleted.</div>
+  <ol class="steps">
+    <li><div class="card"><h3>Sign up <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Create an account with your email or with Google.</dd>
+      <dt>Happens</dt><dd>Bench makes your personal workspace. No card details are asked.</dd>
+      <dt>Where</dt><dd><span class="where">Sign-in page</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Create your card <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Press <b>New card</b> and type your name.</dd>
+      <dt>Happens</dt><dd>The card is saved as a <b>draft</b>. Nobody can see it yet. Creating it is free, and you can build one draft without any plan.</dd>
+      <dt>Where</dt><dd><span class="where">Cards</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Make it yours <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Go through the editor tabs: <b>Look, Colour, Details, Buttons, Under the card, Extras, More settings, Share</b>. A live preview of the card is always beside you.</dd>
+      <dt>Happens</dt><dd>Changes save by themselves. On the free plan you can choose from the first <b>50 faces, 50 below-card layouts and 50 animations</b>, and no page styles. A paid plan opens all 500 faces and all 127 page styles.</dd>
+      <dt>Where</dt><dd><span class="where">Cards → your card</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Publish <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Press <b>Publish</b>.</dd>
+      <dt>Happens</dt><dd>The card goes live and your <b>7 free days start now</b>, not when you created it. So take your time building.</dd>
+      <dt>Where</dt><dd><span class="where">Card editor → Publish</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Share it <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Show the QR code, send the link, tap an NFC card or tag, add it to your phone wallet, or put it in your email signature.</dd>
+      <dt>Happens</dt><dd>Anyone who scans or taps sees your card in a browser. No app is needed.</dd>
+      <dt>Where</dt><dd><span class="where">Share</span> (QR, NFC, email signature, wallet and Event mode in one place)</dd></dl></div></li>
+
+    <li><div class="card"><h3>People meet your card <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>They</dt><dd>Save your contact, or send you their own details.</dd>
+      <dt>Happens</dt><dd>Their details arrive in your <b>Contacts</b> and you get an email alert. Only you can see them. You can also add a contact by scanning a paper business card.</dd>
+      <dt>Where</dt><dd><span class="where">Contacts</span> (Add contact → Scan a paper card)</dd></dl></div></li>
+
+    <li><div class="card"><h3>Two days before the free week ends <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>You get an email in English or Arabic: your free week is about to end.</dd>
+      <dt>Where</dt><dd><span class="where">Your inbox</span>, and a banner in the app with a countdown</dd></dl></div></li>
+
+    <li><div class="card"><h3>Day 7: you choose <span class="chip part">Partly verified</span></h3>
+      <div class="fork">
+        <div class="opt good"><h4>You pay the Personal plan</h4>
+          The card stays online. All designs unlock. It renews each year until you cancel, and you can manage that under Billing. The paid year starts on the day you pay.</div>
+        <div class="opt bad"><h4>You do not pay</h4>
+          The card goes <b>offline</b> straight away, with no extra grace days. Visitors see "temporarily unavailable". Nothing is deleted, but you cannot publish again until you pay. There is no second free week.</div>
+      </div>
+      <dl class="rows" style="margin-top:12px"><dt>Where</dt><dd><span class="where">Plan and billing</span></dd></dl>
+      <p style="margin:10px 0 0;color:var(--mute);font-size:.9rem">The rules are tested. A real payment has not been tried yet, because no payment keys are set up here.</p>
+    </div></li>
+  </ol>
+
+  <h2>Free week or paid Personal<small>What changes when you pay</small></h2>
+  <div class="table"><table>
+    <thead><tr><th>Thing</th><th>Free week</th><th>Personal plan (49 QAR a year)</th></tr></thead>
+    <tbody>
+      <tr><td>Cards</td><td>1</td><td>1</td></tr>
+      <tr><td>Online</td><td>7 days from first publish</td><td>While the plan is active</td></tr>
+      <tr><td>Card faces</td><td>First 50</td><td>All 500</td></tr>
+      <tr><td>Below-card layouts and animations</td><td>First 50 of each</td><td>All</td></tr>
+      <tr><td>Page styles (photo headers and the 127 designs)</td><td>None</td><td>All</td></tr>
+      <tr><td>After it ends</td><td>Card offline, nothing deleted</td><td>Some grace days after the end date</td></tr>
+    </tbody></table></div>
+</section>
+
+<!-- ============ COMPANY ============ -->
+<section class="flow" id="company" role="tabpanel" aria-labelledby="t-company">
+  <div class="intro"><b>The short version</b>A company gets one card per person, all in the company's look. The owner and admins manage the team. Each employee's own contacts stay private unless that employee chooses to share them.</div>
+  <ol class="steps">
+    <li><div class="card"><h3>Create the company <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Open the workspace menu and add a company. A personal user with a work email also sees a gentle "Turn this into a team" prompt.</dd>
+      <dt>Happens</dt><dd>You become the <b>owner</b>. Bench makes a company workspace next to your personal one.</dd>
+      <dt>Where</dt><dd><span class="where">Workspace menu → New company</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Choose a plan <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>Company</dt><dd>39 QAR per seat per year, from 5 seats. Renews yearly. There is <b>no free week</b> for companies.</dd>
+      <dt>Enterprise</dt><dd>By request only. The company asks, Bench staff set the seats and the price, and the company accepts and pays.</dd>
+      <dt>Where</dt><dd><span class="where">Plan and billing</span></dd></dl>
+      <div class="table"><table>
+        <thead><tr><th>Included</th><th>Company</th><th>Enterprise</th></tr></thead>
+        <tbody>
+          <tr><td>Invite and remove people, owner and admin roles</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>Brand and locked design, company card, shared contacts, analytics, weekly report, export</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td>Departments, directory, approval rules, activity log</td><td>No</td><td>Yes</td></tr>
+          <tr><td>Integrations: webhooks, API, CRM</td><td>No</td><td>Yes</td></tr>
+          <tr><td>Own web address (custom domain) and sign-in rules</td><td>No</td><td>Yes</td></tr>
+        </tbody></table></div>
+      <p style="margin:10px 0 0;color:var(--mute);font-size:.9rem">Companies that were already paying before 26 November 2026 keep the Enterprise features until their period ends.</p></div></li>
+
+    <li><div class="card"><h3>Set the brand <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Choose the company colours, upload the logo, pick a card style, and lock the design if you want every card to look the same.</dd>
+      <dt>Happens</dt><dd>Every employee card uses the company look.</dd>
+      <dt>Where</dt><dd><span class="where">Brand</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Invite the team <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Add people by email, or import a spreadsheet.</dd>
+      <dt>Happens</dt><dd>Each person gets an invitation, joins, and gets their own card in the company brand. One card per seat.</dd>
+      <dt>Where</dt><dd><span class="where">Team</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Employees fill in their cards <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>They</dt><dd>Add their name, title, photo and links.</dd>
+      <dt>Happens</dt><dd>Fields can be free, needing approval, or locked (approval rules are an Enterprise feature). Employees can use the extras the company allows, such as a shop or booking.</dd>
+      <dt>Where</dt><dd><span class="where">Cards</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>The company card <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Make one shared company card for the website, the reception, and events.</dd>
+      <dt>Happens</dt><dd>Contacts that arrive on this card belong to the <b>company</b>. Owners and admins see them, and they can be emailed about each new one.</dd>
+      <dt>Where</dt><dd><span class="where">Cards → Company card</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Who sees which contacts <span class="chip ok">Ready today</span></h3>
+      <div class="table"><table>
+        <thead><tr><th>The contact came in on...</th><th>The employee sees</th><th>Owner and admins see</th></tr></thead>
+        <tbody>
+          <tr><td>The company card</td><td>Only if assigned to them</td><td>Yes</td></tr>
+          <tr><td>The employee's own card (switch off, the default)</td><td>Yes</td><td><b>No</b></td></tr>
+          <tr><td>The employee's own card, after they turn on sharing</td><td>Yes</td><td>Yes, for contacts that arrive from then on</td></tr>
+          <tr><td>A card nobody holds any more (the person left)</td><td>-</td><td>Yes</td></tr>
+        </tbody></table></div>
+      <p style="margin:10px 0 0">The employee's switch is called <b>Share my new contacts with the company</b>. Sharing sends those contacts on to the CRM, webhooks, the weekly report and admin email alerts. Turning it off stops sharing for new contacts; ones already shared stay with the company. Orders and bookings follow the same switch.</p>
+      <dl class="rows" style="margin-top:8px"><dt>Where</dt><dd><span class="where">Settings</span> (for the employee) and <span class="where">Team</span> (admins see "Shares contacts" or "Private")</dd></dl></div></li>
+
+    <li><div class="card"><h3>When someone leaves <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Remove the person and choose what happens to their card: keep it, hand it to someone else, or delete it.</dd>
+      <dt>Happens</dt><dd>A kept card with no holder counts as the company's, so its contacts stay with the company.</dd>
+      <dt>Where</dt><dd><span class="where">Team → Remove</span></dd></dl></div></li>
+
+    <li><div class="card"><h3>Renewal <span class="chip part">Partly verified</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>The plan renews each year through Stripe. A failed payment sends an email, and grace days still apply. Owners manage the card and cancel in <b>Manage billing</b>.</dd>
+      <dt>Where</dt><dd><span class="where">Plan and billing</span></dd></dl>
+      <p style="margin:10px 0 0;color:var(--mute);font-size:.9rem">Tested with simulated payments. A real Stripe test has not been run.</p></div></li>
+  </ol>
+
+  <h2>Asking for Enterprise<small>How a company gets a custom plan</small></h2>
+  <ol class="steps">
+    <li><div class="card"><h3>The owner asks <span class="chip ok">Ready today</span></h3><dl class="rows"><dt>You</dt><dd>On the Billing page, fill in how many seats you need and a short message.</dd></dl></div></li>
+    <li><div class="card"><h3>Bench staff reply with a quote <span class="chip ok">Ready today</span></h3><dl class="rows"><dt>Happens</dt><dd>In the back office, staff set the seats and the price for this company. The owner gets an email in English or Arabic.</dd></dl></div></li>
+    <li><div class="card"><h3>The owner accepts and pays <span class="chip ok">Ready today</span></h3><dl class="rows"><dt>Happens</dt><dd>The Enterprise features switch on and the plan renews yearly like the others. Seats can never be set below the number already in use.</dd></dl></div></li>
+  </ol>
+</section>
+
+<!-- ============ EVENTS ============ -->
+<section class="flow" id="events" role="tabpanel" aria-labelledby="t-events">
+  <div class="intro"><b>The idea</b>An event or exhibition organiser makes Bench the official digital card partner. Every exhibitor, speaker and visitor gets a card in the event's look, and the organiser gets results to show its sponsors. Much of the base already exists. The event-specific tools are planned.</div>
+
+  <h2>Three ways to do the deal<small>Pick one for the first event</small></h2>
+  <div class="models">
+    <div class="card"><h3>1. Official partner</h3>The organiser includes Bench in every exhibitor package and pays Bench per exhibitor or per attendee. Simple for exhibitors.</div>
+    <div class="card"><h3>2. Exhibitor add-on</h3>The organiser sells a "Bench Event Pack" as an optional extra and shares the revenue with Bench. Low risk for the organiser.</div>
+    <div class="card"><h3>3. Sponsor-funded</h3>A sponsor pays, so cards are free for everyone and carry the sponsor's name. Bench earns from the sponsor.</div>
+  </div>
+
+  <h2>Before the event<small>Setting everything up</small></h2>
+  <ol class="steps">
+    <li><div class="card"><h3>Agree the tie-up <span class="chip plan">Planned (business step)</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>You and the organiser agree the model, the price, who owns visitor details, and the consent wording. A lawyer should check this for Qatar.</dd></dl></div></li>
+    <li><div class="card"><h3>Create the event workspace <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Make a company workspace for the organiser, with the event's colours and logo and a locked design.</dd>
+      <dt>Happens</dt><dd>You can pick one of the event-themed page styles (speaker, exhibitor booth, expo hall, awards gala, music festival, art fair).</dd></dl></div></li>
+    <li><div class="card"><h3>Add exhibitors and speakers <span class="chip part">Partly built</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Import the list from a spreadsheet.</dd>
+      <dt>Happens</dt><dd>Everyone gets a card in the event brand. Today this works through the company team import. A version made for events is planned.</dd></dl></div></li>
+    <li><div class="card"><h3>Publish the directory <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>The company directory becomes the exhibitor and speaker directory, with search. It is an Enterprise feature. It can sit on the event's own web address once a custom domain is set up (not yet tested on a real domain).</dd></dl></div></li>
+    <li><div class="card"><h3>Print the booth QR poster <span class="chip plan">Planned</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>One click makes a print-ready A4, A3 or roll-up banner with the event or company brand and a big QR: "Scan to get our catalogue and meet our team".</dd></dl></div></li>
+  </ol>
+
+  <h2>On the day<small>At the stand</small></h2>
+  <ol class="steps">
+    <li><div class="card"><h3>Visitors scan or tap <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>They</dt><dd>Scan the stand's QR or tap a staff member's NFC card.</dd>
+      <dt>Happens</dt><dd>They see the card, save the contact, and can leave their own details with a clear consent line.</dd></dl></div></li>
+    <li><div class="card"><h3>Staff capture leads <span class="chip part">Partly built</span></h3>
+      <dl class="rows"><dt>You</dt><dd>Use <b>Event mode</b> for a full-screen QR and quick "I met someone" notes that save offline. Scan a visitor's paper card to add it.</dd>
+      <dt>Planned</dt><dd>A <b>kiosk mode</b> (a tablet where visitors type their own details) and <b>Hot / Warm / Cold</b> marks with interest tags.</dd>
+      <dt>Where</dt><dd><span class="where">Share → Event</span> and <span class="where">Contacts → Add contact → Scan</span></dd></dl></div></li>
+    <li><div class="card"><h3>Visitors get a follow-up <span class="chip plan">Planned</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>Right after they leave details, the visitor gets a message with the catalogue link. The staff member is reminded to follow up.</dd></dl></div></li>
+    <li><div class="card"><h3>Who owns the leads <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>Leads from the company card belong to the company. Leads from a staff member's own card stay private unless that person has turned on sharing. Exhibitor staff can use either.</dd></dl></div></li>
+  </ol>
+
+  <h2>After the event<small>Proving it worked</small></h2>
+  <ol class="steps">
+    <li><div class="card"><h3>Reports <span class="chip plan">Planned</span></h3>
+      <dl class="rows"><dt>Exhibitor</dt><dd>Leads per hour, leads per staff member, and a list of hot leads to call first.</dd>
+      <dt>Organiser</dt><dd>Cards created, scans, connections made, and the busiest stands, to show sponsors. Basic analytics and export exist today for company cards.</dd></dl></div></li>
+    <li><div class="card"><h3>Follow-up and reminders <span class="chip part">Partly built</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>Contacts keep the "met at the event" tag, and assigned contacts notify the person. Automatic reminders "You met 40 people, send a hello?" are planned.</dd></dl></div></li>
+    <li><div class="card"><h3>From the event to paying customers <span class="chip ok">Ready today</span></h3>
+      <dl class="rows"><dt>Happens</dt><dd>People who liked the card start a Personal plan, and exhibitors turn the event setup into a Company plan for their team.</dd></dl></div></li>
+  </ol>
+
+  <h2>How Bench makes money<small>No prices are set yet</small></h2>
+  <div class="table"><table>
+    <thead><tr><th>Source</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td>Organiser</td><td>A fee per exhibitor or per attendee</td></tr>
+      <tr><td>Exhibitor</td><td>A one-off Event Pack for the event, not a yearly plan</td></tr>
+      <tr><td>Sponsor</td><td>A fee for the logo on cards and posters</td></tr>
+      <tr><td>Printing</td><td>A margin on NFC cards, lanyards and posters made by a partner</td></tr>
+      <tr><td>After the event</td><td>New Personal and Company plans</td></tr>
+    </tbody></table></div>
+
+  <h2>A small pilot first<small>How to prove it with one event</small></h2>
+  <ol class="steps">
+    <li><div class="card"><h3>Pick one event</h3>A small or medium one, with an organiser who already knows you.</div></li>
+    <li><div class="card"><h3>Offer it free or at cost</h3>For 10 to 30 exhibitor cards, a booth QR poster and a speaker directory.</div></li>
+    <li><div class="card"><h3>Measure</h3>Cards created, scans, contacts saved, and how many exhibitors say they would pay next time.</div></li>
+    <li><div class="card"><h3>Write a one-page case study</h3>Use it to sell the next event.</div></li>
+  </ol>
+</section>
+
+<p class="note">This page was written from the product as it is built and tested on 26 November 2026. "Ready today" means the code exists and passes its tests; most screens have not been clicked through in a browser yet, and real payments and real custom domains have not been tried. Prices other than the plan prices are not set.</p>
+</div>
+
+<script>
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('nav.tabs button'));
+  var flows=[].slice.call(document.querySelectorAll('section.flow'));
+  function show(id){
+    tabs.forEach(function(b){b.setAttribute('aria-selected',String(b.getAttribute('aria-controls')===id))});
+    flows.forEach(function(f){f.classList.toggle('on',f.id===id)});
+    try{history.replaceState(null,'','#'+id)}catch(e){}
+    window.scrollTo({top:0});
+  }
+  tabs.forEach(function(b){b.addEventListener('click',function(){show(b.getAttribute('aria-controls'))})});
+  var h=(location.hash||'').slice(1);
+  if(h&&document.getElementById(h)&&document.getElementById(h).classList.contains('flow'))show(h);
+})();
+</script>
+</body>
+</html>

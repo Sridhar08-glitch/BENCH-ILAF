@@ -64,4 +64,10 @@ export const dash: Messages<typeof en> = {
   "dash.endedOn": "انتهى في",
   "dash.renewsOn": "يتجدد في",
   "dash.managePlan": "إدارة الاشتراك",
+  "dash.teamPromptTitle": "يمكن لزملائك أن تكون لهم بطاقات أيضًا",
+  "dash.teamPromptText": "حوّل هذا إلى فريق: يحصل كل شخص على بطاقة بمظهر شركتك، وتديرها كلها من مكان واحد.",
+  "dash.teamPromptSeats": "تبدأ باقات الشركات من {n} مقاعد.",
+  "dash.teamPromptAction": "حوّل هذا إلى فريق",
+  "dash.teamPromptDismiss": "ليس الآن",
+  "dash.teamPromptDismissAria": "إخفاء هذا الاقتراح لمدة 30 يومًا",
 };

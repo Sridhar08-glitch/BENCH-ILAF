@@ -16,9 +16,8 @@ function bareLink(i, inner) {
   return '<a' + LA(i) + ' aria-label="' + i.l + '" style="display:contents">' + inner + '</a>';
 }
 var DV = [
-  {n: 'List', d: 'Quick call, message and email buttons, then a plain list.', h: function () {
-    var acts = LV([0, 1, 2, 4]).map(function (i) { return bareLink(i, '<span>' + IH(i) + '</span>'); }).join('');
-    return (acts ? '<div class="acts">' + acts + '</div>' : '') + rows(LIVE);
+  {n: 'List', d: 'A plain list of your buttons.', h: function () {
+    return rows(LIVE);
   }},
   {n: 'App grid', d: 'Icons laid out like a phone home screen, details in a short block.', h: function () {
     var info = (P.phone ? '<div>' + ic('phone') + P.phone + '</div>' : '') + (P.email ? '<div>' + ic('mail') + P.email + '</div>' : '') + (P.addr ? '<div>' + ic('pin') + P.addr + '</div>' : '');

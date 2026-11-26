@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { fetchPublicCard } from "@/lib/public-api";
+import { getCustomHost } from "@/lib/server/custom-host";
+import { cardHref } from "@/lib/card-address";
 import { dirOf } from "@/lib/i18n/config";
 import { getI18n } from "@/lib/i18n/server";
 import { REPORT_REASONS } from "@/lib/server/public-form";
@@ -23,10 +25,11 @@ const REASON_TEXT: Record<(typeof REPORT_REASONS)[number], MessageKey> = {
 export default async function ReportPage({ params, searchParams }: Props) {
   const { code } = await params;
   const sp = await searchParams;
-  const data = await fetchPublicCard(code);
+  const { host } = await getCustomHost();
+  const data = await fetchPublicCard(code, host);
   if (!data || data.state !== "live") notFound();
   const { t, locale } = await getI18n();
-  const back = `/c/${encodeURIComponent(data.canonical)}`;
+  const back = cardHref(data.canonical, host);
   return (
     <main lang={locale} dir={dirOf(locale)} style={{ maxWidth: 520, margin: "0 auto", padding: "28px 18px 48px", display: "grid", gap: 16 }}>
       <Logo />

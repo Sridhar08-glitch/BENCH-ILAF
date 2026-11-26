@@ -1,0 +1,91 @@
+<section class="page" data-no="130" data-name="Paper layers" data-style="Digital" data-rtl="0">
+<!--recipe {"top":57,"style":"Digital","name":"Paper layers","slug":"30-paper-layers","dir":"auto","split":"stack","avatar":"r3","drop":["save","foot","x-top"],"cond":{"nlay":"bio"},"lists":[{"c":"stack","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: the cream paper, the sunset hills and the layer palette (teal, navy, yellow, purple, brown) are the signature and stay fixed; the red paper layer, the monogram ring, the quote mark and the role text take the card accent mixed 55% into the signature red (--ac-on on the red layer, --ac-t on cream) */
+.p130 .in{--ink:#2b2118;--cream:#f7ecd9;--sig:#c9472d;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h)}
+.p130 *{box-sizing:border-box;margin:0}
+.p130 .in{font-family:"Figtree","Cairo",system-ui,sans-serif;color:var(--ink)}
+.p130 .in{background-color:var(--cream);position:relative;overflow:hidden;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+.p130 a{color:inherit;text-decoration:none}
+.p130 .hero{position:relative;padding:66cqw 0 9.231cqw;min-height:104cqw;overflow:hidden}
+.p130 .hero>svg{position:absolute;top:0;inset-inline:0;width:100%;height:120.513cqw}
+.p130 .hero>.fill{position:absolute;inset-inline:0;top:105cqw;bottom:0;background:#a8583a}
+.p130 .sh{filter:drop-shadow(0 1.538cqw 1.282cqw rgba(60,30,10,.28)) drop-shadow(0 1px 1px rgba(60,30,10,.3))}
+.p130 .mono{position:absolute;inset-inline-start:6.667cqw;top:8cqw;width:34cqw;height:34cqw;z-index:3}
+.p130 .mono i{position:absolute;border-radius:50%;filter:drop-shadow(0 1.026cqw 1.026cqw rgba(60,30,10,.35))}
+.p130 .mono .r1{inset:0;background:var(--ac)}
+.p130 .mono .r2{inset:2.7cqw;background:#f0bd52}
+.p130 .mono .r3{inset:6cqw;background:#1f7a7e}
+.p130 .mono .r3 .pic{object-fit:cover;display:grid;place-items:center;font-family:"Fraunces","Cairo",serif;font-weight:900;font-size:38cqw;letter-spacing:-.02em;line-height:1;color:#f7ecd9;background:#1f7a7e}
+.p130 .tag{position:relative;margin:0 5.128cqw;z-index:3;background:#fffaf0;padding:5.128cqw 5.128cqw 4.615cqw;border-radius:1.538cqw;transform:rotate(-1.2deg);box-shadow:0 3.077cqw 3.59cqw -1.538cqw rgba(60,30,10,.35),0 2px 0.769cqw rgba(60,30,10,.25)}
+.p130[dir="rtl"] .tag{transform:rotate(1.2deg)}
+.p130 .tag::before{content:"";position:absolute;top:-3.077cqw;inset-inline-start:50%;width:21.538cqw;height:6.154cqw;margin-inline-start:-10.769cqw;background:rgba(240,189,82,.85);transform:rotate(2deg);box-shadow:0 1px 2px rgba(60,30,10,.3)}
+.p130 h1{font-family:"Fraunces","Cairo",serif;font-weight:900;font-size:10.256cqw;line-height:1;letter-spacing:-.025em;color:#2b2118;overflow-wrap:anywhere}
+.p130 h1 span{display:block}
+.p130 h1 .l:empty{display:none}
+.p130.nl2 h1{font-size:7.6cqw}.p130.nl3 h1{font-size:6cqw}
+.p130[dir="rtl"] h1{font-weight:800;letter-spacing:0;line-height:1.35;font-size:9.5cqw}
+.p130[dir="rtl"].nl2 h1{font-size:7.6cqw}.p130[dir="rtl"].nl3 h1{font-size:6cqw}
+.p130 .role{margin-top:2.564cqw;font-weight:700;font-size:max(11px,3.59cqw);line-height:1.35;color:var(--ac-t);overflow-wrap:anywhere}
+.p130 .co{margin-top:.8cqw;font-weight:500;font-size:max(11px,3.59cqw);line-height:1.35;color:#5b4a3a;overflow-wrap:anywhere}
+.p130 .nlay{position:relative;margin-top:-0.256cqw;filter:drop-shadow(0 -1.282cqw 1.282cqw rgba(40,20,5,.28)) drop-shadow(0 -1px 1px rgba(40,20,5,.3))}
+.p130 .nlay .wave{display:block;width:100%;height:7.692cqw;color:var(--cream)}
+.p130 .nlay .wave path{fill:currentColor}
+.p130 .nlay .body{background:var(--cream);margin-top:-0.256cqw}
+.p130 .note{padding:12cqw 6.667cqw 6cqw;font-family:"Fraunces","Cairo",serif;font-weight:500;font-size:max(12px,5.128cqw);line-height:1.35;color:#3b2c20;position:relative;overflow-wrap:anywhere}
+.p130[dir="rtl"] .note{line-height:1.6}
+.p130 .note::before{content:"\201C";position:absolute;inset-inline-start:5.641cqw;top:3.077cqw;font-size:13.846cqw;color:var(--ac);font-weight:900;line-height:1}
+.p130 .stack{display:block}
+.p130 .layer{--c:#1f7a7e;--t:#fff;--w:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 30' preserveAspectRatio='none'%3E%3Cpath d='M0 18 C60 28 120 -2 200 14 S330 26 390 8 V30 H0Z'/%3E%3C/svg%3E");position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:3.59cqw;min-height:30cqw;margin-top:-0.256cqw;padding:7.692cqw 5.641cqw 6.667cqw;color:var(--t);background:linear-gradient(var(--c),var(--c)) 0 100%/100% calc(100% - 7.4cqw) no-repeat;filter:drop-shadow(0 -1.282cqw 1.282cqw rgba(40,20,5,.28)) drop-shadow(0 -1px 1px rgba(40,20,5,.3))}
+.p130 .layer::before{content:"";position:absolute;top:0;inset-inline:0;height:7.692cqw;background:var(--c);-webkit-mask:var(--w) 0 0/100% 100% no-repeat;mask:var(--w) 0 0/100% 100% no-repeat}
+.p130 .layer:nth-child(3n+2){--w:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 30' preserveAspectRatio='none'%3E%3Cpath d='M0 8 C70 -4 130 26 210 12 S330 4 390 16 V30 H0Z'/%3E%3C/svg%3E")}
+.p130 .layer:nth-child(3n){--w:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 30' preserveAspectRatio='none'%3E%3Cpath d='M0 16 C60 30 140 0 200 16 S330 28 390 6 V30 H0Z'/%3E%3C/svg%3E")}
+.p130 .layer:nth-child(6n+1){--c:#1f7a7e}
+.p130 .layer:nth-child(6n+2){--c:#24507a}
+.p130 .layer:nth-child(6n+3){--c:var(--ac);--t:var(--ac-on)}
+.p130 .layer:nth-child(6n+4){--c:#f0bd52;--t:#2b2118}
+.p130 .layer:nth-child(6n+5){--c:#6b3f78}
+.p130 .layer:nth-child(6n){--c:#3a2a20}
+.p130 .layer>*{position:relative}
+.p130 a:focus-visible{outline:0.769cqw solid var(--t,#2b2118);outline-offset:-1.5cqw;border-radius:3.077cqw}
+.p130 .badge{flex:none;width:12.308cqw;height:12.308cqw;border-radius:50%;background:color-mix(in srgb,var(--t) 18%,transparent);color:var(--t);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--t),0 0.769cqw 1.026cqw rgba(0,0,0,.2)}
+.p130 .badge svg{width:5.641cqw;height:5.641cqw;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.p130 .tx{min-width:0}
+.p130 .layer b{display:block;font-family:"Fraunces","Cairo",serif;font-weight:900;font-size:max(14px,6.41cqw);line-height:1.1;letter-spacing:-.02em;overflow-wrap:anywhere}
+.p130[dir="rtl"] .layer b{letter-spacing:0;font-weight:800}
+.p130 .layer small{display:block;font-size:max(11px,3.59cqw);font-weight:500;margin-top:0.769cqw;overflow-wrap:anywhere;opacity:.95}
+.p130 .go{width:6.154cqw;height:6.154cqw;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.p130[dir="rtl"] .go{transform:scaleX(-1)}
+</style>
+<div class="pg p130"><div class="in">
+<header class="hero">
+    <svg viewBox="0 0 390 470" aria-hidden="true">
+      <rect width="390" height="470" fill="#f7ecd9"/>
+      <g class="sh"><circle cx="292" cy="108" r="58" fill="#e8734a"/></g>
+      <g class="sh"><circle cx="292" cy="108" r="36" fill="#f0bd52"/></g>
+      <g class="sh"><path d="M0 232 C60 196 120 212 190 226 S320 206 390 190 V470 H0Z" fill="#f1d3a0"/></g>
+      <g class="sh"><path d="M0 286 C70 262 130 250 210 272 S330 292 390 262 V470 H0Z" fill="#e4a96c"/></g>
+      <g class="sh"><path d="M0 340 C80 322 150 330 230 346 S340 340 390 322 V470 H0Z" fill="#c97b4c"/></g>
+      <g class="sh"><path d="M0 400 C70 388 140 396 210 408 S330 400 390 392 V470 H0Z" fill="#a8583a"/></g>
+    </svg>
+    <div class="fill" aria-hidden="true"></div>
+    <div class="mono"><i class="r1"></i><i class="r2"></i><i class="r3"></i></div>
+    <div class="tag">
+      <h1><span>{first}</span><span class="l">{last}</span></h1>
+      <p class="role">{title}</p>
+      <p class="co">{co} · {city}</p>
+    </div>
+  </header>
+
+  <div class="nlay">
+    <svg class="wave" viewBox="0 0 390 30" preserveAspectRatio="none" aria-hidden="true"><path d="M0 14 C50 -2 110 28 190 14 S330 0 390 12 V30 H0Z"/></svg>
+    <div class="body"><p class="note">{bio}</p></div>
+  </div>
+
+  <div class="stack">
+    <a class="layer"><span class="badge"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><span class="tx"><b>Call</b><small><bdi>{phone}</bdi></small></span><svg class="go" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <a class="layer"><span class="badge"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><span class="tx"><b>Email</b><small><bdi>{email}</bdi></small></span><svg class="go" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </div>
+</div></div>
+</section>

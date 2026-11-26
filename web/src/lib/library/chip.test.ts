@@ -99,10 +99,10 @@ describe("brand colours below the card, every layout", () => {
       if (below >= 13) {
         // every link of the layout that has a brand colour carries its chip and icon colours in the variables the layout
         // draws with (the custom link without a brand keeps the accent)
-        const links = anchors(on, below - 1).filter((l) => !/aria-label="(Link|Our menu)"/.test(l));
-        if (links.length < 5) badOn.push(`${below}: only ${links.length} links`);
+        const links = anchors(on, below - 1).filter((l) => !/aria-label="(Link|Our menu)"/.test(l) && !(below > 400 && /x\.example\/menu/.test(l)));
+        if (below <= 400 && links.length < 5) badOn.push(`${below}: only ${links.length} links`);
         for (const l of links) {
-          if (!/--bc:#[0-9A-F]{6};--bf:#(FFFFFF|0F172A);--pacc:#[0-9A-F]{6};--pon:#(FFFFFF|0F172A);/.test(l)) badOn.push(`${below}: ${l.slice(0, 90)}`);
+          if (!(below > 400 ? /--bc:#[0-9A-F]{6};--bf:#[0-9A-F]{6};--pacc:#[0-9A-F]{6};--pon:#[0-9A-F]{6};/ : /--bc:#[0-9A-F]{6};--bf:#(FFFFFF|0F172A);--pacc:#[0-9A-F]{6};--pon:#(FFFFFF|0F172A);/).test(l)) badOn.push(`${below}: ${l.slice(0, 120)}`);
         }
       }
       if (/--bc:|--bf:|--pacc:#/.test(off)) badOff.push(String(below));

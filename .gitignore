@@ -17,3 +17,8 @@ backend/media/
 backend/staticfiles/
 backend/private_exports/
 backend/private_files/
+
+# Local-only working material: database backups hold real data, the design lab is kept on this machine
+backend/dev-backups/
+design-lab/
+web/.lab/

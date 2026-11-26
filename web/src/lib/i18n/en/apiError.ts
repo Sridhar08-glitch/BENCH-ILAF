@@ -143,4 +143,11 @@ export const apiError = {
   "apiError.two_factor_required_by_company": "Your company requires 2-step verification, so it cannot be turned off.",
   "apiError.domain_free_mail": "Free e-mail domains such as gmail.com cannot be verified. Use your company's own domain.",
   "apiError.domain_invalid": "Enter a company domain such as northgate.com.",
+  "apiError.already_subscribed": "Your plan renews automatically. Use Manage billing to change or cancel it.",
+  "apiError.enterprise_not_quoted": "There is no quote to accept yet.",
+  "apiError.enterprise_request_closed": "This Enterprise request is already closed.",
+  "apiError.enterprise_request_open": "You already have an Enterprise request open. Wait for our answer or cancel it first.",
+  "apiError.no_billing_account": "There is no card payment to manage yet.",
+  "apiError.invalid_domain": "This is not a domain name we can use. Enter one such as cards.example.com.",
+  "apiError.domain_not_found": "This company has no custom domain yet. Add one first.",
 } satisfies Record<string, string>;

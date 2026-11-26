@@ -93,7 +93,7 @@ describe("tours", () => {
     expect(tourFor("/app/contacts")?.id).toBe("contacts");
     expect(tourFor("/app/analytics")?.id).toBe("analytics");
     expect(tourFor("/app/settings/integrations")?.id).toBe("integrations");
-    expect(tourFor("/app/qr")).toBeNull();
+    expect(tourFor("/app/share")).toBeNull();
     expect(tourFor("/app")).toBeNull();
   });
 });

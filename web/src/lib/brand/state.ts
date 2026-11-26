@@ -1,9 +1,9 @@
 // The brand page's working copy of the company brand and the rules for turning it into a save. Pure functions.
-import { DEFAULT_COLOURS, normalizeArtwork } from "@/lib/library/company/brand";
-import { derivePalette, type BrandMode } from "@/lib/library/company/colour";
+import { DEFAULT_COLOURS, asLogoFree, asLogoSize, normalizeArtwork } from "@/lib/library/company/brand";
+import { cr, derivePalette, type BrandMode } from "@/lib/library/company/colour";
 import { COMPANY_COLOUR, normalizeDesign } from "@/lib/library";
 import type { BrandPatch } from "@/lib/api";
-import type { ArtworkMode, Brand, BrandArtwork, BrandColours, BrandPalette, LogoChip, LogoCorner, LogoDisplay, LogoPlacement } from "@/lib/types";
+import type { ArtworkMode, Brand, BrandArtwork, BrandColours, BrandPalette, LogoChip, LogoCorner, LogoDisplay, LogoFree, LogoPlacement, LogoSpot } from "@/lib/types";
 
 /** A brand with every setting present (the API may leave the new ones out for older companies). */
 export type FullBrand = Brand & {
@@ -12,6 +12,8 @@ export type FullBrand = Brand & {
   logo_corner: LogoCorner;
   logo_chip: LogoChip;
   show_company_name: boolean;
+  logo_size: number;
+  logo_free: LogoFree;
   artwork: BrandArtwork;
 };
 
@@ -26,6 +28,8 @@ export function fullBrand(b: Brand): FullBrand {
     logo_corner: b.logo_corner ?? "auto",
     logo_chip: b.logo_chip ?? "auto",
     show_company_name: b.show_company_name !== false,
+    logo_size: asLogoSize(b.logo_size),
+    logo_free: asLogoFree(b.logo_free),
     artwork: normalizeArtwork(b.artwork),
     symbol_url: b.symbol_url ?? null,
     background_url: b.background_url ?? null,
@@ -41,8 +45,21 @@ export function withColours(b: FullBrand, colours: BrandColours | null): FullBra
     const design = b.design.colour === COMPANY_COLOUR ? { ...b.design, colour: 0 } : b.design;
     return { ...b, colours: null, palette: null, design };
   }
-  const pal: BrandPalette = derivePalette(colours.primary, colours.accent, colours.mode as BrandMode).pal;
-  return { ...b, colours, palette: pal };
+  return { ...b, colours, palette: paletteFor(colours) };
+}
+
+/** The five card colours of two brand colours, with the owner's own text colour in place of the worked-out one when they chose one. */
+export function paletteFor(c: BrandColours): BrandPalette {
+  const pal: BrandPalette = derivePalette(c.primary, c.accent, c.mode as BrandMode).pal;
+  return c.text ? { ...pal, fg: c.text } : pal;
+}
+
+/** How readable the text is on the card colours (the server asks for 4.5 on both backgrounds). */
+export function textReadability(c: BrandColours): { onCard: number; onSecond: number; ok: boolean } {
+  const p = paletteFor(c);
+  const onCard = cr(p.fg, p.bg);
+  const onSecond = cr(p.fg, p.bg2);
+  return { onCard, onSecond, ok: onCard >= 4.5 && onSecond >= 4.5 };
 }
 
 export function startColours(b: FullBrand): BrandColours {
@@ -76,6 +93,34 @@ export function brandPatch(b: FullBrand, company: boolean): BrandPatch {
     logo_corner: b.logo_corner,
     logo_chip: b.logo_chip,
     show_company_name: b.show_company_name,
+    logo_size: b.logo_size,
+    logo_free: b.logo_free,
     artwork: { mode: b.artwork.mode, background: b.artwork.background, pattern: b.artwork.pattern, template: b.artwork.template },
   };
+}
+
+/** Which design a logo place belongs to: "t3" for page style 3, else "f12" for card face 12. */
+export function designKey(d: { face: number; top: number }): string {
+  return d.top > 0 ? `t${d.top}` : `f${d.face}`;
+}
+
+/** Where the owner put the logo on the company's current design, or null when it is placed automatically. */
+export function logoSpotOf(b: FullBrand): LogoSpot | null {
+  return b.logo_free[designKey(b.design)] ?? null;
+}
+
+/** The brand with the logo placed on the current design (a spot) or placed automatically again (null). */
+export function withLogoSpot(b: FullBrand, spot: LogoSpot | null): FullBrand {
+  const key = designKey(b.design);
+  const next = { ...b.logo_free };
+  if (spot) next[key] = { x: round1(spot.x), y: round1(spot.y), w: round1(spot.w) };
+  else delete next[key];
+  return { ...b, logo_free: next };
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** The logo place after a drag: kept inside the card. */
+export function dragged(spot: LogoSpot, x: number, y: number, height: number): LogoSpot {
+  return { ...spot, x: Math.min(100 - spot.w, Math.max(0, x)), y: Math.min(100 - height, Math.max(0, y)) };
 }

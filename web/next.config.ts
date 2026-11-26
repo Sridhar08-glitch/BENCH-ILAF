@@ -1,10 +1,15 @@
 import type { NextConfig } from "next";
+import { LEGACY_ROUTES } from "./src/lib/share/legacy-routes";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Card photos and logos come from the API's media storage, which can be any host.
   images: { unoptimized: true },
+  // The old addresses of QR, NFC, signature, event mode and the paper-card scanner lead to the Share hub and to Contacts (the query string is kept).
+  async redirects() {
+    return LEGACY_ROUTES.map((r) => ({ ...r, permanent: false }));
+  },
   async headers() {
     return [
       // The card stylesheet is a static file whose address carries a content hash (`?v=`), so it can be cached for a year.

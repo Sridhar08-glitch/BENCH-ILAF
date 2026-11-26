@@ -35,6 +35,12 @@ describe("activity log sentences", () => {
     });
   }
 
+  it("says whether an employee started or stopped sharing contacts", () => {
+    const en = createI18n("en", "latn", CATALOGUES.en);
+    expect(describeEvent({ action: "member.share_contacts_changed", target_label: "Eve", details: { share_contacts: true }, label: "" }, en)).toBe("Eve started sharing new contacts with the company");
+    expect(describeEvent({ action: "member.share_contacts_changed", target_label: "Eve", details: { share_contacts: false }, label: "" }, en)).toBe("Eve stopped sharing new contacts with the company");
+  });
+
   it("says what the spreadsheet download contained", () => {
     const en = createI18n("en", "latn", CATALOGUES.en);
     expect(describeEvent({ action: "lead.exported", target_label: "", details: { rows: 1, notes: false }, label: "" }, en)).toBe("Downloaded 1 contact as a spreadsheet");

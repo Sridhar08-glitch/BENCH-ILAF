@@ -5,7 +5,7 @@ import type { Condition, NextPrompt } from "./types";
 
 /** One prompt per key event. An event is shown to a person only once (the engine records it). */
 export const PROMPTS: NextPrompt[] = [
-  { event: "card_published", title: tk("guide.next.cardPublished.title"), text: tk("guide.next.cardPublished.text"), action: tk("guide.next.cardPublished.action"), route: "/app/qr" },
+  { event: "card_published", title: tk("guide.next.cardPublished.title"), text: tk("guide.next.cardPublished.text"), action: tk("guide.next.cardPublished.action"), route: "/app/share" },
   { event: "first_invite_sent", title: tk("guide.next.invite.title"), text: tk("guide.next.invite.text"), action: tk("guide.next.invite.action"), route: "/app/fields" },
   { event: "brand_saved", title: tk("guide.next.brand.title"), text: tk("guide.next.brand.text"), action: tk("guide.next.brand.action"), route: "/app/team" },
   { event: "first_lead", title: tk("guide.next.lead.title"), text: tk("guide.next.lead.text"), action: tk("guide.next.lead.action"), route: "/app/contacts" },
@@ -34,7 +34,7 @@ export const SUGGESTIONS: Record<string, Suggestion> = {
     id: "qr",
     title: tk("guide.sug.qr.title"),
     text: tk("guide.sug.qr.text"),
-    route: "/app/qr",
+    route: "/app/share",
     action: tk("guide.sug.qr.action"),
     doneWhen: { is: "shared_qr_opened" },
   },
@@ -42,17 +42,9 @@ export const SUGGESTIONS: Record<string, Suggestion> = {
     id: "signature",
     title: tk("guide.sug.signature.title"),
     text: tk("guide.sug.signature.text"),
-    route: "/app/signature",
+    route: "/app/share/signature",
     action: tk("guide.sug.signature.action"),
     doneWhen: { is: "signature_copied" },
-  },
-  background: {
-    id: "background",
-    title: tk("guide.sug.background.title"),
-    text: tk("guide.sug.background.text"),
-    route: "/app/background",
-    action: tk("guide.sug.background.action"),
-    doneWhen: { is: "background_opened" },
   },
   team: {
     id: "team",
@@ -79,7 +71,7 @@ export const FOLLOW_UPS: Record<string, string[]> = {
   buttons: [],
   design: [],
   publish: ["qr", "signature"],
-  share: ["signature", "background"],
+  share: ["signature"],
   brand: [],
   "card-style": [],
   lock: [],
@@ -92,5 +84,5 @@ export const FOLLOW_UPS: Record<string, string[]> = {
   "send-approval": [],
 };
 
-/** Suggested once every step is done: share the QR code, the e-mail signature, the call background, the team. */
-export const ALL_DONE: string[] = ["qr", "signature", "background", "team"];
+/** Suggested once every step is done: share the QR code, the e-mail signature, the team. */
+export const ALL_DONE: string[] = ["qr", "signature", "team"];
