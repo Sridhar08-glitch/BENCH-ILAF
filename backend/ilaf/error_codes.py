@@ -549,6 +549,7 @@ ERROR_MESSAGES = [
     ('validation_error', 'Enter one valid e-mail address.'),
     ('validation_error', 'Enter some text.'),
     ('validation_error', 'Enter the link or number for each button.'),
+    ('validation_error', 'Enter the number of seats for the Enterprise period.'),
     ('validation_error', 'Enter the price per seat as a whole number above zero.'),
     ('validation_error', 'Enter the web address of your booking page, such as https://calendly.com/yourname.'),
     ('validation_error', 'Enter the web address of your booking page.'),

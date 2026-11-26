@@ -303,15 +303,15 @@ class AnalyticsAndBillingTests(BackOfficeCase):
         self.assertEqual(csv_safe("plain"), "plain")
         self.assertIn("analytics.exported", self.audit_actions())
 
-    def test_billing_page_is_read_only_and_says_payments_are_parked(self):
+    def test_billing_page_is_read_only_and_has_the_plans_and_the_summary(self):
         res = self.ro.client.get(self.url("billing"))
-        self.assertTrue(res.data["payments_parked"])
+        self.assertNotIn("payments_parked", res.data)
         self.assertTrue(any(p["code"] == "company" for p in res.data["plans"]))
-        self.assertEqual(res.data["invoices"], [])
+        self.assertEqual(res.data["summary"]["currency"], "QAR")
 
     def test_only_admin_grants_a_plan_period_and_it_is_logged(self):
         before = Payment.objects.count()
-        body = {"company_id": self.ws, "plan_code": "company", "seats": 8, "reason": "Pilot while billing is parked"}
+        body = {"company_id": self.ws, "plan_code": "company", "seats": 8, "reason": "Pilot customer before the first payment"}
         self.assertEqual(self.support.client.post(self.url("billing/grant"), body, format="json").status_code, 403)
         self.assertEqual(Payment.objects.count(), before)
         res = self.admin.client.post(self.url("billing/grant"), body, format="json")

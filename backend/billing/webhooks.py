@@ -11,10 +11,11 @@ from datetime import datetime, timezone as dt_timezone
 
 from django.utils import timezone
 
+from operations import audit
 from workspaces.models import Workspace
 
 from . import enterprise, notices
-from .models import Plan, Subscription
+from .models import Payment, Plan, Subscription
 from .services import activate, seats_used
 
 log = logging.getLogger(__name__)
@@ -138,7 +139,8 @@ def on_invoice_paid(invoice):
     if workspace is None or plan is None:
         log.warning("Stripe invoice %s has no workspace", invoice.get("id"))
         return
-    activate(
+    paid_before = Payment.objects.filter(workspace=workspace).exists()
+    payment, created = activate(
         workspace, plan, seats,
         invoice_id=invoice.get("id"),
         amount_minor=invoice.get("amount_paid"),
@@ -146,6 +148,8 @@ def on_invoice_paid(invoice):
         source="stripe",
         period=_invoice_period(invoice),
     )
+    if created and paid_before:
+        audit.log(None, workspace, "subscription.renewed", "workspace", workspace.id, workspace.name, {"plan": plan.code, "seats": payment.seats, "invoice": payment.number})
     _link_stripe(workspace, invoice.get("customer"), sub_id)
     _finish_request(metadata, workspace)
 
@@ -162,6 +166,7 @@ def on_payment_failed(invoice):
     sub.failed_invoice_id = invoice_id
     sub.save(update_fields=["payment_failed_at", "failed_invoice_id", "updated_at"])
     if first_for_invoice:  # Stripe retries the same invoice several times: one e-mail per invoice
+        audit.log(None, sub.workspace, "subscription.payment_failed", "workspace", sub.workspace_id, sub.workspace.name, {"plan": sub.plan_id, "invoice": invoice_id})
         notices.send_payment_failed(sub)
 
 
@@ -170,6 +175,7 @@ def on_subscription_updated(obj):
     if sub is None:
         return
     status = obj.get("status")
+    was_cancelling = sub.cancel_at_period_end
     sub.cancel_at_period_end = bool(obj.get("cancel_at_period_end") or obj.get("cancel_at"))
     if status in DEAD_STATUSES:
         sub.auto_renew = False
@@ -183,13 +189,18 @@ def on_subscription_updated(obj):
         # Seats never drop below the people already on the team.
         sub.seats_total = max(quantity, seats_used(sub.workspace))
     sub.save()
+    if sub.cancel_at_period_end != was_cancelling:
+        action = "subscription.auto_renew_off" if sub.cancel_at_period_end else "subscription.auto_renew_on"
+        audit.log(None, sub.workspace, action, "workspace", sub.workspace_id, sub.workspace.name, {"plan": sub.plan_id})
 
 
 def on_subscription_deleted(obj):
-    sub = Subscription.objects.filter(stripe_subscription_id=obj.get("id") or "-").first()
+    sub = Subscription.objects.select_related("workspace").filter(stripe_subscription_id=obj.get("id") or "-").first()
     if sub is None:
         return
     # What was paid for still runs to ends_at; Stripe just will not charge again.
+    if sub.auto_renew:
+        audit.log(None, sub.workspace, "subscription.auto_renew_off", "workspace", sub.workspace_id, sub.workspace.name, {"plan": sub.plan_id})
     sub.auto_renew = False
     sub.cancel_at_period_end = False
     sub.stripe_subscription_id = ""

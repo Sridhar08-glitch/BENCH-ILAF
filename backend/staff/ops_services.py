@@ -32,7 +32,10 @@ JOBS = [
     ("prune_analytics", "Roll up old visit records", "Every day", 1560),
     ("prune_api_idempotency", "Clear old API request keys", "Every day", 1560),
     ("prune_back_office", "Clear old staff metrics and e-mail log", "Every day", 1560),
-    ("send_renewal_reminders", "Remind about renewals", "Every day", 1560),
+    ("send_renewal_reminders", "E-mail renewal and free-week reminders", "Every day", 1560),
+    ("check_custom_domains", "Check the DNS records of custom web addresses", "Every hour", 150),
+    ("send_daily_summary", "Daily summary e-mails", "Every hour", 150),
+    ("prune_security", "Clear old security records", "Every day", 1560),
     ("send_weekly_reports", "Weekly report e-mails", "Every week", 10200),
     ("clearsessions", "Remove expired admin sessions", "Every week", 10200),
 ]

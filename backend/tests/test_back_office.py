@@ -44,6 +44,8 @@ class RoleEdgeTests(BackOfficeCase):
             ("get", "system/health", None, everyone), ("get", "system/jobs", None, everyone), ("get", "system/email", None, everyone), ("get", "system/errors", None, everyone),
             ("get", "flags", None, everyone), ("patch", "flags/directory", {"state": "everyone"}, admin),
             ("get", "billing", None, everyone), ("post", "billing/grant", {"company_id": c, "reason": "pilot"}, admin),
+            ("get", "billing/renewals", None, everyone), ("get", "billing/failed-payments", None, everyone), ("get", "billing/free-weeks", None, everyone),
+            ("get", "billing/payments", None, everyone), ("get", "billing/payments/export", None, writers), ("get", f"companies/{c}/billing", None, everyone),
             ("get", "permissions", None, everyone), ("get", "team", None, everyone), ("post", "team", {"email": "new@person.test", "role": "support"}, admin),
             ("get", "audit", None, everyone), ("get", "audit/export", None, writers),
         ]

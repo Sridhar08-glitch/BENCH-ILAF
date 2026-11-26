@@ -18,7 +18,7 @@ from ilaf.utils import iso
 from leads.models import Lead
 from workspaces.models import Workspace
 
-from . import announce, services
+from . import announce, billing_data, services
 from .common import csv_response, int_param, paged, week_start, weekly_counts
 from .models import Announcement, CompanyLead
 from .perms_map import roles_for
@@ -356,6 +356,7 @@ def analytics_payload(weeks, now):
         "sizes": [{"label": k, "companies": v} for k, v in sizes.items()],
         "top_companies": [{"id": str(r["card__workspace_id"]), "name": r["card__workspace__name"], "views": r["n"]} for r in top],
         "retention": retention(now),
+        "money": billing_data.money_block(now),
     }
 
 

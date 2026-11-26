@@ -118,6 +118,7 @@ TEXTS = {
     "Created an announcement": "أُنشئ إعلان",
     "Dismissed a card report": "تم تجاهل بلاغ عن بطاقة",
     "Downloaded the analytics CSV": "تم تنزيل ملف CSV للتحليلات",
+    "Downloaded the payments CSV": "تم تنزيل ملف CSV للمدفوعات",
     "Downloaded the audit log CSV": "تم تنزيل ملف CSV لسجل التدقيق",
     "Ended a support view": "انتهت جلسة عرض الدعم",
     "Ended all staff sessions of someone": "أُنهيت جميع جلسات أحد أعضاء الفريق",

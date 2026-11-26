@@ -1,4 +1,4 @@
-"""Platform: system health (health, e-mail, jobs, errors, storage), feature switches and the billing placeholder."""
+"""Platform: system health (health, e-mail, jobs, errors, storage) and feature switches. Billing is in views_billing."""
 import os
 from datetime import timedelta
 
@@ -8,8 +8,6 @@ from django.http import Http404
 from django.utils import timezone
 from rest_framework.response import Response
 
-from billing.models import Payment, Plan, Subscription
-from billing.services import grant_period
 from ilaf.errors import ApiError, validation_error
 from ilaf.utils import iso
 from workspaces.models import Workspace
@@ -168,49 +166,3 @@ class FlagDetailView(StaffView):
         flags.clear_cache()
         services.log(request, "flag.changed", "flag", key, key, {"summary": summary, **services.reason_details(data)})
         return Response(flag_json(key, row, list(row.changes.all()[:8])))
-
-
-# ---------------------------------------------------------------- billing placeholder
-class BillingView(StaffView):
-    """Read-only plan list and the free periods granted by hand. Payments are parked: nothing here charges anyone."""
-
-    perm = "view"
-
-    def get(self, request):
-        counts = {r["plan_id"]: r["n"] for r in Subscription.objects.values("plan_id").annotate(n=Count("id")).order_by()}
-        plans = [
-            {"code": p.code, "name": p.name, "kind": p.kind, "interval": p.interval, "price_minor": p.price_minor, "currency": p.currency, "per_seat": p.per_seat,
-             "max_cards": p.max_cards, "min_seats": p.min_seats, "active": p.active, "companies": counts.get(p.code, 0)}
-            for p in Plan.objects.order_by("kind", "sort_order")
-        ]
-        grants = Payment.objects.filter(source="manual").select_related("workspace", "plan").order_by("-paid_at")[:20]
-        return Response({
-            "payments_parked": True, "plans": plans, "invoices": [],
-            "grants": [{"company_id": str(g.workspace_id), "company": g.workspace.name, "plan": g.plan.name, "seats": g.seats, "until": iso(g.period_end), "at": iso(g.paid_at)} for g in grants],
-        })
-
-
-class BillingGrantView(StaffView):
-    perm = "view"
-    write_roles = roles_for("plans")
-
-    def post(self, request):
-        data = request.data if isinstance(request.data, dict) else {}
-        ws = get_company(data.get("company_id"))
-        plan = None
-        if data.get("plan_code"):
-            plan = Plan.objects.filter(code=data["plan_code"], kind="company", active=True).first()
-            if plan is None:
-                raise validation_error({"plan_code": ["Choose a plan from the list."]})
-        seats = data.get("seats")
-        if seats is not None and (not isinstance(seats, int) or isinstance(seats, bool) or not 1 <= seats <= 10000):
-            raise validation_error({"seats": ["Enter a whole number of seats."]})
-        reason = str(data.get("reason") or "").strip()
-        if len(reason) < 5:
-            raise validation_error({"reason": ["Write a reason of at least 5 characters."]})
-        try:
-            payment = grant_period(ws, plan, seats)
-        except ValueError as exc:
-            raise validation_error({"plan_code": [str(exc)]}) from exc
-        services.log(request, "plan.granted", "company", ws.id, ws.name, {"plan": payment.plan.code, "seats": payment.seats, "reason": reason[:300]})
-        return Response({"company": ws.name, "plan": payment.plan.name, "seats": payment.seats, "until": iso(payment.period_end)}, status=201)

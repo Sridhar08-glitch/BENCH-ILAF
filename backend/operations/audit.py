@@ -77,6 +77,11 @@ ACTIONS = {
     "enterprise.requested": "Asked for an Enterprise quote",
     "enterprise.cancelled": "Withdrew the Enterprise request",
     "enterprise.accepted": "Accepted the Enterprise quote",
+    "subscription.renewed": "The plan was renewed and paid",
+    "subscription.payment_failed": "A renewal payment failed",
+    "subscription.auto_renew_off": "Automatic renewal was switched off",
+    "subscription.auto_renew_on": "Automatic renewal was switched on",
+    "plan.granted": "Our team gave the company a plan period",
     "support.viewed": "Our support team looked at your account",
     "support.ended": "Our support team finished looking at your account",
 }

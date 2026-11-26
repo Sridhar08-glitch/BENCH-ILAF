@@ -13,7 +13,7 @@ from ilaf.utils import iso
 from privacy.models import DataRequest
 from workspaces.models import Workspace
 
-from . import metrics, ops_services
+from . import billing_data, metrics, ops_services
 from .common import week_start, weekly_counts
 from .models import AbuseReport, CompanyLead, EmailLog, ErrorLogEntry, StaffAuditEvent, SupportViewSession
 from .permissions import StaffView
@@ -155,6 +155,9 @@ def attention(now):
     if near:
         names = ", ".join(r["workspace__name"] for r in near[:3])
         items.append({"kind": "seats_near", "level": "warn", "count": len(near), "text": f"{len(near)} compan{'ies' if len(near) != 1 else 'y'} near the seat limit: {names}", "path": "/staff/companies"})
+    failed_pay = Subscription.objects.filter(payment_failed_at__isnull=False, workspace__deleted_at__isnull=True).count()
+    if failed_pay:
+        items.append({"kind": "payments_failed", "level": "warn", "count": failed_pay, "text": f"{failed_pay} failed renewal payment{'s' if failed_pay != 1 else ''}", "path": "/staff/billing"})
     sessions = SupportViewSession.objects.filter(ended_at__isnull=True, expires_at__gt=now).count()
     if sessions:
         items.append({"kind": "support_views", "level": "info", "count": sessions, "text": f"{sessions} support view{'s' if sessions != 1 else ''} open now", "path": "/staff/support-view"})
@@ -173,6 +176,7 @@ class OverviewView(StaffView):
             "jobs": [{"name": j["name"], "label": j["label"], "state": j["state"]} for j in ops_services.job_states()],
             "email": ops_services.email_counts(24, now),
             "numbers": key_numbers(now),
+            "money": billing_data.money_block(now),
             "growth": growth,
             "growth_total": growth_total(growth, now),
             "customer_events": customer_events(now),

@@ -5,6 +5,7 @@ from designs import staff_views as d
 from . import public_views as pub
 from . import views_look as look
 from . import views_enterprise as ent
+from . import views_billing as bl
 from . import views, views_customers as c, views_frame as fr, views_growth as g, views_overview as o, views_safety as sf, views_staffadmin as sa, views_supportview as sv, views_system as sy
 
 urlpatterns = [
@@ -33,6 +34,7 @@ urlpatterns = [
     path("staff/companies/<uuid:company_id>/brand", c.CompanyBrandView.as_view()),
     path("staff/companies/<uuid:company_id>/activity", c.CompanyActivityView.as_view()),
     path("staff/companies/<uuid:company_id>/notes", c.CompanyNotesView.as_view()),
+    path("staff/companies/<uuid:company_id>/billing", bl.CompanyBillingView.as_view()),
     path("staff/companies/<uuid:company_id>/suspend", c.CompanySuspendView.as_view()),
     path("staff/companies/<uuid:company_id>/restore", c.CompanyRestoreView.as_view()),
     path("staff/search", c.SearchView.as_view()),
@@ -81,8 +83,13 @@ urlpatterns = [
     path("staff/system/errors", sy.SystemErrorsView.as_view()),
     path("staff/flags", sy.FlagsView.as_view()),
     path("staff/flags/<slug:key>", sy.FlagDetailView.as_view()),
-    path("staff/billing", sy.BillingView.as_view()),
-    path("staff/billing/grant", sy.BillingGrantView.as_view()),
+    path("staff/billing", bl.BillingView.as_view()),
+    path("staff/billing/grant", bl.BillingGrantView.as_view()),
+    path("staff/billing/renewals", bl.BillingRenewalsView.as_view()),
+    path("staff/billing/failed-payments", bl.BillingFailedView.as_view()),
+    path("staff/billing/free-weeks", bl.BillingFreeWeeksView.as_view()),
+    path("staff/billing/payments", bl.BillingPaymentsView.as_view()),
+    path("staff/billing/payments/export", bl.BillingPaymentsExportView.as_view()),
     # staff and permissions
     path("staff/permissions", sa.PermissionsView.as_view()),
     path("staff/team", sa.StaffTeamView.as_view()),

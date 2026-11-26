@@ -14,7 +14,7 @@ from accounts.models import User
 from accounts.services import revoke_refresh_tokens
 from analytics.models import Event
 from billing.models import Plan
-from billing.services import _sub_live, get_subscription, seats_used
+from billing.services import _sub_live, get_subscription, plan_is_paid, seats_used
 from cards.models import Card
 from cards.services import card_json, stats_for
 from designs.models import DesignRequest
@@ -30,13 +30,13 @@ from operations.models import AuditEvent
 from workspaces import domains
 from workspaces.models import Member, Workspace
 
-from . import services
+from . import billing_data, services
 from .common import csv_response, int_param, paged
 from .models import AbuseReport, CompanyNote, StaffTotp, SupportViewSession
 from .ops_services import company_country_info, customer_event
 from .perms_map import roles_for
 from .permissions import StaffView
-from .views import company_json, company_status
+from .views import company_json
 
 
 def get_company(company_id):
@@ -78,6 +78,8 @@ def member_json(m, card_statuses=(), signed_in=_ASK):
         "joined_at": iso(m.joined_at), "invited_at": iso(m.invited_at),
         "last_sign_in": signed_in,
         "card_status": card_state(card_statuses), "cards": len(card_statuses),
+        # The employee's own switch "share my new contacts with the company": the setting only, never a contact.
+        "share_contacts": bool(m.share_contacts) if m.role == "employee" else None, "share_contacts_changed_at": iso(m.share_contacts_changed_at) if m.role == "employee" else None,
     }
 
 
@@ -188,7 +190,8 @@ def _country_codes(term):
 
 
 def filtered_companies(params):
-    """The companies a list or an export asks for. Filters: q (company name, owner e-mail, owner name, country), plan (code), status."""
+    """The companies a list or an export asks for. Filters: q (company name, owner e-mail, owner name, country), plan (code), status,
+    auto_renew=off, payment_failed=1, grandfathered=1, enterprise=1."""
     qs = Workspace.objects.filter(kind="company", deleted_at__isnull=True)
     term = (params.get("q") or "").strip()[:100]
     if term:
@@ -210,7 +213,9 @@ def filtered_companies(params):
     elif status == "no_plan":
         qs = qs.filter(subscription__isnull=True)
     card_count = Card.objects.filter(workspace=OuterRef("pk")).order_by().values("workspace").annotate(n=Count("id")).values("n")
-    qs = qs.annotate(n_cards=Coalesce(Subquery(card_count), 0))
+    member_count = Member.objects.filter(workspace=OuterRef("pk")).order_by().values("workspace").annotate(n=Count("id")).values("n")
+    qs = qs.annotate(n_cards=Coalesce(Subquery(card_count), 0), n_members=Coalesce(Subquery(member_count), 0), owner_mail=billing_data.owner_email_of("pk"))
+    qs = billing_data.filter_company_billing(billing_data.with_company_billing(qs), params)
     sort = params.get("sort")
     if sort == "newest":
         return qs.order_by("-created_at", "id")
@@ -219,26 +224,49 @@ def filtered_companies(params):
     return qs.order_by("name", "id")
 
 
+def company_row(w, open_requests, now):
+    """One row of the companies list, built from what the query already loaded (no query per row)."""
+    sub = getattr(w, "subscription", None)
+    if w.suspended_at is not None:
+        status = "suspended"
+    elif w.deletion_due_at is not None:
+        status = "deletion_pending"
+    elif sub is None:
+        status = "no_plan"
+    elif _sub_live(sub, now):
+        status = "active"
+    else:
+        status = "expired" if sub.status == "active" else sub.status
+    return {
+        "id": str(w.id), "name": w.name, "country": w.country or "", "plan": sub.plan.name if sub else None, "seats_used": w.n_members,
+        "seats_total": sub.seats_total if sub else 0, "status": status, "owner_email": w.owner_mail or "", "open_design_requests": open_requests,
+        "created_at": iso(w.created_at), "suspended": w.suspended_at is not None, "plan_code": sub.plan_id if sub else None, "cards": w.n_cards,
+        **billing_data.billing_cell(sub, w.later_pay, w.domain_status, now),
+    }
+
+
 class CompaniesListView(StaffView):
-    """Search, filter, sort and page the companies. Filters: q, plan (code), status, sort (name, newest, cards).
-    Every row carries its number of cards."""
+    """Search, filter, sort and page the companies. Filters: q, plan (code), status, auto_renew (off), payment_failed (1),
+    grandfathered (1), enterprise (1), sort (name, newest, cards). Every row carries its cards, seats, plan facts (auto-renew,
+    payment failed, Enterprise features, grandfathered until, custom domain status)."""
 
     perm = "view"
     write_roles = roles_for("suspendCo")
 
     def get(self, request):
-        qs = filtered_companies(request.query_params)
+        now = timezone.now()
+        qs = filtered_companies(request.query_params).select_related("subscription__plan")
         open_counts = {}
         for row in DesignRequest.objects.filter(status__in=DesignRequest.OPEN).values("workspace_id").order_by():
             open_counts[row["workspace_id"]] = open_counts.get(row["workspace_id"], 0) + 1
-        body = paged(request, qs, lambda w: {**company_json(w, open_counts.get(w.id, 0)), "suspended": w.suspended_at is not None, "plan_code": _plan_code(w), "cards": w.n_cards})
+        body = paged(request, qs, lambda w: company_row(w, open_counts.get(w.id, 0), now))
         body["plans"] = [{"code": p.code, "name": p.name} for p in Plan.objects.filter(kind="company").order_by("sort_order")]
         return Response(body)
 
 
 class CompaniesExportView(StaffView):
     """Download companies as a CSV: the ids picked on the list (`ids`, comma separated, up to 500) or, without ids,
-    everything the list filters (q, plan, status) match, up to 5000 rows. Admin and support only; written to the audit log."""
+    everything the list filters (q, plan, status and the billing filters) match, up to 5000 rows. Admin and support only; written to the audit log."""
 
     perm = "export"
 
@@ -251,25 +279,28 @@ class CompaniesExportView(StaffView):
                 qs = qs.filter(pk__in=[uuid.UUID(part) for part in ids[:500]])
             except ValueError:
                 raise validation_error({"ids": ["Choose companies from the list."]})
-        companies = list(qs[:5000])
+        companies = list(qs.select_related("subscription__plan")[:5000])
         owners = {}
         for m in Member.objects.filter(workspace__in=[w.id for w in companies], role="owner").order_by("-joined_at"):
             owners.setdefault(m.workspace_id, m)
+        now = timezone.now()
         rows = []
         for w in companies:
-            sub = get_subscription(w)
+            row = company_row(w, 0, now)
+            sub = getattr(w, "subscription", None)
             owner = owners.get(w.id)
             rows.append([
-                w.name, sub.plan.name if sub else "", seats_used(w), sub.seats_total if sub else 0, w.n_cards, company_status(w), iso(w.created_at),
+                w.name, sub.plan.name if sub else "", w.n_members, sub.seats_total if sub else 0, w.n_cards, row["status"], iso(w.created_at),
                 country_name(w.country) if w.country else "", owner.full_name if owner else "", owner.email if owner else "",
+                row["plan_code"] or "", iso(sub.ends_at) if sub else "", row["auto_renew"], iso(sub.payment_failed_at) if sub and sub.payment_failed_at else "",
+                "yes" if row["enterprise"] else "no", row["grandfathered_until"] or "", row["domain_status"] or "",
             ])
         services.log(request, "company.exported", "export", "", f"{len(rows)} companies", {"rows": len(rows), "picked": bool(ids)})
-        return csv_response("companies.csv", ["Company", "Plan", "Seats used", "Seats", "Cards", "Status", "Joined (UTC)", "Country", "Owner", "Owner e-mail"], rows)
-
-
-def _plan_code(ws):
-    sub = get_subscription(ws)
-    return sub.plan.code if sub else None
+        header = [
+            "Company", "Plan", "Seats used", "Seats", "Cards", "Status", "Joined (UTC)", "Country", "Owner", "Owner e-mail",
+            "Plan code", "Plan ends (UTC)", "Auto-renew", "Payment failed since (UTC)", "Enterprise features", "Grandfathered until (UTC)", "Custom domain",
+        ]
+        return csv_response("companies.csv", header, rows)
 
 
 class CompanyDetailView(StaffView):
@@ -755,6 +786,24 @@ class PeopleListView(StaffView):
 
 
 # ---------------------------------------------------------------- one person
+def personal_plan(user, now):
+    """The plan of the person's own (personal) workspace, and which stage of the free week it is in:
+    none (nothing published yet), free_week (running), free_week_ended, paid (live), or paid_ended."""
+    member = Member.objects.filter(user=user, role="owner", workspace__kind="personal", workspace__deleted_at__isnull=True).select_related("workspace").first()
+    sub = get_subscription(member.workspace) if member else None
+    if sub is None:
+        return {"workspace_id": str(member.workspace_id) if member else None, "state": "none", "plan_code": None, "plan": None, "starts_at": None, "ends_at": None,
+                "auto_renew": "none", "payment_failed": False}
+    if plan_is_paid(sub.plan):
+        state = "paid" if _sub_live(sub, now) else "paid_ended"
+    else:
+        state = "free_week" if sub.ends_at > now else "free_week_ended"
+    return {
+        "workspace_id": str(sub.workspace_id), "state": state, "plan_code": sub.plan_id, "plan": sub.plan.name, "starts_at": iso(sub.starts_at), "ends_at": iso(sub.ends_at),
+        "auto_renew": billing_data.renewal_mode(sub), "payment_failed": sub.payment_failed_at is not None
+    }
+
+
 class UserDetailView(StaffView):
     perm = "view"
 
@@ -772,8 +821,14 @@ class UserDetailView(StaffView):
             "last_sign_in": last_sign_in(user),
             "deletion_due_at": iso(user.deletion_due_at),
             "sessions": [{"id": str(t.id), "started_at": iso(t.created_at), "expires_at": iso(t.expires_at)} for t in tokens],
+            "personal": personal_plan(user, now),
             "memberships": [
-                {"company_id": str(m.workspace_id), "company": m.workspace.name, "kind": m.workspace.kind, "role": m.role, "status": m.status}
+                {
+                    "company_id": str(m.workspace_id), "company": m.workspace.name, "kind": m.workspace.kind, "role": m.role, "status": m.status,
+                    # The employee's own switch "share my new contacts with the company": the setting only, never a contact.
+                    "share_contacts": bool(m.share_contacts) if m.workspace.kind == "company" and m.role == "employee" else None,
+                    "share_contacts_changed_at": iso(m.share_contacts_changed_at) if m.workspace.kind == "company" and m.role == "employee" else None,
+                }
                 for m in Member.objects.filter(user=user).select_related("workspace")
             ],
         })
