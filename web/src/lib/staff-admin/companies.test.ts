@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANNOUNCE_KEY, announceHref, exportQuery, seatPercent, seatsNearlyFull, storeAnnounceSelection, togglePage } from "./companies";
+import { ANNOUNCE_KEY, NO_BILLING_FILTERS, announceHref, billingFilterQuery, exportQuery, seatPercent, seatsNearlyFull, storeAnnounceSelection, togglePage } from "./companies";
 
 describe("seats", () => {
   it("warns from 90 percent up", () => {
@@ -33,6 +33,15 @@ describe("exportQuery", () => {
   it("sends the picked ids, or else the list filters", () => {
     expect(exportQuery(["x", "y"], filters)).toEqual({ ids: "x,y" });
     expect(exportQuery([], filters)).toEqual({ q: "pol", status: "active", sort: "name" });
+  });
+});
+
+describe("billing filters", () => {
+  it("sends only the switches that are on, and the export carries them", () => {
+    expect(billingFilterQuery(NO_BILLING_FILTERS)).toEqual({});
+    expect(billingFilterQuery({ autoRenewOff: true, paymentFailed: true, grandfathered: false, enterprise: true })).toEqual({ auto_renew: "off", payment_failed: "1", enterprise: "1" });
+    const q = exportQuery([], { q: "", plan: "company", status: "", sort: "name", ...billingFilterQuery({ ...NO_BILLING_FILTERS, grandfathered: true }) });
+    expect(q).toEqual({ plan: "company", sort: "name", grandfathered: "1" });
   });
 });
 

@@ -192,17 +192,17 @@ English is the source language and the default. Arabic (`ar`) is the first trans
 
 ## Staff dashboard (back office)
 
-The staff area is now a full dashboard. The screens are English only (owner decision) and live in `src/components/staff-admin/` with thin route files under `src/app/staff/`; the pure logic is in `src/lib/staff-admin/` (`roles.ts` hides or disables what a role cannot do and is compared with the server's table by a test, `api.ts`, `format.ts`, `charts.ts` for the SVG scales, `card-data.ts`). `static-scan.test.ts` skips these two folders on purpose.
+The staff area is now a full dashboard. The screens are English only (owner decision) and live in `src/components/staff-admin/` with thin route files under `src/app/staff/`; the pure logic is in `src/lib/staff-admin/` (`roles.ts` hides or disables what a role cannot do and is compared with the server's table by a test, `api.ts`, `format.ts`, `charts.ts` for the SVG scales, `card-data.ts`, `billing.ts` for QAR formatting, renewal and free-week words, Stripe dashboard links, the funnel rows and the contact-sharing sentence; tests in `billing.test.ts`). Money is shown in QAR from minor units with `fmtMoney`. Staff see counts and settings only for contact sharing, never a contact. `static-scan.test.ts` skips these two folders on purpose.
 
 | Route | Screen |
 |---|---|
-| `/staff` | Overview: health strip, numbers, 12 week growth, needs attention, recent staff activity |
-| `/staff/companies`, `/staff/companies/[id]` | Companies (search, filters, bulk) and the company page: Overview, Team, Cards, Leads, Brand, Activity, Notes, Danger zone |
+| `/staff` | Overview: health strip, numbers, renewals and failed payments, the sign-up to paying funnel (7 or 30 days), revenue per month in QAR, 12 week growth, needs attention, recent staff activity |
+| `/staff/companies`, `/staff/companies/[id]` | Companies (search, plan filters: auto-renew off, payment failed, grandfathered, Enterprise; plan, renewal, flag and domain columns; bulk) and the company page: Overview, Billing (subscription with Stripe links, Enterprise, contact-sharing counts, custom domain, latest payments), Team (with each employee's share setting), Cards, Leads, Brand, Activity, Notes, Danger zone |
 | `/staff/people` | Global search with real card thumbnails (the customer card renderer), card drawer (suspend, restore), person drawer (sign-in methods, sessions, sign out everywhere) |
 | `/staff/support-view`, `/staff/support-view/[session]` | Start dialog (reason, 30 minutes), the orange "Support view · read-only · logged" banner on every staff page while a session is open, the mirror (overview, team, cards, leads, brand, activity, what was viewed) |
 | `/staff/abuse`, `/staff/data-requests`, `/staff/applications` | Card reports with answer-time timers and bulk actions; data requests with due countdown; sign-up requests board plus a pointer to the design requests |
 | `/staff/enterprise` | Enterprise requests: companies that asked for a quote; admins set the seats and the price per seat for that customer (or decline), everyone else looks |
-| `/staff/announcements`, `/staff/analytics`, `/staff/system`, `/staff/flags`, `/staff/billing` | Compose banners and e-mails (English and Arabic required); business analytics and CSV; health, e-mail, jobs, errors and storage; feature switches; plan list and manual grant (payments are parked) |
+| `/staff/announcements`, `/staff/analytics`, `/staff/system`, `/staff/flags`, `/staff/billing` | Compose banners and e-mails (English and Arabic required); business analytics (a Revenue tab with the funnel and revenue per month) and CSV; health, e-mail, jobs, errors and storage; feature switches; Billing: summary tiles (active paid plans, estimated yearly revenue in QAR, free weeks, renewals due, failed payments, Enterprise requests) and paged tables for renewals, failed payments, free weeks, payments (CSV), plans, plus the manual grant (Enterprise needs seats) |
 | `/staff/team`, `/staff/audit` | Staff table, invitations, permissions page read from the server; audit log with filters and CSV |
 | `/staff/design-requests` | The design request board (it used to be `/staff`) |
 

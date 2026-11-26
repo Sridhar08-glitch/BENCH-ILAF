@@ -9,11 +9,12 @@ import { countryName } from "@/lib/countries";
 import { fmtNumber } from "@/lib/staff-admin/format";
 import { monthLabel } from "@/lib/staff-admin/health";
 import { BarChart, HBars, LineChart } from "./charts";
+import { Funnel, MoneyKpis, Revenue } from "./MoneyPanels";
 import { Await, Chips, Kpi, NoRows, Page, RoleButton, Table, Tabs, td, useFail } from "./ui";
 
 const RANGES = [{ key: "12", label: "12 weeks" }, { key: "26", label: "26 weeks" }, { key: "52", label: "52 weeks" }] as const;
 type Range = (typeof RANGES)[number]["key"];
-const TABS = [{ key: "growth", label: "Growth" }, { key: "usage", label: "Usage" }, { key: "where", label: "Where" }, { key: "top", label: "Top companies" }, { key: "retention", label: "Retention" }] as const;
+const TABS = [{ key: "growth", label: "Growth" }, { key: "revenue", label: "Revenue" }, { key: "usage", label: "Usage" }, { key: "where", label: "Where" }, { key: "top", label: "Top companies" }, { key: "retention", label: "Retention" }] as const;
 type Tab = (typeof TABS)[number]["key"];
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
@@ -41,7 +42,7 @@ export default function Analytics() {
                 <Kpi label="Leads, last 30 days" value={fmtNumber(d.totals.leads_30d)} />
               </div>
               <Tabs tabs={TABS} value={tab} onChange={setTab} />
-              {tab !== "where" && tab !== "top" && tab !== "retention" && <Chips items={RANGES} value={range} onChange={setRange} />}
+              {tab !== "where" && tab !== "top" && tab !== "retention" && tab !== "revenue" && <Chips items={RANGES} value={range} onChange={setRange} />}
               {tab === "growth" && (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>
@@ -52,6 +53,15 @@ export default function Analytics() {
                     <LineChart label="Active cards, running total" labels={d.active_cards.map((w) => w.week.slice(5))} series={[{ name: "Active cards", values: d.active_cards.map((w) => w.n), color: "#10B981" }]} />
                     <p className="hint" style={{ margin: 0 }}>Cards that are live now, counted from the week each was made. A card that was live earlier and has been taken down since is not in this line.</p>
                   </Panel>
+                </>
+              )}
+              {tab === "revenue" && (
+                <>
+                  <MoneyKpis m={d.money} />
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 14 }}>
+                    <Funnel m={d.money} />
+                    <Revenue m={d.money} />
+                  </div>
                 </>
               )}
               {tab === "usage" && (

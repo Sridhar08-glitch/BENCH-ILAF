@@ -11,6 +11,7 @@ import { Dialog } from "@/components/ops/shared";
 import { sa } from "@/lib/staff-admin/api";
 import { cardStatusWord } from "@/lib/staff-admin/card-data";
 import { fmtDay, fmtNumber, fmtWhen } from "@/lib/staff-admin/format";
+import { freeWeekWords, renewalTone, renewalWord } from "@/lib/staff-admin/billing";
 import CardsList from "./CardsList";
 import { StaffCardThumb } from "./StaffCardThumb";
 import PeopleList from "./PeopleList";
@@ -90,9 +91,28 @@ export function UserDrawer({ id, onClose }: { id: string; onClose: () => void })
               <dt className="hint">Product updates by e-mail</dt><dd style={{ margin: 0 }}>{u.product_updates ? "Yes" : "No"}</dd>
               {u.deletion_due_at && <><dt className="hint">Deletion due</dt><dd style={{ margin: 0 }}>{fmtWhen(u.deletion_due_at)}</dd></>}
             </dl>
+            <section aria-label="Personal plan"><h4>Personal plan</h4>
+              {(() => {
+                const free = freeWeekWords(u.personal);
+                return (
+                  <div className="row">
+                    <Pill tone={free.tone}>{free.text}</Pill>
+                    {u.personal.plan && <Pill tone="accent">{u.personal.plan}</Pill>}
+                    {u.personal.auto_renew !== "none" && <Pill tone={renewalTone(u.personal.auto_renew)}>{renewalWord(u.personal.auto_renew)}</Pill>}
+                    {u.personal.payment_failed && <Pill tone="bad">Payment failed</Pill>}
+                    {u.personal.ends_at && u.personal.state.startsWith("paid") && <span className="hint">Period ends {fmtDay(u.personal.ends_at)}</span>}
+                  </div>
+                );
+              })()}
+            </section>
             <section><h4>Companies</h4>
               {u.memberships.length === 0 && <span className="hint">None.</span>}
-              {u.memberships.map((m) => <div key={m.company_id} className="row">{m.kind === "company" ? <Link href={`/staff/companies/${m.company_id}`}>{m.company}</Link> : <span>Personal space</span>}<Pill>{m.role}</Pill><Pill tone={toneOf(m.status)}>{m.status}</Pill></div>)}
+              {u.memberships.map((m) => (
+                <div key={m.company_id} className="row">
+                  {m.kind === "company" ? <Link href={`/staff/companies/${m.company_id}`}>{m.company}</Link> : <span>Personal space</span>}<Pill>{m.role}</Pill><Pill tone={toneOf(m.status)}>{m.status}</Pill>
+                  {m.share_contacts != null && <Pill tone={m.share_contacts ? "ok" : ""}>{m.share_contacts ? "Shares new contacts with the company" : "Does not share new contacts"}</Pill>}
+                </div>
+              ))}
             </section>
             <section><h4>Sessions (read only)</h4>
               {u.sessions.length === 0 && <span className="hint">No open sessions.</span>}

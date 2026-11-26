@@ -15,9 +15,10 @@ import { Await, Kpi, NoRows, Page, Pill, ReasonDialog, RoleButton, Table, Tabs, 
 import { cardStatusWord } from "@/lib/staff-admin/card-data";
 import { brandSwatches, cardStateWord, extrasWords, fontName, logoWords, rightsWords, seatsInfo, viewsPoints } from "@/lib/staff-admin/company-page";
 import { BarChart } from "./charts";
+import { DOMAIN_WORDS, domainTone, qar, renewalWord, sharingSentence, stripeLink } from "@/lib/staff-admin/billing";
 import { CardDrawer } from "./People";
 
-const TABS = ["Overview", "Team", "Cards", "Leads", "Brand", "Activity", "Notes", "Danger zone"] as const;
+const TABS = ["Overview", "Billing", "Team", "Cards", "Leads", "Brand", "Activity", "Notes", "Danger zone"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function CompanyDetail({ id }: { id: string }) {
@@ -36,6 +37,7 @@ export default function CompanyDetail({ id }: { id: string }) {
           {c.suspended && <div className="notice bad" role="status"><div className="grow"><b>Suspended {fmtWhen(c.suspended_at)}</b>{c.suspended_reason}</div></div>}
           <Tabs tabs={TABS.map((t) => ({ key: t, label: t }))} value={tab} onChange={setTab} />
           {tab === "Overview" && <OverviewTab c={c} />}
+          {tab === "Billing" && <BillingTab id={id} />}
           {tab === "Team" && <TeamTab id={id} />}
           {tab === "Cards" && <CardsTab id={id} />}
           {tab === "Leads" && <LeadsTab id={id} />}
@@ -110,18 +112,119 @@ function OverviewTab({ c }: { c: Detail }) {
   );
 }
 
+function StripeId({ kind, id }: { kind: "customer" | "subscription"; id: string }) {
+  const link = stripeLink(kind, id);
+  if (!id) return <span className="hint">None</span>;
+  return link ? <a href={link} target="_blank" rel="noopener noreferrer">{id}</a> : <span>{id}</span>;
+}
+
+const BOX = { padding: 14, display: "grid", gap: 8, alignContent: "start" } as const;
+const DL = { display: "grid", gridTemplateColumns: "max-content 1fr", gap: "6px 16px", margin: 0 } as const;
+
+function InvoiceId({ id }: { id: string }) {
+  const link = stripeLink("invoice", id);
+  if (!id) return <>-</>;
+  return link ? <a href={link} target="_blank" rel="noopener noreferrer">{id}</a> : <>{id}</>;
+}
+
+function BillingTab({ id }: { id: string }) {
+  const q = useQuery({ queryKey: ["staff-company-billing", id], queryFn: () => sa.companyBilling(id) });
+  const row = (label: string, value: ReactNode) => <><dt className="hint">{label}</dt><dd style={{ margin: 0, overflowWrap: "anywhere" }}>{value}</dd></>;
+  return (
+    <Await q={q}>
+      {(b) => {
+        const s = b.subscription;
+        const mode = !s.plan_code ? "none" : s.cancel_at_period_end ? "cancels" : s.auto_renew ? "auto" : "manual";
+        const e = b.enterprise;
+        const d = b.domain;
+        return (
+          <div style={{ display: "grid", gap: 14 }}>
+            {s.payment_failed && <div className="notice bad" role="status"><div className="grow"><b>The last renewal payment failed {fmtWhen(s.payment_failed_at)}.</b> The grace days run until {fmtDay(s.grace_ends_at)}.</div></div>}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+              <section className="panel" aria-label="Subscription" style={BOX}>
+                <h3 style={{ margin: 0, fontSize: 15 }}>Subscription</h3>
+                {!s.plan ? <span className="hint">This company has no plan.</span> : (
+                  <dl style={DL}>
+                    {row("Plan", <b>{s.plan}</b>)}
+                    {row("Seats", `${s.seats_used} used of ${s.seats_total}`)}
+                    {row("Period", `${fmtDay(s.starts_at)} to ${fmtDay(s.ends_at)}`)}
+                    {row("Grace days end", fmtDay(s.grace_ends_at))}
+                    {row("Status", <Pill tone={s.live ? "ok" : "bad"}>{s.live ? "Live" : "Ended"}</Pill>)}
+                    {row("Renewal", <Pill tone={mode === "auto" ? "ok" : "warn"}>{renewalWord(mode)}</Pill>)}
+                    {row("Renews at", s.renews_at ? fmtDay(s.renews_at) : "-")}
+                    {row("Cancels at period end", s.cancel_at_period_end ? "Yes" : "No")}
+                    {row("Payment failed", s.payment_failed_at ? <span>since {fmtWhen(s.payment_failed_at)}, invoice <InvoiceId id={s.failed_invoice_id} /></span> : "No")}
+                    {row("Stripe customer", <StripeId kind="customer" id={s.stripe_customer_id} />)}
+                    {row("Stripe subscription", <StripeId kind="subscription" id={s.stripe_subscription_id} />)}
+                  </dl>
+                )}
+              </section>
+              <section className="panel" aria-label="Enterprise" style={BOX}>
+                <h3 style={{ margin: 0, fontSize: 15 }}>Enterprise</h3>
+                <dl style={DL}>
+                  {row("Enterprise features", <Pill tone={e.features_on ? "ok" : ""}>{e.features_on ? "On" : "Off"}</Pill>)}
+                  {row("Grandfathered", e.grandfathered ? <span>Yes, until {fmtDay(e.grandfathered_until)}</span> : "No")}
+                  {row("Latest request", e.latest_request ? <span><Pill tone={toneOf(e.latest_request.status)}>{e.latest_request.status}</Pill> {e.latest_request.seats_wanted} seats wanted, {fmtDay(e.latest_request.created_at)}</span> : "None")}
+                  {e.latest_request && e.latest_request.quoted_seats != null && row("Quote", `${e.latest_request.quoted_seats} seats at ${qar(e.latest_request.quoted_price_per_seat_minor)} per seat per year, ${qar(e.latest_request.quoted_total_minor)} a year`)}
+                </dl>
+                <Link href="/staff/enterprise" className="btn ghost sm" style={{ justifySelf: "start" }}>Open Enterprise requests</Link>
+              </section>
+              <section className="panel" aria-label="Contact sharing" style={BOX}>
+                <h3 style={{ margin: 0, fontSize: 15 }}>Contact sharing</h3>
+                <b>{sharingSentence(b.sharing)}</b>
+                <span className="hint">{b.sharing.contacts_shared} contact{b.sharing.contacts_shared === 1 ? "" : "s"} shared so far{b.sharing.last_changed_at ? `, last change ${fmtDay(b.sharing.last_changed_at)}` : ""}. Staff see counts and the setting, never the contacts.</span>
+              </section>
+              <section className="panel" aria-label="Custom domain" style={BOX}>
+                <h3 style={{ margin: 0, fontSize: 15 }}>Custom domain</h3>
+                {!d ? <span className="hint">No custom domain.</span> : (
+                  <dl style={DL}>
+                    {row("Address", <b>{d.domain}</b>)}
+                    {row("Status", <Pill tone={domainTone(d.status)}>{DOMAIN_WORDS[d.status] ?? d.status}</Pill>)}
+                    {row("Serving cards", d.serving ? "Yes" : "No")}
+                    {row("Claimed", fmtDay(d.requested_at))}
+                    {row("Verified", fmtDay(d.verified_at))}
+                    {row("Last checked", fmtWhen(d.last_checked_at))}
+                    {d.last_error && row("Last problem", d.last_error_message ?? d.last_error)}
+                    {d.expires_at && row("Claim expires", fmtDay(d.expires_at))}
+                    {d.failing_since && row("Records missing since", fmtWhen(d.failing_since))}
+                    {d.grace_ends_at && row("Stops serving", fmtDay(d.grace_ends_at))}
+                  </dl>
+                )}
+              </section>
+            </div>
+            <section className="panel" aria-label="Latest payments" style={BOX}>
+              <h3 style={{ margin: 0, fontSize: 15 }}>Latest payments</h3>
+              {b.payments.length === 0 ? <span className="hint">No payments yet.</span> : (
+                <Table head={["Invoice", "Plan", "Seats", "Amount", "Source", "Paid", "Stripe invoice"]}>
+                  {b.payments.map((p) => (
+                    <tr key={p.id}>
+                      <td style={td}><b>{p.number}</b></td><td style={td}>{p.plan}</td><td style={td}>{p.seats}</td><td style={{ ...td, whiteSpace: "nowrap" }}>{qar(p.amount_minor)}</td>
+                      <td style={td}>{p.source}</td><td style={td}>{fmtDay(p.paid_at)}</td><td style={td}><InvoiceId id={p.stripe_invoice_id} /></td>
+                    </tr>
+                  ))}
+                </Table>
+              )}
+            </section>
+          </div>
+        );
+      }}
+    </Await>
+  );
+}
+
 function TeamTab({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["staff-company-team", id], queryFn: () => sa.companyTab<Member[]>(id, "team") });
   return (
     <Await q={q}>
       {(rows) => rows.length === 0 ? <NoRows>No people yet.</NoRows> : (
-        <Table head={["Person", "Title", "Role", "Status", "Card", "Department", "Joined", "Last signed in"]}>
+        <Table head={["Person", "Title", "Role", "Status", "Card", "Shares new contacts", "Department", "Joined", "Last signed in"]}>
           {rows.map((m) => (
             <tr key={m.id}>
               <td style={td}>{m.user_id ? <Link href={`/staff/people?user=${m.user_id}`}><b>{m.full_name || m.email}</b></Link> : <b>{m.full_name || m.email}</b>}<div className="hint">{m.email}</div></td>
               <td style={td}>{m.title || "-"}</td>
               <td style={td}>{m.role}</td><td style={td}><Pill tone={toneOf(m.status)}>{m.status}</Pill></td>
               <td style={td}><Pill tone={m.card_status === "published" ? "ok" : m.card_status === "suspended" ? "bad" : ""}>{cardStateWord(m.card_status)}</Pill>{m.cards > 1 && <span className="hint"> {m.cards} cards</span>}</td>
+              <td style={td}>{m.share_contacts == null ? "-" : <Pill tone={m.share_contacts ? "ok" : ""}>{m.share_contacts ? "On" : "Off"}</Pill>}</td>
               <td style={td}>{m.department || "-"}</td>
               <td style={td}>{fmtDay(m.joined_at)}</td><td style={td}>{fmtDay(m.last_sign_in)}</td>
             </tr>

@@ -7,6 +7,7 @@ import { sa, type Overview as OverviewData } from "@/lib/staff-admin/api";
 import { fmtMs, fmtNumber, fmtWhen, humanAction } from "@/lib/staff-admin/format";
 import { changeText, errorRateTone, fmtPercent, versusText } from "@/lib/staff-admin/health";
 import { BarChart, LineChart } from "./charts";
+import { Funnel, MoneyKpis, Revenue } from "./MoneyPanels";
 import { Await, Kpi, Page, Pill, toneOf } from "./ui";
 
 const EVENT_LABEL = { signup: "Sign-up", card: "New card", upgrade: "Upgrade", support: "Support" } as const;
@@ -51,6 +52,11 @@ export default function Overview() {
               <Kpi label="Open card reports" value={fmtNumber(d.numbers.open_reports)} tone={d.numbers.open_reports ? "bad" : undefined} hint={`${d.numbers.deltas.reports_late} past the answer time`} />
               <Kpi label="Open data requests" value={fmtNumber(d.numbers.open_data_requests)} hint={`${d.numbers.deltas.data_due_soon} due within 5 days`} />
               {d.numbers.open_support_tickets != null && <Kpi label="Open support tickets" value={fmtNumber(d.numbers.open_support_tickets)} />}
+            </div>
+            <MoneyKpis m={d.money} />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+              <Funnel m={d.money} />
+              <Revenue m={d.money} />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
               <section className="panel" style={{ padding: 14, display: "grid", gap: 8 }} aria-label="New companies per week">

@@ -25,8 +25,8 @@ export function storeAnnounceSelection(ids: readonly string[], storage?: Pick<St
   } catch { /* storage blocked: the link still carries the ids */ }
 }
 
-/** The query of the CSV download: the picked companies, or the filters of the list when none are picked. */
-export function exportQuery(picked: readonly string[], filters: { q: string; plan: string; status: string; sort: string }): Record<string, string> {
+/** The query of the CSV download: the picked companies, or the filters of the list when none are picked (q, plan, status, sort and the billing filters). */
+export function exportQuery(picked: readonly string[], filters: Record<string, string>): Record<string, string> {
   if (picked.length > 0) return { ids: picked.join(",") };
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(filters)) if (value) out[key] = value;
@@ -38,4 +38,17 @@ export function togglePage(picked: readonly string[], pageIds: readonly string[]
   const all = pageIds.length > 0 && pageIds.every((id) => picked.includes(id));
   if (all) return picked.filter((id) => !pageIds.includes(id));
   return [...picked, ...pageIds.filter((id) => !picked.includes(id))];
+}
+
+/** The billing filters of the list (a switch is on when its value is "1", or "off" for auto-renew). Only the switched-on ones are sent. */
+export interface BillingFilters { autoRenewOff: boolean; paymentFailed: boolean; grandfathered: boolean; enterprise: boolean }
+export const NO_BILLING_FILTERS: BillingFilters = { autoRenewOff: false, paymentFailed: false, grandfathered: false, enterprise: false };
+
+export function billingFilterQuery(f: BillingFilters): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (f.autoRenewOff) out.auto_renew = "off";
+  if (f.paymentFailed) out.payment_failed = "1";
+  if (f.grandfathered) out.grandfathered = "1";
+  if (f.enterprise) out.enterprise = "1";
+  return out;
 }

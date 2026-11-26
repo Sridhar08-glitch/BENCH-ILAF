@@ -34,6 +34,9 @@ export interface Company {
   country?: string;
   /** Number of cards (only on the companies list). */
   cards?: number;
+  /** Plan facts of the companies list. auto_renew: auto (Stripe charges again), manual (off), cancels (switched off, runs to its end), none (no paid plan). */
+  auto_renew?: "auto" | "manual" | "cancels" | "none"; payment_failed?: boolean; enterprise?: boolean; grandfathered?: boolean; grandfathered_until?: string | null;
+  plan_ends_at?: string | null; domain_status?: string | null;
 }
 export interface CompanyDetail extends Company {
   suspended: boolean; suspended_at: string | null; suspended_reason: string; deletion_due_at: string | null; country: string; country_guessed: boolean; plan_ends_at: string | null;
@@ -49,6 +52,8 @@ export interface Member {
   joined_at: string | null; invited_at: string | null; last_sign_in: string | null;
   /** The state of the person's cards: published, suspended, draft or none. */
   card_status: "published" | "suspended" | "draft" | "none"; cards: number;
+  /** An employee's own switch "share my new contacts with the company" (null for owners and admins). The setting only, never a contact. */
+  share_contacts?: boolean | null; share_contacts_changed_at?: string | null;
 }
 export interface CardRow {
   id: string; workspace_id: string; workspace_name: string; name: string; title: string; company: string; address: string; status: string; staff_hold: boolean;
@@ -84,6 +89,8 @@ export interface Overview {
   };
   jobs: { name: string; label: string; state: string }[];
   email: { sent: number; failed: number; resent: number };
+  /** Conversion funnel (7 and 30 days), revenue per month in QAR, renewals due and failed payments. */
+  money: MoneyBlock;
   numbers: {
     companies: number; active_cards: number; views_today: number; new_companies_week: number; open_reports: number; open_data_requests: number; open_support_tickets: number | null;
     deltas: { companies_4w: number; active_cards_4w: number; views_yesterday: number; new_companies_prev_week: number; reports_late: number; data_due_soon: number };
@@ -120,7 +127,12 @@ export interface UserDetail {
   id: string; email: string; full_name: string; language: string | null; created_at: string; email_verified: boolean; is_active: boolean; staff_role: string; product_updates: boolean;
   sign_in_methods: { password: boolean; google: boolean }; last_sign_in: string | null; deletion_due_at: string | null;
   sessions: { id: string; started_at: string; expires_at: string }[];
-  memberships: { company_id: string; company: string; kind: string; role: string; status: string }[];
+  /** The person's own workspace: the free week (running or ended) or the paid plan. */
+  personal: {
+    workspace_id: string | null; state: "none" | "free_week" | "free_week_ended" | "paid" | "paid_ended"; plan_code: string | null; plan: string | null;
+    starts_at: string | null; ends_at: string | null; auto_renew: "auto" | "manual" | "cancels" | "none"; payment_failed: boolean;
+  };
+  memberships: { company_id: string; company: string; kind: string; role: string; status: string; share_contacts: boolean | null; share_contacts_changed_at: string | null }[];
 }
 
 export interface SupportSession {
@@ -165,6 +177,7 @@ export interface AnalyticsData {
   totals: { companies: number; active_cards: number; views_30d: number; leads_30d: number };
   active_cards: { week: string; n: number }[];
   retention_monthly: { month: string; companies: number; after: Record<string, number | null> }[];
+  money: MoneyBlock;
 }
 
 export interface QueueRow { key: string; label: string; waiting: number; failing: number; state: "ok" | "warn" | "bad" }
@@ -186,10 +199,57 @@ export interface Flag {
   key: string; description: string; known: boolean; state: "off" | "selected" | "everyone"; rollout_percent: number;
   companies: { id: string; name: string }[]; history: { at: string; who: string; text: string; reason?: string }[];
 }
+export interface BillingPlan {
+  code: string; name: string; kind: string; interval: string; price_minor: number; currency: string; per_seat: boolean; max_cards: number; min_seats: number;
+  active: boolean; purchasable: boolean; by_quote: boolean; companies: number;
+}
+export interface BillingSummary {
+  currency: string;
+  active_by_plan: { plan_code: string; plan: string; subscriptions: number; seats: number; arr_minor: number }[];
+  active_total: number;
+  /** Estimated yearly recurring revenue: price x seats of every live paid subscription (Enterprise: its last real payment). */
+  arr_minor: number; arr_is_estimate: boolean;
+  free_weeks: { running: number; ending_soon: number; ended_unpaid: number; converted: number };
+  renewals: { in_7_days: { auto: number; manual: number }; in_30_days: { auto: number; manual: number }; in_grace: number };
+  failed_payments: number;
+  enterprise_requests: { requested: number; quoted: number };
+}
 export interface BillingData {
-  payments_parked: boolean;
-  plans: { code: string; name: string; kind: string; interval: string; price_minor: number; currency: string; per_seat: boolean; max_cards: number; min_seats: number; active: boolean; companies: number }[];
-  invoices: unknown[]; grants: { company_id: string; company: string; plan: string; seats: number; until: string; at: string }[];
+  summary: BillingSummary; plans: BillingPlan[];
+  grants: { company_id: string; company: string; kind: string; plan: string; seats: number; until: string; at: string }[];
+}
+export interface BillingWho { workspace_id: string; company: string; kind: "company" | "personal" }
+export interface RenewalRow extends BillingWho {
+  plan_code: string; plan: string; seats: number; ends_at: string; days_left: number; renewal: "auto" | "manual" | "cancels" | "none"; payment_failed: boolean; owner_email: string;
+}
+export interface FailedPaymentRow extends BillingWho {
+  plan_code: string; plan: string; seats: number; owner_email: string; failed_at: string; invoice_id: string; ends_at: string; grace_ends_at: string; live: boolean;
+}
+export interface FreeWeekRow { workspace_id: string; owner_email: string; started_at: string; ends_at: string; state: "running" | "ending_soon" | "ended"; published: boolean }
+export interface PaymentRow {
+  id: string; number: string; company_id: string; company: string; kind: "company" | "personal"; plan_code: string; plan: string; seats: number; amount_minor: number;
+  currency: string; source: "stripe" | "dev" | "manual"; paid_at: string; period_end: string; stripe_invoice_id: string;
+}
+export interface FunnelStep { days: number; signed_up: number; created_card: number; published: number; still_live: number; ended_unpaid: number; converted: number }
+/** The money block of the overview and the analytics: funnel, revenue per month (QAR) and the renewal and failure counts. */
+export interface MoneyBlock {
+  funnel: { "7": FunnelStep; "30": FunnelStep }; revenue_monthly: { month: string; amount_minor: number; payments: number }[]; currency: string;
+  renewals_due_7: number; renewals_due_30: number; failed_payments: number; enterprise_requests_waiting: number;
+}
+export interface CompanyBilling {
+  subscription: {
+    status: string; plan_code: string | null; plan: string | null; interval?: string; seats_total: number; seats_used: number; starts_at: string | null; ends_at: string | null;
+    grace_ends_at: string | null; live: boolean; auto_renew: boolean; cancel_at_period_end: boolean; renews_at: string | null; payment_failed: boolean;
+    payment_failed_at: string | null; failed_invoice_id: string; stripe_customer_id: string; stripe_subscription_id: string;
+  };
+  enterprise: { features_on: boolean; grandfathered: boolean; grandfathered_until: string | null; latest_request: EnterpriseRequestRow | null };
+  /** How many employees switched on "share my new contacts with the company". Counts only. */
+  sharing: { employees: number; sharing: number; last_changed_at: string | null; contacts_shared: number };
+  domain: {
+    domain: string; status: string; serving: boolean; holding: boolean; requested_at: string | null; verified_at: string | null; last_checked_at: string | null;
+    last_error: string | null; last_error_message: string | null; expires_at: string | null; grace_ends_at: string | null; failing_since: string | null; broken_at: string | null;
+  } | null;
+  payments: PaymentRow[];
 }
 
 export interface EnterpriseRequestRow {
@@ -278,6 +338,12 @@ export const sa = {
   flags: () => get<{ flags: Flag[]; history: { at: string; who: string; text: string; reason?: string }[] }>("staff/flags"),
   setFlag: (key: string, body: { state?: string; rollout_percent?: number; company_ids?: string[]; reason?: string }) => send<Flag>("PATCH", `staff/flags/${key}`, body),
   billing: () => get<BillingData>("staff/billing"),
+  billingRenewals: (q: Q) => get<Paged<RenewalRow>>("staff/billing/renewals", q),
+  billingFailed: (q: Q) => get<Paged<FailedPaymentRow>>("staff/billing/failed-payments", q),
+  billingFreeWeeks: (q: Q) => get<Paged<FreeWeekRow>>("staff/billing/free-weeks", q),
+  billingPayments: (q: Q) => get<Paged<PaymentRow>>("staff/billing/payments", q),
+  downloadPayments: (q: Q) => downloadFile("staff/billing/payments/export", q, "payments.csv"),
+  companyBilling: (id: string) => get<CompanyBilling>(`staff/companies/${id}/billing`),
   grantPlan: (b: { company_id: string; plan_code?: string; seats?: number; reason: string }) => send<{ company: string; plan: string; seats: number; until: string }>("POST", "staff/billing/grant", b),
   enterpriseRequests: (q: Q) => get<EnterpriseRequestsData>("staff/enterprise-requests", q),
   quoteEnterprise: (id: string, b: { seats: number; price_per_seat_minor: number; note?: string }) => send<EnterpriseRequestRow>("POST", `staff/enterprise-requests/${id}/quote`, b),

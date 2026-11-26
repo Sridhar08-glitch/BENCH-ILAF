@@ -8,7 +8,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/app/ui";
 import { sa } from "@/lib/staff-admin/api";
 import { countryName } from "@/lib/countries";
-import { announceHref, exportQuery, seatsNearlyFull, storeAnnounceSelection, togglePage } from "@/lib/staff-admin/companies";
+import { NO_BILLING_FILTERS, announceHref, billingFilterQuery, exportQuery, seatsNearlyFull, storeAnnounceSelection, togglePage, type BillingFilters } from "@/lib/staff-admin/companies";
+import { DOMAIN_WORDS, domainTone, renewalTone, renewalWord } from "@/lib/staff-admin/billing";
 import { fmtDay } from "@/lib/staff-admin/format";
 import { Await, NoRows, Page, Pager, Pill, ReasonDialog, RoleButton, td, toneOf, useCan, useDebounced, useFail } from "./ui";
 
@@ -16,7 +17,7 @@ export const STATUS_WORDS: Record<string, string> = {
   active: "Active", expired: "Plan ended", no_plan: "No plan", deletion_pending: "Deletion pending", suspended: "Suspended", trialing: "Trial",
 };
 
-const HEAD = ["Company", "Country", "Plan", "Seats", "Cards", "Status", "Owner", "Joined"];
+const HEAD = ["Company", "Country", "Plan", "Seats", "Cards", "Status", "Renewal", "Flags", "Custom domain", "Owner", "Joined"];
 
 /** The companies table: a first column with the select-all box for the rows on this page. */
 function CompaniesTable({ canPick, allPicked, onToggleAll, children }: { canPick: boolean; allPicked: boolean; onToggleAll: () => void; children: React.ReactNode }) {
@@ -42,6 +43,7 @@ export default function Companies() {
   const [plan, setPlan] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("name");
+  const [billing, setBilling] = useState<BillingFilters>(NO_BILLING_FILTERS);
   const [page, setPage] = useState(1);
   const [picked, setPicked] = useState<string[]>([]);
   const [bulk, setBulk] = useState<"suspend" | "restore" | null>(null);
@@ -54,13 +56,14 @@ export default function Companies() {
   const [exporting, setExporting] = useState(false);
   const qc = useQueryClient();
   const term = useDebounced(q);
-  const list = useQuery({ queryKey: ["staff-companies", term, plan, status, sort, page], queryFn: () => sa.companies({ q: term, plan, status, sort, page: String(page) }), placeholderData: (p) => p });
+  const extra = billingFilterQuery(billing);
+  const list = useQuery({ queryKey: ["staff-companies", term, plan, status, sort, page, extra], queryFn: () => sa.companies({ q: term, plan, status, sort, page: String(page), ...extra }), placeholderData: (p) => p });
   const reset = () => { setPage(1); setPicked([]); };
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const exportCsv = async () => {
     setExporting(true);
     try {
-      await sa.downloadCompanies(exportQuery(picked, { q: term, plan, status, sort }));
+      await sa.downloadCompanies(exportQuery(picked, { q: term, plan, status, sort, ...extra }));
       toast(`${picked.length} ${picked.length === 1 ? "company" : "companies"} exported. Logged.`);
     } catch (e) {
       toast(fail(e));
@@ -91,6 +94,11 @@ export default function Companies() {
           <option value="cards">Most cards</option>
         </select>
       </div>
+      <div className="row" role="group" aria-label="Plan filters">
+        {([["autoRenewOff", "Auto-renew off"], ["paymentFailed", "Payment failed"], ["grandfathered", "Grandfathered"], ["enterprise", "Enterprise features"]] as const).map(([key, label]) => (
+          <button key={key} type="button" className={`btn sm ${billing[key] ? "" : "ghost"}`} aria-pressed={billing[key]} onClick={() => { setBilling((b) => ({ ...b, [key]: !b[key] })); reset(); }}>{label}</button>
+        ))}
+      </div>
       {picked.length > 0 && canPick && (
         <div className="notice" role="region" aria-label="Selected companies">
           <div className="grow row"><b>{picked.length} selected</b>
@@ -115,10 +123,19 @@ export default function Companies() {
                     <td style={td}>{canPick && <input type="checkbox" checked={picked.includes(c.id)} onChange={() => toggle(c.id)} aria-label={`Select ${c.name}`} />}</td>
                     <td style={td}><Link href={`/staff/companies/${c.id}`}><b>{c.name}</b></Link></td>
                     <td style={td}>{c.country ? countryName(c.country, "en") : "-"}</td>
-                    <td style={td}>{c.plan ?? "-"}</td>
+                    <td style={td}>{c.plan ? <Pill tone="accent">{c.plan}</Pill> : "-"}</td>
                     <td style={{ ...td, ...(seatsNearlyFull(c.seats_used, c.seats_total) ? { color: "var(--warn)", fontWeight: 700 } : {}) }} title={seatsNearlyFull(c.seats_used, c.seats_total) ? "90% or more of the seats are taken" : undefined}>{c.seats_used} / {c.seats_total}</td>
                     <td style={td}>{c.cards ?? 0}</td>
                     <td style={td}><Pill tone={toneOf(c.status)}>{STATUS_WORDS[c.status] ?? c.status}</Pill></td>
+                    <td style={td}>{c.auto_renew && c.auto_renew !== "none" ? <Pill tone={renewalTone(c.auto_renew)}>{renewalWord(c.auto_renew)}</Pill> : "-"}</td>
+                    <td style={td}>
+                      <span className="row" style={{ gap: 4 }}>
+                        {c.payment_failed && <Pill tone="bad">Payment failed</Pill>}
+                        {c.grandfathered ? <Pill tone="accent">Grandfathered until {fmtDay(c.grandfathered_until)}</Pill> : c.enterprise && <Pill tone="accent">Enterprise</Pill>}
+                        {!c.payment_failed && !c.enterprise && "-"}
+                      </span>
+                    </td>
+                    <td style={td}>{c.domain_status ? <Pill tone={domainTone(c.domain_status)}>{DOMAIN_WORDS[c.domain_status] ?? c.domain_status}</Pill> : "-"}</td>
                     <td style={td}>{c.owner_email}</td>
                     <td style={td}>{fmtDay(c.created_at)}</td>
                   </tr>

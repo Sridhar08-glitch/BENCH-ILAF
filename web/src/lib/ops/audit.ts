@@ -99,6 +99,11 @@ export function describeEvent(e: Pick<AuditEvent, "action" | "target_label" | "d
     case "enterprise.requested": return t("billing.evEntRequested");
     case "enterprise.cancelled": return t("billing.evEntCancelled");
     case "enterprise.accepted": return t("billing.evEntAccepted");
+    case "subscription.renewed": return t("billing.evRenewed");
+    case "subscription.payment_failed": return t("billing.evPaymentFailed");
+    case "subscription.auto_renew_off": return t("billing.evAutoRenewOff");
+    case "subscription.auto_renew_on": return t("billing.evAutoRenewOn");
+    case "plan.granted": return t("billing.evPlanGranted");
     case "card.published": return t("company.evCardPublished", { who });
     case "card.unpublished": return t("company.evCardUnpublished", { who });
     case "card.suspended": return d.by === "support" ? t("company.evCardSuspendedSupport", { app: APP_NAME, who }) : t("company.evCardSuspended", { who });
