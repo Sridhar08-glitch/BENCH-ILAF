@@ -23,7 +23,7 @@ import s from "./guide.module.css";
 /** Only accounts this young see the welcome by themselves; an older account can replay it from the Help menu. */
 const WELCOME_WINDOW_DAYS = 14;
 /** Pages that set a flag just by being opened. */
-const VISIT_FLAGS: Record<string, string> = { "/app/qr": "shared_qr_opened", "/app/background": "background_opened" };
+const VISIT_FLAGS: Record<string, string> = { "/app/share": "shared_qr_opened" };
 const PROMPT_SECONDS = 20;
 
 const allSteps: Step[] = Object.values(GUIDES).flatMap((g) => g.steps);

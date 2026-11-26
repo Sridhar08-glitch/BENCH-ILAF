@@ -1,0 +1,98 @@
+<section class="page" data-no="115" data-name="Event badge" data-style="Objects" data-rtl="0">
+<!--recipe {"top":42,"style":"Objects","name":"Event badge","slug":"15-event-badge","dir":"auto","split":"badge2","avatar":null,"drop":["save","qrrow","made","ar"],"cond":{"ot":"title","oc":"addr","ev":"company"},"lists":[{"c":"chips","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: night navy, white badge and the green role band stay fixed (identity); the orange lanyard, header accent and focus ring follow the card accent (--ac fills, --ac-t text on white) */
+.p115 .in{
+  --bg:#0f1a2e; --badge:#fbfbf8; --ink:#0f1a2e; --role:#13806b; --mute:#566075;
+  --sig:#ff5a3c; --ac:color-mix(in oklab,var(--cacc) 55%,var(--sig)); --ac-d:oklch(from var(--ac) calc(l*.85) c h); --ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0); --ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h);
+  --disp:"Bricolage Grotesque","Arial Black",Impact,sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+.p115[dir="rtl"] .in{--disp:"Cairo","Bricolage Grotesque",sans-serif;--mono:"Cairo","JetBrains Mono",sans-serif}
+.p115 *{box-sizing:border-box;margin:0}
+.p115 .in{font-family:var(--disp);color:var(--ink);position:relative;background-color:var(--bg);overflow:hidden;
+  background-image:radial-gradient(circle at 20% 10%,rgba(255,90,60,.18),transparent 40%),radial-gradient(circle at 90% 40%,rgba(22,160,133,.18),transparent 45%),radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1.5px);background-size:auto,auto,22px 22px}
+.p115.top .in{padding-bottom:5.641cqw}
+.p115.bt .in{padding:5.641cqw}
+.p115 a{color:inherit;text-decoration:none}
+.p115 a:focus-visible{outline:0.769cqw solid var(--ac-t);outline-offset:-0.769cqw}
+.p115 .lan{height:38.462cqw;position:relative}
+.p115 .lan svg{position:absolute;inset:0;width:100%;height:100%}
+.p115 .clip{position:relative;z-index:3;width:11.282cqw;height:14.872cqw;margin:-7.692cqw auto -5.128cqw}
+.p115 .clip svg{width:100%;height:100%;display:block}
+.p115 .badge,.p115 .badge2{position:relative;background:linear-gradient(180deg,#fff,#f1f2ee);border-radius:4.615cqw;box-shadow:0 4cqw 8cqw rgba(0,0,0,.5);overflow:hidden}
+.p115 .badge{margin-inline:5.641cqw}
+.p115 .slot{position:absolute;top:3.077cqw;inset-inline-start:50%;width:18.974cqw;height:3.59cqw;margin-inline-start:-9.487cqw;border-radius:2.051cqw;background:var(--bg);box-shadow:inset 0 0.769cqw 1.026cqw rgba(0,0,0,.6),0 1px 0 #fff;z-index:2}
+.p115[dir="rtl"] .slot{inset-inline-start:auto;inset-inline-end:50%;margin-inline-start:0;margin-inline-end:-9.487cqw}
+.p115 .head{padding:9.231cqw 5.128cqw 0;display:flex;justify-content:space-between;align-items:flex-start;gap:3cqw;font-family:var(--mono);font-size:max(10px,2.564cqw);letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--mute);line-height:1.5}
+.p115[dir="rtl"] .head,.p115[dir="rtl"] .hi,.p115[dir="rtl"] .lbl,.p115[dir="rtl"] .roleband span{letter-spacing:0}
+.p115 .head .ev{font-family:var(--disp);font-weight:800;font-size:4.103cqw;letter-spacing:-.01em;color:var(--ink);text-transform:none;line-height:1.1;min-width:0;overflow-wrap:anywhere}
+.p115 .head .ev::before{content:"";display:inline-block;width:2.6cqw;height:2.6cqw;border-radius:50%;background:var(--ac);margin-inline-end:1.8cqw}
+.p115 .head .r{text-align:end;margin-inline-start:auto;color:var(--ac-t);flex:none}
+.p115 .name{padding:5.128cqw 5.128cqw 0}
+.p115 .name .hi{font-family:var(--mono);font-size:max(10px,2.821cqw);letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.p115 .name h1{font-weight:800;font-size:17cqw;line-height:.95;letter-spacing:-.045em;margin-top:1.538cqw;overflow-wrap:anywhere}
+.p115[dir="rtl"] .name h1{letter-spacing:0;line-height:1.2}
+.p115.wl2 .name h1{font-size:12.5cqw}.p115.wl3 .name h1{font-size:9cqw}
+.p115 .name h1 span{display:block;font-weight:500;font-size:.5em;letter-spacing:-.02em;line-height:1.1;margin-top:1.538cqw}
+.p115 .org{margin:3.59cqw 5.128cqw 0;padding-top:3.077cqw;border-top:2px solid var(--ink);display:flex;flex-wrap:wrap;gap:1.5cqw 2.051cqw;align-items:flex-end}
+.p115 .org:not(:has(>div)){display:none}
+.p115 .org .t{font-weight:700;font-size:4.359cqw;line-height:1.15;overflow-wrap:anywhere}
+.p115 .org .ot{min-width:0;flex:1 1 40%}
+.p115 .org .city{font-family:var(--mono);font-size:max(10px,2.821cqw);font-weight:600;text-align:end;line-height:1.35;margin-inline-start:auto;color:var(--mute);overflow-wrap:anywhere;max-width:100%}
+.p115 .bio{margin:3.59cqw 5.128cqw 0;font-size:3.59cqw;line-height:1.45;font-weight:500;color:#2d3750;overflow-wrap:anywhere}
+.p115 .badge{padding-bottom:6cqw}
+.p115 .sp{margin:5.128cqw 5.128cqw 0}
+.p115 .sp .lbl{font-family:var(--mono);font-size:max(10px,2.564cqw);letter-spacing:.2em;text-transform:uppercase;color:var(--mute);text-align:center;display:flex;align-items:center;gap:2.564cqw;font-weight:600}
+.p115 .sp .lbl::before,.p115 .sp .lbl::after{content:"";flex:1;border-top:1px solid #c9cdd6}
+.p115 .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(22cqw,1fr));gap:2.051cqw;margin-top:2.564cqw}
+.p115 .chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.282cqw;min-height:17.949cqw;padding:2.051cqw 1.026cqw;border:1.5px solid #cfd3db;border-radius:2.564cqw;background:#fff;font-weight:700;font-size:max(11px,3.333cqw);letter-spacing:-.01em;text-align:center;min-width:0;overflow-wrap:anywhere}
+.p115 .chip:hover{border-color:var(--ink)}
+.p115 .chip svg{width:5.641cqw;height:5.641cqw;stroke:var(--ink);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.p115 .chip small{font-family:var(--mono);font-size:max(10px,2.436cqw);font-weight:600;color:var(--mute);letter-spacing:0;line-height:1.2;overflow-wrap:anywhere}
+.p115 .roleband{margin-top:5.128cqw;background-color:var(--role);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:3cqw;padding:4.103cqw 5.128cqw 4.615cqw;
+  background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.1) 0 2.564cqw,transparent 2.564cqw 5.128cqw)}
+.p115 .roleband b{font-weight:800;font-size:8cqw;letter-spacing:.02em;text-transform:uppercase;line-height:1.05}
+.p115[dir="rtl"] .roleband b{letter-spacing:0}
+.p115 .roleband span{font-family:var(--mono);font-size:max(10px,2.821cqw);letter-spacing:.12em;text-transform:uppercase;font-weight:600;text-align:end;line-height:1.5}
+.p115 .chip small{direction:ltr;unicode-bidi:isolate}
+</style>
+<div class="pg p115"><div class="in">
+<div class="lan" aria-hidden="true">
+    <svg viewBox="0 0 390 150" preserveAspectRatio="none">
+      <defs>
+        <pattern id="web" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" style="fill:var(--ac)"/><path d="M0 14L14 0" style="stroke:var(--ac-d)" stroke-width="3"/></pattern>
+      </defs>
+      <polygon points="60,0 118,0 218,150 176,150" fill="url(#web)"/>
+      <polygon points="272,0 330,0 218,150 176,150" fill="url(#web)" opacity=".92"/>
+      <polygon points="60,0 118,0 218,150 176,150" fill="none" style="stroke:var(--ac-d)" stroke-width="1.5"/>
+      <polygon points="272,0 330,0 218,150 176,150" fill="none" style="stroke:var(--ac-d)" stroke-width="1.5"/>
+      <path d="M89 0L197 150M301 0L197 150" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="8 8" fill="none"/>
+    </svg>
+  </div>
+  <div class="clip" aria-hidden="true"><svg viewBox="0 0 44 58"><rect x="4" y="2" width="36" height="22" rx="6" fill="#c9ced8" stroke="#7d8696" stroke-width="2"/><rect x="14" y="14" width="16" height="42" rx="5" fill="#dfe3ea" stroke="#7d8696" stroke-width="2"/><rect x="19" y="24" width="6" height="16" rx="3" fill="#0f1a2e"/></svg></div>
+
+  <main class="badge">
+    <div class="slot" aria-hidden="true"></div>
+    <div class="head"><div class="ev">{co}</div><div class="r">[[Contact badge|شارة تعارف]]</div></div>
+    <div class="name">
+      <div class="hi">[[Hello, I am|مرحباً، أنا]]</div>
+      <h1>{first}<span>{last}</span></h1>
+    </div>
+    <div class="org">
+      <div class="ot"><div class="t">{title}</div></div>
+      <div class="oc"><div class="city">{city}</div></div>
+    </div>
+    <p class="bio">{bio}</p>
+  </main>
+
+  <div class="badge2">
+    <div class="sp">
+      <div class="lbl">[[Connect with me|تواصل معي]]</div>
+      <div class="chips">
+        <a class="chip"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Call<small>{phone}</small></a>
+      </div>
+    </div>
+    <div class="roleband"><b>[[Let us talk|لنتحدث]]</b><span>[[All access|وصول كامل]]</span></div>
+  </div>
+</div></div>
+</section>

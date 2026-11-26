@@ -2,6 +2,7 @@
 
 // The design picker, one step at a time: face, colours, text, layout below the card, opening animation, finish.
 // Every choice goes through the editor's own update(), so saving works exactly as for the other tabs.
+import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { designsApi } from "@/lib/designs/api";
@@ -11,26 +12,26 @@ import { Icon } from "@/components/Icon";
 import { ToggleRow } from "@/components/app/Switch";
 import { useToast } from "@/components/app/ui";
 import { CardView } from "@/components/card/CardView";
-import { api } from "@/lib/api";
 import { fontInfo, isFontLocked, FONT_FACE } from "@/lib/library/text";
-import { BELOW_COUNT, COMPANY_COLOUR, FACE_COUNT, INTRO_COUNT, belowInfo, defaultDesign, faceInfo, introInfo, normalizeDesign } from "@/lib/library";
+import { COMPANY_COLOUR, FACE_COUNT, INTRO_COUNT, belowInfo, belowOfTop, defaultDesign, faceInfo, introInfo, normalizeDesign } from "@/lib/library";
 import type { CardPageData } from "@/lib/library/types";
 import type { Design } from "@/lib/types";
 import { useFlags } from "@/lib/flags";
-import { apiErrorText } from "@/lib/i18n/api-error";
+import { usePlans, useWorkspaceDetail } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
-import { IMAGE_ACCEPT, isAllowedImage } from "@/lib/images";
-import { cardLocale, dirOf, type MessageKey } from "@/lib/i18n";
+import { cardLocale, dirOf } from "@/lib/i18n";
 import type { EditorApi } from "../types";
 import {
-  PACK1_COUNT, PACKS, PACK_LABELS, PAGE_SIZE, STEPS, TAGS, backStep, belowItems, filterItems, firstStep, goToStep, introItems, isDone, nextStep, offeredFaces, packOf, pad, pageOf,
-  pagesToShow, paletteLabel, randomBetween, tagLabel, type Item, type Pack, type StepState,
+  PACK1_COUNT, PACK1_INTRO_COUNT, PAGE_SIZE, STEP_TITLES, TAGS, TOP_STYLES, TOP_STYLE_LABELS, backStep, belowForTop, type StepKey, belowItems, filterItems, firstStep, goToStep, introForTop, introItems, isDone,
+  nextStep, offeredBelowCount, offeredFaces, packOf, pad, pageOf, pagesToShow, paletteLabel, randomBetween, tagLabel, topItemsIn, visibleSteps, type Item, type StepState, type TopStyle,
 } from "./logic";
+import { FREE_LIMIT, isFreePlan, richPagesAllowed } from "../ContentTab";
 import { Scaled, Thumb } from "./Preview";
+import { fieldsOf } from "@/lib/library/fieldsUsed";
+import { CoverUpload } from "./CoverUpload";
 import { TextStep } from "./TextStep";
 import s from "./design.module.css";
 
-const MAX_COVER = 3 * 1024 * 1024;
 /** Narrowest a grid cell may get; the grid then fits as many columns as the panel allows and shares the leftover width. */
 const MIN_CELL = 128;
 const GRID_GAP = 10;
@@ -59,7 +60,14 @@ function useGrid(): [React.RefObject<HTMLDivElement | null>, { cols: number; thu
   return [ref, size];
 }
 
-export function DesignWizard({ ed }: { ed: EditorApi }) {
+/** `only` limits the wizard to some of its steps (the guided editor uses it); `onFinish` and `onBack` are called from the last and first of them. */
+export interface WizardScope {
+  only?: readonly StepKey[];
+  onFinish?: () => void;
+  onBack?: () => void;
+}
+
+export function DesignWizard({ ed, only, onFinish, onBack }: { ed: EditorApi } & WizardScope) {
   const { card, draft, update, icons } = ed;
   const { t, locale, number } = useI18n();
   const toast = useToast();
@@ -69,7 +77,15 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
   const faces: CompanyFace[] = faceList.data ?? [];
   const customFace = faces.find((f) => f.id === d.custom_face) ?? null;
   // Design Pack 2 (faces 401 to 500) can be switched off by the product team; the picker then offers the first 400 only.
-  const pack2 = useFlags(card.workspace_id).pack2_faces;
+  const flags = useFlags(card.workspace_id) as Record<string, boolean>;
+  const pack2 = flags.pack2_faces;
+  // Page styles (photo headers and their layouts 401 to 427) can be switched off by the product team, and belong to the paid plans.
+  const pageStyles = flags.page_styles ?? true;
+  const ws = useWorkspaceDetail(card.workspace_id);
+  const plans = usePlans();
+  const paid = richPagesAllowed(ws.data?.subscription, plans.data);
+  // The free plan (the 7-day trial) offers the first 50 faces, below-card layouts and animations, and no page styles.
+  const free = isFreePlan(ws.data?.kind, ws.data?.subscription);
   // The cards are drawn in the card's own language, or in the dashboard's when the card follows the visitor.
   const cardLang = cardLocale(draft.language ?? "auto", locale);
   const [st, setSt] = useState<StepState>(firstStep);
@@ -88,7 +104,7 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
     }),
     [customFace, draft.name, draft.title, draft.company, draft.address, draft.save_contact, draft.items, icons, card.photo_url, card.cover_url, card.public_url, ed.brand, cardLang],
   );
-  const preview = useMemo<CardPageData>(() => ({ ...base, design: d }), [base, d.face, d.custom_face, d.colour, d.below, d.intro, d.font, d.size, d.photo, d.brand_colors, d.foot]); // eslint-disable-line react-hooks/exhaustive-deps
+  const preview = useMemo<CardPageData>(() => ({ ...base, design: d }), [base, d.face, d.custom_face, d.colour, d.top, d.below, d.intro, d.font, d.size, d.photo, d.brand_colors, d.foot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const play = () => {
     ed.replay();
@@ -101,25 +117,34 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
   };
 
   const shuffle = () => {
-    const face = randomBetween(1, pack2 ? FACE_COUNT : PACK1_COUNT);
-    set({ face, colour: randomBetween(0, ed.brand?.palette ? COMPANY_COLOUR : 3), below: randomBetween(1, BELOW_COUNT), intro: randomBetween(1, INTRO_COUNT) });
+    const face = randomBetween(1, free ? FREE_LIMIT : pack2 ? FACE_COUNT : PACK1_COUNT);
+    set({ face, colour: randomBetween(0, ed.brand?.palette ? COMPANY_COLOUR : 3), below: d.top > 0 ? belowOfTop(d.top) : randomBetween(1, free ? FREE_LIMIT : offeredBelowCount(pageStyles && paid)), intro: d.top > 0 ? randomBetween(PACK1_INTRO_COUNT + 1, INTRO_COUNT) : randomBetween(1, PACK1_INTRO_COUNT) });
     play();
   };
 
-  const stepKey = STEPS[st.step].key;
-  const titles: Record<string, [MessageKey, MessageKey]> = {
-    face: ["editor.titleFace", "editor.textFace"],
-    colour: ["editor.titleColour", "editor.textColour"],
-    text: ["editor.titleText", "editor.textText"],
-    below: ["editor.titleBelow", "editor.textBelow"],
-    anim: ["editor.titleAnim", "editor.textAnim"],
-    finish: ["editor.titleFinish", "editor.textFinish"],
+  const all = visibleSteps(pageStyles, d.top);
+  // Without a limit the picker starts with the card faces. The page styles (headers) are a second kind of look, chosen with the switch above the steps.
+  const kindSwitch = !only && pageStyles;
+  const steps = only ? all.filter((x) => only.includes(x.key)) : kindSwitch && d.top === 0 ? all.filter((x) => x.key !== "top") : all;
+  const setKind = (page: boolean) => {
+    if (page === d.top > 0) return;
+    const top = page ? 1 : 0;
+    set({ top, below: belowForTop(top, d.below), intro: introForTop(top, d.intro) });
+    setSt(firstStep());
   };
+  const stepKey = steps[Math.min(st.step, steps.length - 1)].key;
+  const titles = STEP_TITLES;
 
   return (
     <div className={s.wiz} ref={top}>
-      <ol className={s.steps} aria-label={t("editor.stepsAria")}>
-        {STEPS.map((x, i) => {
+      {kindSwitch && (
+        <div className="row" role="group" aria-label={t("editor.gsLookKind")} style={{ marginBlockEnd: 8 }}>
+          <button type="button" className={d.top === 0 ? "btn sm" : "btn ghost sm"} aria-pressed={d.top === 0} onClick={() => setKind(false)}>{t("editor.gsLookFace")}</button>
+          <button type="button" className={d.top > 0 ? "btn sm" : "btn ghost sm"} aria-pressed={d.top > 0} onClick={() => setKind(true)}>{t("editor.gsLookPage")}</button>
+        </div>
+      )}
+      {steps.length > 1 && <ol className={s.steps} aria-label={t("editor.stepsAria")}>
+        {steps.map((x, i) => {
           const done = isDone(st, i);
           const current = i === st.step;
           return (
@@ -137,7 +162,7 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
             </li>
           );
         })}
-      </ol>
+      </ol>}
 
       <div className={s.head}>
         <div>
@@ -156,22 +181,25 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
       </div>
 
       <div role="group" aria-labelledby={headId}>
-        {stepKey === "face" && <FaceStep base={base} d={d} faces={faces} pack2={pack2} onPick={(face) => set({ face, custom_face: null })} onPickCustom={(id) => set({ custom_face: id, colour: d.colour === 4 ? 4 : d.colour })} />}
+        {stepKey === "top" && <TopStep base={base} d={d} locked={!paid} onPick={(n) => set({ top: n, below: belowForTop(n, d.below), intro: introForTop(n, d.intro) })} />}
+        {stepKey === "face" && <FaceStep base={base} d={d} faces={faces} pack2={pack2} free={free} onPick={(face) => set({ face, custom_face: null })} onPickCustom={(id) => set({ custom_face: id, colour: d.colour === 4 ? 4 : d.colour })} />}
         {stepKey === "colour" && <ColourStep base={base} d={d} customFace={customFace} onPick={(colour) => set({ colour })} />}
         {stepKey === "text" && <TextStep base={base} d={d} set={set} />}
-        {stepKey === "below" && <BelowStep base={base} d={d} onPick={(below) => set({ below })} />}
-        {stepKey === "anim" && <AnimStep d={d} onPick={(intro, replay) => { set({ intro }); if (replay) play(); }} onPlay={play} />}
-        {stepKey === "finish" && <FinishStep ed={ed} d={d} set={set} toast={toast} onReset={() => update({ design: defaultDesign() })} />}
+        {stepKey === "below" && <BelowStep base={base} d={d} pageStyles={pageStyles} locked={!paid} free={free} onPick={(below) => set({ below })} />}
+        {stepKey === "anim" && <AnimStep header={d.top > 0} d={d} free={free} onPick={(intro, replay) => { set({ intro }); if (replay) play(); }} onPlay={play} />}
+        {stepKey === "finish" && <FinishStep ed={ed} d={d} set={set} guided={!!only} onReset={() => update({ design: defaultDesign() })} />}
       </div>
 
       <div className={s.nav}>
         <button type="button" className="btn ghost sm" onClick={shuffle}><Icon name="tap" size="s" />{t("editor.shuffle")}</button>
         <div className={s.right}>
-          <button type="button" className="btn ghost" disabled={st.step === 0} onClick={() => move(backStep(st))}>{t("common.back")}</button>
-          {st.step < STEPS.length - 1 ? (
-            <button type="button" className="btn" onClick={() => move(nextStep(st))}>{t("common.next")}</button>
+          <button type="button" className="btn ghost" disabled={st.step === 0 && !onBack} onClick={() => (st.step === 0 ? onBack?.() : move(backStep(st)))}>{t("common.back")}</button>
+          {st.step < steps.length - 1 ? (
+            <button type="button" className="btn" onClick={() => move(nextStep(st, steps.length))}>{t("common.next")}</button>
+          ) : onFinish ? (
+            <button type="button" className="btn" onClick={onFinish}>{t("common.next")}</button>
           ) : (
-            <button type="button" className="btn accent" onClick={() => { setSt((x) => ({ ...x, reached: STEPS.length })); toast(t("editor.designSaved")); }}>
+            <button type="button" className="btn accent" onClick={() => { setSt((x) => ({ ...x, reached: steps.length })); toast(t("editor.designSaved")); }}>
               <Icon name="check" size="s" />{t("common.done")}
             </button>
           )}
@@ -182,38 +210,41 @@ export function DesignWizard({ ed }: { ed: EditorApi }) {
 }
 
 /** Search box, optional tag and pack filters and the "Show more" paging shared by the face and layout lists. */
-function Browser({ items, selected, tags, packs, thumb, label, onPick }: {
+function Browser({ items, selected, tags, packs, thumb, label, onPick, locked }: {
   items: Item[];
   selected: number;
-  tags?: boolean;
+  /** true offers the style tags (corporate, bold ...); a list offers those tags instead (the app patterns of the Top step). */
+  tags?: boolean | readonly string[];
   /** Offer the Pack 1 / Pack 2 chips and mark the Pack 2 faces as new. */
   packs?: boolean;
   /** Which list this is; it picks the search and count texts. */
-  label: "faces" | "layouts";
+  label: "faces" | "layouts" | "headers";
   thumb: (it: Item, width: number) => React.ReactNode;
   onPick: (n: number) => void;
+  /** Items the owner cannot choose yet (they need a paid plan): shown with a lock, not clickable. */
+  locked?: (it: Item) => boolean;
 }) {
   const { t, number, list } = useI18n();
   const [q, setQ] = useState("");
   const [tag, setTag] = useState<string | null>(null);
-  const [pack, setPack] = useState<Pack | null>(null);
   const [pages, setPages] = useState(() => pagesToShow(items, selected));
-  const found = useMemo(() => filterItems(items, q, tag, (it) => it.tags.map((x) => tagLabel(x, t)).join(" "), pack), [items, q, tag, t, pack]);
+  const found = useMemo(() => filterItems(items, q, tag, (it) => it.tags.map((x) => tagLabel(x, t)).join(" ")), [items, q, tag, t]);
   const { shown, more } = pageOf(found, pages);
   const [gridRef, grid] = useGrid();
   const current = items.find((it) => it.n === selected);
-  const search = label === "faces" ? t("editor.searchFaces") : t("editor.searchLayouts");
-  const count = (label === "faces" ? t("editor.countFaces", { found: number(found.length), total: number(items.length) }) : t("editor.countLayouts", { found: number(found.length), total: number(items.length) }));
+  const search = label === "faces" ? t("editor.searchFaces") : label === "headers" ? t("editor.searchHeaders") : t("editor.searchLayouts");
+  const counts = { found: number(found.length), total: number(items.length) };
+  const count = label === "faces" ? t("editor.countFaces", counts) : label === "headers" ? t("editor.countHeaders", counts) : t("editor.countLayouts", counts);
+  const tagList: readonly string[] = typeof tags === "object" ? tags : TAGS;
+  const chip = (x: string) => (x in TOP_STYLE_LABELS ? t(TOP_STYLE_LABELS[x as TopStyle]) : tagLabel(x, t));
   return (
     <div className={s.tools}>
       <input type="search" dir="auto" aria-label={search} placeholder={search} value={q} onChange={(e) => { setQ(e.target.value); setPages(1); }} />
-      {(tags || packs) && (
-        <div className={s.tags} role="group" aria-label={packs ? `${t("editor.filterPack")}, ${t("editor.filterStyle")}` : t("editor.filterStyle")}>
-          {packs && PACKS.map((x) => (
-            <button key={`pack${x}`} type="button" className={s.tag} aria-pressed={pack === x} onClick={() => { setPack(pack === x ? null : x); setPages(1); }}>{t(PACK_LABELS[x])}</button>
-          ))}
-          {tags && TAGS.map((x) => (
-            <button key={x} type="button" className={s.tag} aria-pressed={tag === x} onClick={() => { setTag(tag === x ? null : x); setPages(1); }}>{tagLabel(x, t)}</button>
+      {tags && (
+        <div className={s.tags} role="group" aria-label={t("editor.filterStyle")}>
+          
+          {tags && tagList.map((x) => (
+            <button key={x} type="button" className={s.tag} aria-pressed={tag === x} onClick={() => { setTag(tag === x ? null : x); setPages(1); }}>{chip(x)}</button>
           ))}
         </div>
       )}
@@ -223,12 +254,12 @@ function Browser({ items, selected, tags, packs, thumb, label, onPick }: {
       ) : (
         <div className={s.grid} ref={gridRef} style={{ ["--cols" as string]: grid.cols }}>
           {shown.map((it) => (
-            <button key={it.n} type="button" className={s.cell} aria-pressed={selected === it.n} onClick={() => onPick(it.n)}>
+            <button key={it.n} type="button" className={s.cell} aria-pressed={selected === it.n} disabled={locked?.(it)} title={locked?.(it) ? t("editor.needsPlan") : undefined} onClick={() => onPick(it.n)}>
               {thumb(it, grid.thumb)}
               <span>
-                <b><span className={s.num}>{pad(it.n)}</span>{it.name}{packs && packOf(it.n) === 2 && <em className={s.new}>{t("editor.newFace")}</em>}</b>
+                <b>{locked?.(it) && <Icon name="lock" size="s" />}<span className={s.num}>{pad(it.n)}</span>{it.name}{packs && packOf(it.n) === 2 && <em className={s.new}>{t("editor.newFace")}</em>}</b>
                 {it.description && it.tags.length === 0 && <small>{it.description}</small>}
-                {it.tags.length > 0 && <small>{list(it.tags.map((x) => tagLabel(x, t)))}</small>}
+                {it.tags.length > 0 && <small>{list(it.tags.map(chip))}</small>}
               </span>
             </button>
           ))}
@@ -241,16 +272,43 @@ function Browser({ items, selected, tags, packs, thumb, label, onPick }: {
   );
 }
 
-function FaceStep({ base, d, faces, pack2, onPick, onPickCustom }: {
-  base: Omit<CardPageData, "design">; d: Design; faces: CompanyFace[]; pack2: boolean; onPick: (n: number) => void; onPickCustom: (id: number) => void;
+/** The first step: the card as it always was ("classic"), or one of the page-style headers (app patterns and hand-made design families). */
+function TopStep({ base, d, locked, onPick }: { base: Omit<CardPageData, "design">; d: Design; locked: boolean; onPick: (n: number) => void }) {
+  const { t, locale } = useI18n();
+  const items = useMemo(() => topItemsIn(locale), [locale]);
+  return (
+    <>
+      <div className={s.list}>
+        <div className={s.row} data-on={d.top === 0}>
+          <button type="button" className={s.pick} aria-pressed={d.top === 0} onClick={() => onPick(0)}>
+            <b>{t("editor.classicHeader")}</b> <small>{t("editor.classicHeaderText")}</small>
+          </button>
+        </div>
+      </div>
+      {locked && (
+        <p className="hint" role="note">
+          <Icon name="lock" size="s" /> {t("editor.topPaidNote")} <Link href="/app/billing">{t("shell.seePlans")}</Link>
+        </p>
+      )}
+      <Browser
+        items={items} selected={d.top} tags={TOP_STYLES} label="headers" locked={() => locked} onPick={onPick}
+        thumb={(it, w) => <Thumb base={base} face={d.face} colour={d.colour} top={it.n} below={belowForTop(it.n, d.below)} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={w} ratio={1.4} />}
+      />
+    </>
+  );
+}
+
+function FaceStep({ base, d, faces, pack2, free, onPick, onPickCustom }: {
+  base: Omit<CardPageData, "design">; d: Design; faces: CompanyFace[]; pack2: boolean; free: boolean; onPick: (n: number) => void; onPickCustom: (id: number) => void;
 }) {
   const items = useMemo(() => offeredFaces(pack2), [pack2]);
   return (
     <>
+    {free && <FreeNote />}
     <CustomFaceGrid faces={faces} base={base} d={d} onPick={onPickCustom} />
     <Browser
-      items={items} selected={d.face} tags packs={pack2} label="faces" onPick={onPick}
-      thumb={(it, w) => <Thumb base={base} face={it.n} colour={d.colour} below={d.below} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={w} ratio={1.15} />}
+      items={items} selected={d.face} tags packs={pack2} label="faces" locked={(it) => free && it.n > FREE_LIMIT} onPick={onPick}
+      thumb={(it, w) => <Thumb base={base} face={it.n} colour={d.colour} top={d.top} below={d.below} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={w} ratio={1.15} />}
     />
     </>
   );
@@ -267,7 +325,7 @@ function ColourStep({ base, d, customFace, onPick }: { base: Omit<CardPageData, 
       <div className={s.swatches} ref={gridRef} style={{ ["--cols" as string]: grid.cols }} role="group" aria-label={t("editor.coloursMade")}>
         {company && (
           <button type="button" className={s.sw} aria-pressed={d.colour === COMPANY_COLOUR} aria-label={t("editor.companyColours")} onClick={() => onPick(COMPANY_COLOUR)}>
-            <Thumb base={base} face={d.face} colour={COMPANY_COLOUR} below={d.below} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={grid.thumb - 4} ratio={1.15} />
+            <Thumb base={base} face={d.face} colour={COMPANY_COLOUR} top={d.top} below={d.below} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={grid.thumb - 4} ratio={1.15} />
             <span className={s.chips} aria-hidden="true">
               <i style={{ background: company.bg }} /><i style={{ background: company.bg2 }} /><i style={{ background: company.fg }} /><i style={{ background: company.acc }} />
             </span>
@@ -276,7 +334,7 @@ function ColourStep({ base, d, customFace, onPick }: { base: Omit<CardPageData, 
         )}
         {!customFace && info.palettes.map((p, i) => (
           <button key={i} type="button" className={s.sw} aria-pressed={d.colour === i} aria-label={t("editor.coloursNamed", { name: paletteLabel(p.name, t) })} onClick={() => onPick(i)}>
-            <Thumb base={base} face={d.face} colour={i} below={d.below} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={grid.thumb - 4} ratio={1.15} />
+            <Thumb base={base} face={d.face} colour={i} top={d.top} below={d.below} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={grid.thumb - 4} ratio={1.15} />
             <span className={s.chips} aria-hidden="true">
               <i style={{ background: p.bg }} /><i style={{ background: p.bg2 }} /><i style={{ background: p.fg }} /><i style={{ background: p.acc }} />
             </span>
@@ -289,26 +347,38 @@ function ColourStep({ base, d, customFace, onPick }: { base: Omit<CardPageData, 
   );
 }
 
-function BelowStep({ base, d, onPick }: { base: Omit<CardPageData, "design">; d: Design; onPick: (n: number) => void }) {
+/** Shown on the free plan: what it includes and where to get the rest. */
+function FreeNote() {
+  const { t } = useI18n();
+  return (
+    <p className="hint" role="note">
+      <Icon name="lock" size="s" /> {t("editor.freeNote")} <Link href="/app/billing">{t("shell.seePlans")}</Link>
+    </p>
+  );
+}
+
+function BelowStep({ base, d, pageStyles, locked, free, onPick }: { base: Omit<CardPageData, "design">; d: Design; pageStyles: boolean; locked: boolean; free: boolean; onPick: (n: number) => void }) {
+  // Layouts 401 to 427 are the page styles' own button sets: Pack 2, offered while page styles are on, for paid plans.
+  const items = useMemo(() => belowItems(pageStyles), [pageStyles]);
   return (
     <Browser
-      items={belowItems()} selected={d.below} label="layouts" onPick={onPick}
-      thumb={(it, w) => <Thumb base={base} face={d.face} colour={d.colour} below={it.n} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={w} ratio={1.9} />}
+      items={items} selected={d.below} label="layouts" packs={pageStyles} locked={(it) => (locked && it.n > PACK1_COUNT) || (free && it.n > FREE_LIMIT)} onPick={onPick}
+      thumb={(it, w) => <Thumb base={base} face={d.face} colour={d.colour} top={d.top} below={it.n} photo={d.photo} brand_colors={d.brand_colors} foot={d.foot} font={d.font} size={d.size} width={w} ratio={1.9} />}
     />
   );
 }
 
-function AnimStep({ d, onPick, onPlay }: { d: Design; onPick: (n: number, replay: boolean) => void; onPlay: () => void }) {
+function AnimStep({ d, header, free, onPick, onPlay }: { d: Design; header: boolean; free: boolean; onPick: (n: number, replay: boolean) => void; onPlay: () => void }) {
   const { t, number } = useI18n();
   const [q, setQ] = useState("");
-  const [pages, setPages] = useState(() => (d.intro > 0 ? pagesToShow(introItems(), d.intro) : 1));
-  const found = useMemo(() => filterItems(introItems(), q), [q]);
+  const [pages, setPages] = useState(() => (d.intro > 0 ? pagesToShow(introItems(header), d.intro) : 1));
+  const found = useMemo(() => filterItems(introItems(header), q), [q, header]);
   const { shown, more } = pageOf(found, pages);
   const none = q.trim() === "" || t("editor.noAnimation").toLowerCase().includes(q.trim().toLowerCase());
   return (
     <div className={s.tools}>
       <input type="search" dir="auto" aria-label={t("editor.searchOpenings")} placeholder={t("editor.searchOpenings")} value={q} onChange={(e) => { setQ(e.target.value); setPages(1); }} />
-      <div className={s.count} role="status" aria-live="polite">{t("editor.countOpenings", { found: number(found.length), total: number(INTRO_COUNT) })}</div>
+      <div className={s.count} role="status" aria-live="polite">{t("editor.countOpenings", { found: number(found.length), total: number(introItems(header).length) })}</div>
       <div className={s.list}>
         {none && (
           <div className={s.row} data-on={d.intro === 0}>
@@ -317,10 +387,10 @@ function AnimStep({ d, onPick, onPlay }: { d: Design; onPick: (n: number, replay
         )}
         {shown.map((it) => (
           <div key={it.n} className={s.row} data-on={d.intro === it.n}>
-            <button type="button" className={s.pick} aria-pressed={d.intro === it.n} onClick={() => onPick(it.n, true)}>
-              <span className={s.num}>{pad(it.n)}</span>{it.name}
+            <button type="button" className={s.pick} aria-pressed={d.intro === it.n} disabled={free && it.n > FREE_LIMIT} title={free && it.n > FREE_LIMIT ? t("editor.needsPlan") : undefined} onClick={() => onPick(it.n, true)}>
+              {free && it.n > FREE_LIMIT && <Icon name="lock" size="s" />}<span className={s.num}>{pad(it.n)}</span>{it.name}
             </button>
-            <button type="button" className="btn ghost sm" aria-label={t("editor.playNamed", { name: it.name })} onClick={() => (d.intro === it.n ? onPlay() : onPick(it.n, true))}>
+            <button type="button" className="btn ghost sm" disabled={free && it.n > FREE_LIMIT} aria-label={t("editor.playNamed", { name: it.name })} onClick={() => (d.intro === it.n ? onPlay() : onPick(it.n, true))}>
               <Icon name="eye" size="s" />{t("editor.play")}
             </button>
           </div>
@@ -334,30 +404,12 @@ function AnimStep({ d, onPick, onPlay }: { d: Design; onPick: (n: number, replay
   );
 }
 
-function FinishStep({ ed, d, set, toast, onReset }: { ed: EditorApi; d: Design; set: (p: Partial<Design>) => void; toast: (m: string) => void; onReset: () => void }) {
-  const { card } = ed;
+function FinishStep({ ed, d, set, onReset, guided }: { ed: EditorApi; d: Design; set: (p: Partial<Design>) => void; onReset: () => void; guided: boolean }) {
   const { t, number } = useI18n();
-  const [busy, setBusy] = useState(false);
-  const file = useRef<HTMLInputElement>(null);
   const face = faceInfo(d.face);
-  const mb = number(MAX_COVER / (1024 * 1024));
-
-  async function onCover(f: File | undefined) {
-    if (!f) return;
-    if (!isAllowedImage(f)) return toast(t("common.useImage"));
-    if (f.size > MAX_COVER) return toast(t("editor.pictureTooLarge", { mb }));
-    setBusy(true);
-    try {
-      const r = await api.uploadCover(card.id, f);
-      ed.setCover(r.cover_url);
-      toast(t("editor.coverUpdated"));
-    } catch (e) {
-      toast(apiErrorText(e, t, "editor.coverFailed"));
-    } finally {
-      setBusy(false);
-      if (file.current) file.current.value = "";
-    }
-  }
+  // Only the options this design has: a photo switch for a design that draws a photo, a cover upload for one that draws a cover.
+  // The guided editor asks for the cover in the Details step.
+  const uses = fieldsOf(d);
 
   return (
     <div className="pane">
@@ -372,26 +424,12 @@ function FinishStep({ ed, d, set, toast, onReset }: { ed: EditorApi; d: Design; 
       </dl>
 
       <div>
-        <ToggleRow first title={t("editor.showPhoto")} hint={t("editor.showPhotoHint")} checked={d.photo} onChange={(v) => set({ photo: v })} />
-        <ToggleRow title={t("editor.brandColours")} hint={t("editor.brandColoursHint")} checked={d.brand_colors} onChange={(v) => set({ brand_colors: v })} />
+        {uses.photo && <ToggleRow first title={t("editor.showPhoto")} hint={t("editor.showPhotoHint")} checked={d.photo} onChange={(v) => set({ photo: v })} />}
+        <ToggleRow first={!uses.photo} title={t("editor.brandColours")} hint={t("editor.brandColoursHint")} checked={d.brand_colors} onChange={(v) => set({ brand_colors: v })} />
         <ToggleRow title={t("editor.showFooter")} hint={t("editor.showFooterHint")} checked={d.foot} onChange={(v) => set({ foot: v })} />
       </div>
 
-      {ed.canCover && (
-        <div className="pane" style={{ gap: 8 }}>
-          <div className="sechead"><Icon name="camera" size="s" />{t("editor.coverHead")}</div>
-          <div className="photo">
-            <div className="av" style={{ borderRadius: 8, width: 90, height: 56, background: "var(--surface-2)", color: "var(--mute)" }} aria-hidden="true">
-              {card.cover_url ? <img src={card.cover_url} alt="" /> : <Icon name="camera" />}
-            </div>
-            <div>
-              <input ref={file} type="file" hidden accept={IMAGE_ACCEPT} onChange={(e) => void onCover(e.target.files?.[0])} />
-              <button type="button" className="btn ghost sm" disabled={busy} onClick={() => file.current?.click()}><Icon name="upload" size="s" />{busy ? t("editor.uploading") : t("editor.coverUpload")}</button>
-              <div className="hint" style={{ marginBlockStart: 6 }}>{t("editor.coverHint", { mb })}</div>
-            </div>
-          </div>
-        </div>
-      )}
+      {ed.canCover && uses.cover && !guided && <CoverUpload ed={ed} />}
 
       <button type="button" className="btn ghost" onClick={onReset}>{t("editor.resetDesign")}</button>
     </div>

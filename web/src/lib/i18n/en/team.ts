@@ -94,4 +94,8 @@ export const team = {
   "team.suspend": "Suspend",
   "team.remove": "Remove...",
   "team.removeAria": "Remove {name}",
+  "team.sharesContacts": "Shares contacts",
+  "team.privateContacts": "Private",
+  "team.sharesHint": "This person shares the contacts that arrive from now on with the company. Only they can change it.",
+  "team.privateHint": "This person keeps their contacts private. Only they can change it.",
 } satisfies Record<string, string>;

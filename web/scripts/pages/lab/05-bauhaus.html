@@ -1,0 +1,96 @@
+<section class="page" data-no="105" data-name="Bauhaus" data-style="Editorial" data-rtl="0">
+<!--recipe {"top":32,"style":"Editorial","name":"Bauhaus","slug":"05-bauhaus","dir":"auto","split":"tiles","avatar":"phw","cond":{"bio":"bio"},"lists":[{"c":"tiles","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: cream paper, yellow, blue and black are the Bauhaus signature; the red (name surname, red tiles, red shapes) follows the card accent via --ac */
+.p105 .in{--cream:#f1ead9;--sig:#d62718;--yel:#f2b705;--blue:#1c3f94;--blk:#141414;
+ --ac:color-mix(in oklab,var(--cacc) 55%,var(--sig)); --ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0); --ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h);
+ --sans:"Jost","Futura","Century Gothic","Avenir Next",Arial,sans-serif;--ar:"Cairo","IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif}
+.p105 *{box-sizing:border-box;margin:0;padding:0}
+.p105 .in{font-family:var(--sans);color:var(--blk)}
+.p105[dir="rtl"] .in{font-family:var(--ar)}
+.p105 .in{background:var(--cream);position:relative;overflow:hidden}
+.p105 a{color:inherit;text-decoration:none}
+.p105 a:focus-visible{outline:1.026cqw solid var(--blk);outline-offset:-1.026cqw;box-shadow:inset 0 0 0 1.795cqw var(--cream)}
+.p105 .comp{position:relative;aspect-ratio:390/440;overflow:hidden}
+.p105 .comp>svg{position:absolute;inset:0;display:block;width:100%;height:100%}
+.p105[dir="rtl"] .comp>svg{transform:scaleX(-1)}
+.p105 .phw{position:absolute;z-index:1;left:24.6%;top:5.9%;width:78%;aspect-ratio:1;border-radius:50%;background:var(--yel);overflow:hidden}
+.p105[dir="rtl"] .phw{left:-2.6%}
+.p105 .phw .pic{object-fit:cover;object-position:50% 25%;filter:grayscale(1) contrast(1.1) brightness(1.04);mix-blend-mode:multiply;background:transparent;border-radius:50%}
+.p105 .phw span.pic{display:grid;place-items:center;mix-blend-mode:normal;filter:none;font-family:var(--sans);font-weight:800;font-size:34cqw;line-height:1;color:var(--blk);letter-spacing:-.02em}
+.p105 .comp>svg.front{z-index:2;pointer-events:none}
+.p105 .name{position:absolute;z-index:3;inset-inline-start:2.564cqw;top:3.59cqw;bottom:3.59cqw;writing-mode:vertical-rl;transform:rotate(180deg);font-weight:800;font-size:10.8cqw;line-height:1.05;letter-spacing:.01em;text-transform:uppercase;color:var(--blk);display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:.35em;max-width:30cqw}
+.p105.nl2 .name{font-size:7.4cqw}
+.p105.nl3 .name{font-size:max(10px,6cqw)}
+.p105 .name span,.p105 .name em{overflow-wrap:anywhere;max-height:100%}
+.p105 .name em{font-style:normal;color:var(--ac-t)}
+.p105[dir="rtl"] .name{font-weight:800;line-height:1.2;text-transform:none;font-size:9.4cqw}
+.p105[dir="rtl"].nl2 .name{font-size:7cqw}.p105[dir="rtl"].nl3 .name{font-size:max(10px,5.6cqw)}
+.p105 .role{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:2.564cqw;padding:3.59cqw 4.103cqw 0;border-top:2.051cqw solid var(--blk)}
+.p105 .role h2{font-weight:800;font-size:6.41cqw;line-height:1.05;text-transform:uppercase;letter-spacing:.01em;overflow-wrap:anywhere;min-width:0}
+.p105 .role h2 span{display:block}
+.p105 .role h2 span.ci{font-size:max(10px,3.333cqw);font-weight:700;letter-spacing:.16em;color:var(--ac-t);margin-top:1.538cqw}
+.p105 .role .rc{font-weight:800;font-size:max(10px,3.3cqw);line-height:1.15;text-align:end;max-width:42cqw;overflow-wrap:break-word;text-transform:uppercase;letter-spacing:.03em}
+.p105[dir="rtl"] .role h2{text-transform:none;font-size:6.6cqw;line-height:1.25}
+.p105[dir="rtl"] .role h2 span.ci,.p105[dir="rtl"] .role .rc{letter-spacing:0;text-transform:none}
+.p105 .bio{display:grid;grid-template-columns:5.641cqw minmax(0,1fr);gap:3.59cqw;margin:3.59cqw 4.103cqw 0;padding-bottom:1.5cqw}
+.p105 .bio i{background:var(--yel);border:0.769cqw solid var(--blk);display:block;border-radius:50% 50% 0 0;min-height:15cqw}
+.p105 .bio p{font-size:5.128cqw;line-height:1.24;font-weight:500;letter-spacing:-.005em;overflow-wrap:anywhere}
+.p105[dir="rtl"] .bio p{line-height:1.5;font-size:4.9cqw}
+.p105 .tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin:4.615cqw 0 0;border-block:1.538cqw solid var(--blk)}
+.p105 .t{display:block;position:relative;padding:3.077cqw 3.59cqw 3.077cqw;min-height:max(24.103cqw,44px);overflow:hidden;transition:filter .15s;grid-column:span 3;background:var(--cream);color:var(--blk)}
+.p105 .t:hover{filter:brightness(1.08) saturate(1.1)}
+.p105 .t .l{display:block;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:3.846cqw;line-height:1.1;position:relative;z-index:1;overflow-wrap:anywhere}
+.p105 .t .v{display:block;font-size:3.462cqw;font-weight:500;margin-top:1.026cqw;line-height:1.2;position:relative;z-index:1;overflow-wrap:anywhere;unicode-bidi:plaintext;text-align:start}
+.p105[dir="rtl"] .t .l{letter-spacing:0;text-transform:none;font-size:4cqw}
+.p105 .t svg{position:absolute;width:9cqw;height:9cqw;inset-inline-end:3.077cqw;top:3.077cqw;stroke:currentColor;z-index:1}
+/* a six-tile cycle: red, yellow, blue, black, cream, yellow (rows 3+3, 4+2, 3+3); a lone last tile fills the row */
+.p105 .t:nth-child(6n+1){grid-column:span 3;background:var(--ac);color:var(--ac-on)}
+.p105 .t:nth-child(6n+2){grid-column:span 3;background:var(--yel);border-end-start-radius:14.359cqw}
+.p105 .t:nth-child(6n+3){grid-column:span 4;background:var(--blue);color:#fff;border-end-end-radius:60%}
+.p105 .t:nth-child(6n+4){grid-column:span 2;background:var(--blk);color:var(--cream)}
+.p105 .t:nth-child(6n+5){grid-column:span 3;background:var(--cream);color:var(--blk);border-top:1.538cqw solid var(--blk)}
+.p105 .t:nth-child(6n+6){grid-column:span 3;background:var(--yel);border-top:1.538cqw solid var(--blk);border-inline-start:1.538cqw solid var(--blk)}
+.p105 .t:last-child:nth-child(6n+1),.p105 .t:last-child:nth-child(6n+3),.p105 .t:last-child:nth-child(6n+5){grid-column:1/-1}
+.p105 .t:nth-child(6n+4) .l{font-size:max(10px,3.3cqw);letter-spacing:.04em}
+.p105 .t:nth-child(6n+4) .v,.p105 .t:nth-child(6n+5) .v,.p105 .t:nth-child(6n+6) .v{font-size:max(10px,3.205cqw)}
+.p105 .t:nth-child(6n+4) svg{color:var(--yel);top:auto;bottom:2.564cqw;width:7cqw;height:7cqw}
+.p105 .t:nth-child(6n+1) .l,.p105 .t:nth-child(6n+2) .l{padding-inline-end:10cqw}
+.p105 .t:nth-child(6n+1) .v,.p105 .t:nth-child(6n+2) .v{margin-top:4.103cqw}
+.p105 .t:nth-child(6n+3) svg{inset-inline-end:3.59cqw;top:auto;bottom:2.564cqw;width:8cqw;height:8cqw}
+.p105 .t:nth-child(6n+5) svg,.p105 .t:nth-child(6n+6) svg{width:7cqw;height:7cqw;top:auto;bottom:2.564cqw}
+.p105 .t:nth-child(6n+3) .v,.p105 .t:nth-child(6n+5) .v,.p105 .t:nth-child(6n+6) .v,.p105 .t:nth-child(6n+4) .v{padding-bottom:7cqw}
+.p105 .shapes{display:flex;gap:1.538cqw;padding:4.5cqw 4.103cqw 4.5cqw}
+.p105 .shapes i{width:3.9cqw;height:3.9cqw;display:block}
+</style>
+<div class="pg p105"><div class="in">
+<div class="comp">
+    <svg class="back" viewBox="0 0 390 440" aria-hidden="true">
+      <rect width="390" height="440" fill="#f1ead9"/>
+      <circle cx="248" cy="178" r="152" fill="#f2b705"/>
+      <path d="M66 440V300A140 140 0 0 1 206 440Z" fill="#1c3f94"/>
+      <polygon points="64,150 128,150 96,92" style="fill:var(--ac)"/>
+      <circle cx="104" cy="58" r="22" fill="#141414"/>
+      <circle cx="248" cy="445" r="128" style="fill:var(--ac)"/>
+    </svg>
+    <div class="phw"><svg viewBox="0 0 100 100" role="img" aria-label="Portrait"><circle cx="50" cy="40" r="20" fill="#141414"/></svg></div>
+    <svg class="front" viewBox="0 0 390 440" aria-hidden="true">
+      <rect x="330" y="0" width="22" height="330" fill="#141414"/>
+      <rect x="66" y="372" width="324" height="5" fill="#141414"/>
+      <rect x="0" y="0" width="390" height="5" fill="#141414"/>
+    </svg>
+    <h1 class="name"><span>{first}</span><em>{last}</em></h1>
+  </div>
+
+  <div class="role">
+    <h2><span class="ti">{title}</span><span class="ci">{city}</span></h2>
+    <div class="rc">{co}</div>
+  </div>
+  <div class="bio"><i aria-hidden="true"></i><p>{bio}</p></div>
+
+  <nav class="tiles" aria-label="Contact">
+    <a class="t"><span class="l">Call</span><span class="v">{phone}</span><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="5"/></svg></a>
+  </nav>
+  <div class="shapes" aria-hidden="true"><i style="background:var(--ac);border-radius:50%"></i><i style="background:var(--yel)"></i><i style="background:var(--blue);clip-path:polygon(50% 0,100% 100%,0 100%)"></i></div>
+</div></div>
+</section>

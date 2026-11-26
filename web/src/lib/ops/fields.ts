@@ -1,5 +1,5 @@
 // Pure logic for field rules, approvals and the employee card editor's locked / approval hints.
-import type { ButtonPermissions, ChangeRequest, FieldAccess, FieldPermission, FieldRules, ItemKind, MandatoryButton } from "../types";
+import { EXTRA_KINDS, type ButtonPermissions, type ChangeRequest, type ExtraKind, type ExtrasMode, type FieldAccess, type FieldPermission, type FieldRules, type ItemKind, type MandatoryButton } from "../types";
 import { runtimeT, tk, type I18n, type MessageKey, type TFunction } from "../i18n";
 
 export type PlainField = "name" | "title" | "company" | "address" | "photo";
@@ -25,7 +25,7 @@ export const permissionLabel = (p: FieldPermission, t: TFunction = runtimeT): st
 
 const FIELD_WORD: Record<string, MessageKey> = {
   name: tk("company.wordName"), title: tk("company.wordTitle"), company: tk("company.wordCompany"),
-  address: tk("company.wordAddress"), photo: tk("company.wordPhoto"), buttons: tk("company.wordButtons"),
+  address: tk("company.wordAddress"), bio: tk("company.wordBio"), photo: tk("company.wordPhoto"), buttons: tk("company.wordButtons"),
 };
 /** The field's name as a word inside a sentence ("name", "job title"). */
 export const fieldWordIn = (f: string, t: TFunction): string => (FIELD_WORD[f] ? t(FIELD_WORD[f]) : f);
@@ -33,7 +33,7 @@ export const fieldWordIn = (f: string, t: TFunction): string => (FIELD_WORD[f] ?
 export const fieldWord = (f: string): string => fieldWordIn(f, runtimeT);
 
 /** The one-line hint under a field in the employee editor, or null when the field is free. */
-export function fieldHint(field: PlainField, perm: FieldPermission, pending: boolean, t: TFunction = runtimeT): string | null {
+export function fieldHint(field: PlainField | "bio", perm: FieldPermission, pending: boolean, t: TFunction = runtimeT): string | null {
   const word = fieldWordIn(field, t);
   if (pending) return t("company.hintPending", { word });
   if (perm === "locked") return t("company.hintLocked", { word });
@@ -215,7 +215,7 @@ export function textDiff(oldText: string, newText: string): { kind: "same" | "de
 export const FREE_ACCESS: FieldAccess = {
   name: "free", title: "free", photo: "free", company: "free", address: "free", slug: "free", features: "free", vcard: "free",
   buttons: { add: "free", edit: "free", remove: "free" },
-  allowed_kinds: null, banned_domains: [], mandatory_buttons: [],
+  allowed_kinds: null, banned_domains: [], mandatory_buttons: [], extras: [...EXTRA_KINDS],
 };
 
 // ---- guards for the employee's button editor
@@ -255,4 +255,46 @@ export function linkProblem(items: ItemLike[], access: Pick<FieldAccess, "allowe
 /** Whether this item is one of the required buttons (so the editor can mark it as locked). */
 export function isRequired(i: ItemLike, mandatory: MandatoryButton[]): boolean {
   return mandatory.some((m) => visible(i) && sameButtonItem(i, m));
+}
+
+// ---- how much employees can change, as one choice
+
+export type RightsPreset = "free" | "approval" | "locked";
+
+/** The details of a person that need an admin's approval under the middle choice. */
+const PERSON_FIELDS = ["name", "title", "photo", "company", "address"] as const;
+const SETTING_FIELDS = ["slug", "features", "vcard", "button_add", "button_edit", "button_remove"] as const;
+
+/** The rules a choice stands for. Only the permissions change: allowed button kinds, banned domains and required buttons are kept. */
+export function presetRules(preset: RightsPreset, current: FieldRules): FieldRules {
+  const next = { ...current };
+  for (const k of PERSON_FIELDS) next[k] = preset === "free" ? "free" : preset === "approval" ? "approval" : "locked";
+  for (const k of SETTING_FIELDS) next[k] = preset === "locked" ? "locked" : "free";
+  return next;
+}
+
+/** Which choice the saved rules match, or null when they were set field by field. */
+export function presetOf(rules: FieldRules): RightsPreset | null {
+  for (const p of ["free", "approval", "locked"] as const) {
+    const want = presetRules(p, rules);
+    if ([...PERSON_FIELDS, ...SETTING_FIELDS].every((k) => want[k] === rules[k])) return p;
+  }
+  return null;
+}
+
+// ---- what employees may add under their cards
+
+/** The extras a person may add: the list the API sent for them, or everything when it sent none. */
+export function allowedExtras(access: Pick<FieldAccess, "extras"> | undefined): ExtraKind[] {
+  return access?.extras ? [...access.extras] : [...EXTRA_KINDS];
+}
+
+/** The rules with the extras choice changed. "some" keeps the chosen kinds; "all" and "none" leave the list as it was. */
+export function withExtras(rules: FieldRules, mode: ExtrasMode, kinds: readonly ExtraKind[] = rules.extra_kinds): FieldRules {
+  return { ...rules, extras: mode, extra_kinds: EXTRA_KINDS.filter((k) => kinds.includes(k)) };
+}
+
+/** The extras a company allows its employees, from its rules. */
+export function extrasOf(rules: Pick<FieldRules, "extras" | "extra_kinds">): ExtraKind[] {
+  return rules.extras === "none" ? [] : rules.extras === "some" ? EXTRA_KINDS.filter((k) => rules.extra_kinds.includes(k)) : [...EXTRA_KINDS];
 }

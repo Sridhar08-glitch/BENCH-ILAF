@@ -3,10 +3,11 @@
 // Who is signed in and which workspace (personal or one of their companies) they are working in.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { isClosedForDeletion, isSuspendedCompany } from "@/lib/api";
+import { hasFeature } from "@/lib/enterprise";
 import { useWorkspaces, useMe, useWorkspaceDetail } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
 import { Loading, ErrorBox } from "./ui";
-import type { Role, User, WorkspaceSummary } from "@/lib/types";
+import type { EnterpriseFeature, Role, User, WorkspaceSummary } from "@/lib/types";
 
 interface Ctx {
   user: User;
@@ -23,6 +24,8 @@ interface Ctx {
   closingDue: string | null;
   /** The product team suspended the company: nothing in it can be opened. */
   suspended: boolean;
+  /** Whether the current company may use an Enterprise-only feature (the server decides; this only hides and locks the screens). */
+  has: (feature: EnterpriseFeature) => boolean;
 }
 
 const WsContext = createContext<Ctx | null>(null);
@@ -88,6 +91,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     closed: current.kind === "company" && isClosedForDeletion(detail.error),
     suspended: current.kind === "company" && isSuspendedCompany(detail.error),
     closingDue: current.role === "owner" && current.kind === "company" ? (detail.data?.deletion_due_at ?? null) : null,
+    has: (feature) => hasFeature(current.subscription, feature),
   };
   return <WsContext.Provider value={value}>{children}</WsContext.Provider>;
 }

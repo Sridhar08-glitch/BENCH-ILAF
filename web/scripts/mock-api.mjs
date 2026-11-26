@@ -22,9 +22,10 @@ const db = {
   tokens: new Map(), refresh: new Map(),
 };
 const PLANS = [
-  { code: "personal", name: "Personal", kind: "personal", interval: "year", price_minor: 4900, currency: "AED", max_cards: 1, per_seat: false, min_seats: 1, features: ["NFC and QR sharing", "Contact collection", "Basic analytics"] },
-  { code: "business", name: "Business", kind: "personal", interval: "year", price_minor: 9900, currency: "AED", max_cards: 5, per_seat: false, min_seats: 1, features: ["All 100 designs", "Contact export", "Full analytics"] },
-  { code: "company", name: "Company", kind: "company", interval: "year", price_minor: 3900, currency: "AED", max_cards: 1, per_seat: true, min_seats: 5, features: ["Company brand and design lock", "Team management", "Custom domain"] },
+  { code: "free", name: "Free", kind: "personal", interval: "month", price_minor: 0, currency: "QAR", max_cards: 1, per_seat: false, min_seats: 1, features: ["1 digital card for 7 days"], purchasable: false },
+  { code: "personal", name: "Personal", kind: "personal", interval: "year", price_minor: 4900, currency: "QAR", max_cards: 1, per_seat: false, min_seats: 1, features: ["NFC and QR sharing", "Contact collection", "Basic analytics"] },
+  { code: "business", name: "Business", purchasable: false, kind: "personal", interval: "year", price_minor: 9900, currency: "QAR", max_cards: 5, per_seat: false, min_seats: 1, features: ["All 100 designs", "Contact export", "Full analytics"] },
+  { code: "company", name: "Company", kind: "company", interval: "year", price_minor: 3900, currency: "QAR", max_cards: 1, per_seat: true, min_seats: 5, features: ["Company brand and design lock", "Team management", "Custom domain"] },
 ];
 const DEFAULT_VC = { company: true, photo: true, phones: true, emails: true, urls: true, social: true, addr: true, note: "Saved from my BENCH card" };
 // A design is numbers: face 1..400 with colourway 0..3, the layout below the card 1..400, the opening 0..400 (0 = none).
@@ -70,8 +71,8 @@ function seed() {
   // some leads and invoices
   const names = [["Marcus Reid", "Northwind Labs", "nfc"], ["Aiko Tanaka", "Studio Kobo", "qr"], ["Samuel Ortiz", "Bright Path", "link"], ["Leah Brandt", "Freelance", "email"], ["Tom Hughes", "Hughes Capital", "nfc"]];
   names.forEach(([n, c, s], i) => db.leads.push({ id: id(), card_id: db.cards[0].id, card_name: db.cards[0].name, name: n, email: n.split(" ")[0].toLowerCase() + "@example.com", phone: "+44 7700 90012" + i, company: c, note: i === 1 ? "Met at the expo" : "", source: s, status: ["new", "contacted", "won", "lost", "new"][i], created_at: days(-i * 2) }));
-  db.invoices.push({ id: id(), ws: personal.id, number: "SUB-20260301-00412", amount_minor: 9900, currency: "AED", plan_code: "business", paid_at: days(-60) });
-  db.invoices.push({ id: id(), ws: company.id, number: "SUB-20260410-00501", amount_minor: 19500, currency: "AED", plan_code: "company", paid_at: days(-30) });
+  db.invoices.push({ id: id(), ws: personal.id, number: "SUB-20260301-00412", amount_minor: 9900, currency: "QAR", plan_code: "business", paid_at: days(-60) });
+  db.invoices.push({ id: id(), ws: company.id, number: "SUB-20260410-00501", amount_minor: 19500, currency: "QAR", plan_code: "company", paid_at: days(-30) });
 }
 seed();
 
@@ -79,7 +80,7 @@ seed();
 const subOf = (ws) => {
   const s = ws.sub;
   const used = db.members.filter((m) => m.ws === ws.id && m.status !== "suspended").length;
-  const graceEnd = s.ends_at ? new Date(new Date(s.ends_at).getTime() + 7 * 86400000).toISOString() : null;
+  const graceEnd = s.ends_at ? new Date(new Date(s.ends_at).getTime() + (s.plan_code === "free" ? 0 : 7) * 86400000).toISOString() : null;
   const live = s.status !== "none" && s.ends_at && Date.now() <= new Date(graceEnd).getTime();
   return { status: s.status === "active" && Date.now() > new Date(s.ends_at).getTime() ? "expired" : s.status, plan_code: s.plan_code, seats_total: s.seats_total, seats_used: ws.kind === "company" ? used : Math.min(1, used), starts_at: s.starts_at, ends_at: s.ends_at, grace_ends_at: s.status === "none" ? null : graceEnd, live: !!live };
 };
@@ -333,10 +334,10 @@ async function route(req, res, url, raw) {
     if (m === "GET") return send(res, 200, db.cards.filter((c) => c.workspace_id === ws.id && (role !== "employee" || c.owner_id === user.id)).map(cardPublic));
     if (m === "POST") {
       const sub = subOf(ws);
-      if (!sub.live) throw E(402, "subscription_required", "Choose a plan to create cards.");
       const plan = PLANS.find((x) => x.code === sub.plan_code);
       const count = db.cards.filter((c) => c.workspace_id === ws.id).length;
-      const limit = plan.per_seat ? sub.seats_total : plan.max_cards;
+      // As in the real API: a card can be built before paying (one draft); publishing starts the free week.
+      const limit = !sub.live || !plan ? 1 : plan.per_seat ? sub.seats_total : plan.max_cards;
       if (count >= limit) throw E(403, "plan_limit", `Your plan allows ${limit} card${limit === 1 ? "" : "s"}. Upgrade to add more.`);
       const c = { id: id(), workspace_id: ws.id, owner_id: user.id, public_code: code(), slug: null, status: "draft", name: body.name || user.full_name, title: "", company: ws.brand?.company_name || "", address: "", photo_url: null, cover_url: null, save_contact: true, vc: { ...DEFAULT_VC }, design: ws.brand?.design ?? DESIGN(), items: [{ id: id(), kind: "Mobile", value: "", label: "", on: true, icon: null, order: 0 }], created_at: now(), updated_at: now(), slugs: [] };
       db.cards.push(c);
@@ -388,7 +389,7 @@ async function route(req, res, url, raw) {
       db.cards.push(n);
       return send(res, 201, cardPublic(n));
     }
-    if (r[2] === "publish") { if (!subOf(ws).live) throw E(402, "subscription_required", "Choose a plan to publish your card."); c.status = "published"; } else c.status = "draft";
+    if (r[2] === "publish") { if (ws.kind === "personal" && ws.sub.status === "none") ws.sub = { status: "active", plan_code: "free", seats_total: 1, starts_at: now(), ends_at: days(7) }; if (!subOf(ws).live) throw E(402, "subscription_required", "Choose a plan to publish your card."); c.status = "published"; } else c.status = "draft";
     return send(res, 200, cardPublic(c));
   }
   if (p === "slugs/check") {

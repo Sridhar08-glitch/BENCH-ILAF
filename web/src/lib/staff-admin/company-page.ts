@@ -65,3 +65,43 @@ export function cardStateWord(state: string): string {
 export function assigneeLabel(a: { full_name: string; email: string }): string {
   return a.full_name ? `${a.full_name} (${a.email})` : a.email;
 }
+
+const EXTRA_NAMES: Record<string, string> = {
+  video: "Video", products: "Shop", hours: "Opening hours", booking: "Booking", team: "Team", gallery: "Gallery", event: "Event", map: "Map",
+};
+
+/** What a company lets its employees add under their cards, in words staff can read. */
+export function extrasWords(e: { mode: string; kinds: string[] } | null | undefined): string {
+  if (!e || e.mode === "all") return "Any extra";
+  if (e.mode === "none") return "None";
+  const names = e.kinds.map((k) => EXTRA_NAMES[k] ?? k);
+  return names.length ? `Only: ${names.join(", ")}` : "None";
+}
+
+const LOGO_DISPLAY: Record<string, string> = { auto: "Automatic", full: "Full logo", symbol: "Symbol", symbol_name: "Symbol and name" };
+const LOGO_PLACEMENT: Record<string, string> = { both: "Above the card and on it", card: "On the card", above: "Above the card" };
+const LOGO_CORNER: Record<string, string> = { auto: "Automatic", tl: "Top left", tr: "Top right", bl: "Bottom left", br: "Bottom right" };
+
+/** How the logo is shown, in one line: which picture, where, its size, and how many designs have a place the owner chose. */
+export function logoWords(b: { logo_display?: string; logo_placement?: string; logo_corner?: string; logo_size?: number; logo_free?: Record<string, unknown> }): string {
+  const parts = [
+    LOGO_DISPLAY[b.logo_display ?? "auto"] ?? b.logo_display ?? "Automatic",
+    LOGO_PLACEMENT[b.logo_placement ?? "both"] ?? b.logo_placement ?? "",
+    `corner: ${LOGO_CORNER[b.logo_corner ?? "auto"] ?? b.logo_corner}`,
+    `size ${b.logo_size ?? 100}%`,
+  ];
+  const placed = Object.keys(b.logo_free ?? {}).length;
+  if (placed) parts.push(`placed by the owner on ${placed} design${placed === 1 ? "" : "s"}`);
+  return parts.filter(Boolean).join(", ");
+}
+
+const PERMISSION_WORDS: Record<string, string> = { free: "free", approval: "needs approval", locked: "locked" };
+
+/** The rights employees have on their own cards, as a count per kind: "5 free, 6 locked". */
+export function rightsWords(rights: Record<string, string> | null | undefined): string {
+  if (!rights) return "-";
+  const counts: Record<string, number> = {};
+  for (const v of Object.values(rights)) counts[v] = (counts[v] ?? 0) + 1;
+  const parts = Object.entries(counts).map(([k, n]) => `${n} ${PERMISSION_WORDS[k] ?? k}`);
+  return parts.join(", ") || "-";
+}

@@ -21,7 +21,7 @@ const sample = (face: number, below: number, colour = 0): CardPageData => ({
     { kind: "Location", value: "Doha, Qatar" }, { kind: "LinkedIn", value: "https://linkedin.com/in/sridhar" },
     { kind: "GitHub", value: "https://github.com/sridhar" },
   ],
-  saveContact: true, design: { face, colour, below, intro: 0, font: "face", size: 100, photo: true, brand_colors: false, foot: true },
+  saveContact: true, design: { face, colour, top: 0, below, intro: 0, font: "face", size: 100, photo: true, brand_colors: false, foot: true },
   publicUrl: "https://example.test/c/x",
 });
 

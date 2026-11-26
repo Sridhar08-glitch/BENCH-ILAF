@@ -35,4 +35,8 @@ export const cards: Messages<typeof en> = {
   "cards.copyLink": "نسخ الرابط",
   "cards.copyLinkFor": "نسخ رابط {name}",
   "cards.duplicate": "تكرار",
+  "cards.companyCardTitle": "بطاقة الشركة نفسها.",
+  "cards.companyCardText": "أنشئ بطاقة واحدة للشركة، بمتجرها أو ساعات عملها أو حجوزاتها الخاصة. لا يراها ولا يعدلها إلا المالكون والمسؤولون.",
+  "cards.companyCardMake": "إنشاء بطاقة الشركة",
+  "cards.companyCardPill": "بطاقة الشركة",
 };

@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n/client";
 import { parseVcard, type ContactPreview } from "@/lib/card/vcard";
 import { fetchVcardText, sendEvent } from "@/lib/public-api";
 import type { EventSource, PublicFeatures } from "@/lib/types";
+import { CommerceLayer } from "./CommerceLayer";
 import { ExchangeDialog, MeetingDialog } from "./ExchangeDialogs";
 import { VerifiedBadge } from "@/components/card/VerifiedBadge";
 
@@ -27,9 +28,13 @@ interface Props {
   play: boolean;
   /** The card markup, drawn on the server. */
   children: ReactNode;
+  /** The rich sections under the card (video, products, hours...), drawn on the server. */
+  sections?: ReactNode;
+  /** The end of the page (QR code, "Powered by"), drawn after the extras and the share buttons when the card has extras. */
+  after?: ReactNode;
 }
 
-export function PublicCard({ code, source, contact, pageVars, kinds, tabs, features, verifiedDomain, play, children }: Props) {
+export function PublicCard({ code, source, contact, pageVars, kinds, tabs, features, verifiedDomain, play, children, sections, after }: Props) {
   const { t } = useI18n();
   const [sheet, setSheet] = useState<ContactPreview | null>(null);
   const [leadOpen, setLeadOpen] = useState(false);
@@ -77,22 +82,26 @@ export function PublicCard({ code, source, contact, pageVars, kinds, tabs, featu
     }
   }, [contact, say, t]);
 
+  const toolsEl = (
+    <div className={styles.tools}>
+      <button type="button" className={styles.tool} onClick={share}>
+        <Icon name="share" size="s" /> {t("card.share")}
+      </button>
+      {exchangeOn && (
+        <button type="button" className={styles.tool} onClick={() => setLeadOpen(true)}>
+          <Icon name="adduser" size="s" /> {t("card.shareDetails")}
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className={styles.wrap} style={{ ...pageVars, "--tools-h": "64px" } as React.CSSProperties}>
       <div className={styles.col}>
         <CardBehaviour kinds={kinds} tabs={tabs} play={play} onSave={openSave} onMeeting={() => setMeetOpen(true)} onItemClick={(kind) => sendEvent(code, "link_click", source, kind)}>
           {children}
         </CardBehaviour>
-        <div className={styles.tools}>
-          <button type="button" className={styles.tool} onClick={share}>
-            <Icon name="share" size="s" /> {t("card.share")}
-          </button>
-          {exchangeOn && (
-            <button type="button" className={styles.tool} onClick={() => setLeadOpen(true)}>
-              <Icon name="adduser" size="s" /> {t("card.shareDetails")}
-            </button>
-          )}
-        </div>
+        {after ? <>{sections}{toolsEl}{after}</> : <>{toolsEl}{sections}</>}
         {verifiedDomain && <VerifiedBadge domain={verifiedDomain} label={t("cardx.verified")} tip={t("cardx.verifiedTip", { domain: verifiedDomain })} />}
         <div className={styles.legal}>
           <a href="/privacy" target="_blank" rel="noopener noreferrer">{t("common.privacy")}</a>
@@ -112,6 +121,7 @@ export function PublicCard({ code, source, contact, pageVars, kinds, tabs, featu
       {leadOpen && exchange && (
         <ExchangeDialog code={code} source={source} name={contact.name} features={exchange} vcardUrl={contact.vcardUrl} onClose={() => setLeadOpen(false)} />
       )}
+      <CommerceLayer code={code} source={source} name={contact.name} />
       {meetOpen && exchange && <MeetingDialog code={code} source={source} name={contact.name} features={exchange} onClose={() => setMeetOpen(false)} />}
       {toast && (
         <div className={styles.toast} role="status">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { BioField } from "./BioField";
 import { ExchangePanel } from "./ExchangePanel";
 import { Icon } from "@/components/Icon";
 import { ContactBody } from "@/components/card/SaveSheet";
@@ -13,7 +14,7 @@ import { FREE_ACCESS, fieldHint, pendingFor } from "@/lib/ops/fields";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { keys } from "@/lib/hooks";
-import { PUBLIC_HOST } from "@/lib/config";
+import { addressHost } from "@/lib/card-address";
 import { initials } from "@/lib/card/design";
 import { isValidSlug, normaliseSlug } from "@/lib/card/slug";
 import { buildVcard, previewFromCard, type VcSource } from "@/lib/card/vcard";
@@ -24,10 +25,14 @@ import { IMAGE_ACCEPT, isAllowedImage } from "@/lib/images";
 import { CARD_LANGUAGES, LOCALE_NAMES, normaliseCardLanguage, type CardLanguage } from "@/lib/i18n/config";
 import type { VcardOptions } from "@/lib/types";
 import type { EditorApi } from "./types";
+import { CoverUpload } from "./design/CoverUpload";
+import { FIELD_LABELS } from "./guided";
+import { unusedFields, type DesignFields } from "@/lib/library/fieldsUsed";
 
 const MAX_PHOTO = 8 * 1024 * 1024;
 
-export function ProfileTab({ ed }: { ed: EditorApi }) {
+/** `rest` shows only the settings that are not the card's details (address, language, visibility, contact file). `guided` is set by the step-by-step editor: it asks only for the details that design draws and leaves the other settings to the full editor. */
+export function ProfileTab({ ed, guided, rest }: { ed: EditorApi; guided?: DesignFields; rest?: boolean }) {
   const { card, draft, update } = ed;
   const { t, number } = useI18n();
   const toast = useToast();
@@ -71,7 +76,8 @@ export function ProfileTab({ ed }: { ed: EditorApi }) {
 
   return (
     <div className="pane">
-      <div className="photo">
+      {rest ? null : <>
+      {(!guided || guided.photo) && <div className="photo">
         <div className="av" aria-hidden="true">{card.photo_url ? <img src={card.photo_url} alt="" /> : initials(draft.name)}</div>
         <div>
           <input ref={fileRef} type="file" accept={IMAGE_ACCEPT} hidden id="photo-file" onChange={(e) => void onPhoto(e.target.files?.[0])} />
@@ -80,20 +86,27 @@ export function ProfileTab({ ed }: { ed: EditorApi }) {
           </button>
           {photoHint ? <div className={`${s.fieldHint} ${photoPending ? s.wait : s.lock}`} style={{ marginBlockStart: 6 }} role="status">{photoHint}</div> : <div className="hint" style={{ marginBlockStart: 6 }}>{t("editor.photoSpec", { px: number(400) })}</div>}
         </div>
-      </div>
+      </div>}
 
       <div className="row">
-        <Link className="btn ghost sm" href={`/app/scan?card=${card.id}`}><Icon name="scan" size="s" />{t("editor.scanFill")}</Link>
+        <Link className="btn ghost sm" href={`/app/contacts/scan?card=${card.id}`}><Icon name="scan" size="s" />{t("editor.scanFill")}</Link>
         <span className="hint">{t("editor.scanHint")}</span>
       </div>
 
       <div className="two">
         <GuardedField ed={ed} field="name" label={t("editor.fullName")} autoComplete="name" />
-        <GuardedField ed={ed} field="title" label={t("editor.jobTitle")} />
+        {(!guided || guided.title) && <GuardedField ed={ed} field="title" label={t("editor.jobTitle")} />}
       </div>
-      <GuardedField ed={ed} field="company" label={t("editor.company")} />
-      <GuardedField ed={ed} field="address" label={t("editor.address")} multiline />
+      {(!guided || guided.company) && <GuardedField ed={ed} field="company" label={t("editor.company")} />}
+      {(!guided || guided.address) && <GuardedField ed={ed} field="address" label={t("editor.address")} multiline />}
+      {(!guided || guided.bio) && <BioField ed={ed} />}
+      {guided && guided.cover && ed.canCover && <CoverUpload ed={ed} />}
+      {guided && unusedFields(guided).length > 0 && (
+        <div className="hint" role="status">{t("editor.notDrawn", { list: unusedFields(guided).map((k) => t(FIELD_LABELS[k])).join(", ") })}</div>
+      )}
+      </>}
 
+      {guided ? null : <>
       <SlugField ed={ed} />
 
       <label>
@@ -152,6 +165,7 @@ export function ProfileTab({ ed }: { ed: EditorApi }) {
           </details>
         </div>
       )}
+      </>}
     </div>
   );
 }
@@ -214,7 +228,7 @@ function SlugField({ ed }: { ed: EditorApi }) {
         <input className="ltr" value={text} disabled={locked} onChange={(e) => setText(e.target.value)} placeholder={card.public_code} aria-describedby="slug-hint" aria-invalid={state.kind === "taken" || state.kind === "short"} />
       </label>
       <div id="slug-hint" className="hint" role="status">
-        <span className="ltr" style={{ display: "inline-block" }}>{PUBLIC_HOST}/{slug || card.public_code}</span>
+        <span className="ltr" style={{ display: "inline-block" }}>{addressHost(card)}/{slug || card.public_code}</span>
         {state.kind === "checking" && <> &middot; {t("editor.slugChecking")}</>}
         {state.kind === "ok" && <b className="up"> &middot; {t("editor.slugOk")}</b>}
         {state.kind === "taken" && (

@@ -10,13 +10,13 @@ const CONTENT = path.resolve(__dirname, "..", "..", "..", "content", "help");
 const LANGS = ["en", "ar"] as const;
 
 describe("front matter", () => {
-  const raw = "---\ntitle: A title\nsummary: One line.\naudience: personal, employee, nobody\npages: /app/cards, /evil, /app/qr\nrelated: a, b\nupdated: 2026-11-22\n---\n\nBody **text**.\n";
+  const raw = "---\ntitle: A title\nsummary: One line.\naudience: personal, employee, nobody\npages: /app/cards, /evil, /app/share\nrelated: a, b\nupdated: 2026-11-22\n---\n\nBody **text**.\n";
 
   it("reads the header and the body", () => {
     const a = parseArticle("x", raw)!;
     expect(a.title).toBe("A title");
     expect(a.audience).toEqual(["personal", "employee"]);
-    expect(a.pages).toEqual(["/app/cards", "/app/qr"]);
+    expect(a.pages).toEqual(["/app/cards", "/app/share"]);
     expect(a.related).toEqual(["a", "b"]);
     expect(a.updated).toBe("2026-11-22");
     expect(a.body).toBe("Body **text**.");
@@ -48,11 +48,11 @@ describe("help markdown", () => {
   });
 
   it("bold and safe links only, no raw HTML or script links", () => {
-    const [p] = parseHelp("See **this** [page](/app/qr), [site](https://x.com) and [bad](javascript:alert(1)) <b>raw</b>");
+    const [p] = parseHelp("See **this** [page](/app/share), [site](https://x.com) and [bad](javascript:alert(1)) <b>raw</b>");
     expect(p.kind).toBe("p");
     const inl = (p as { inline: { kind: string; href?: string; text: string }[] }).inline;
     expect(inl.find((i) => i.kind === "bold")?.text).toBe("this");
-    expect(inl.filter((i) => i.kind === "link").map((i) => i.href)).toEqual(["/app/qr", "https://x.com"]);
+    expect(inl.filter((i) => i.kind === "link").map((i) => i.href)).toEqual(["/app/share", "https://x.com"]);
     expect(inl.some((i) => i.kind === "text" && i.text === "bad")).toBe(true);
     expect(inl.some((i) => i.kind === "link" && i.href?.startsWith("javascript"))).toBe(false);
     expect(inl.map((i) => i.text).join("")).toContain("<b>raw</b>");
@@ -70,11 +70,11 @@ describe("help markdown", () => {
   });
 
   it("plain text drops the marks", () => {
-    expect(plainText("## Title\n\n1. **Bold** [link](/app/qr)\n> tip")).toBe("Title Bold link tip");
+    expect(plainText("## Title\n\n1. **Bold** [link](/app/share)\n> tip")).toBe("Title Bold link tip");
   });
 
   it("lists internal links", () => {
-    expect(internalLinks("a [x](/app/qr) b [y](https://z.com) c [w](/app/help/foo)")).toEqual(["/app/qr", "/app/help/foo"]);
+    expect(internalLinks("a [x](/app/share) b [y](https://z.com) c [w](/app/help/foo)")).toEqual(["/app/share", "/app/help/foo"]);
   });
 });
 
@@ -122,8 +122,8 @@ describe("the help articles on disk", () => {
   const slugs = (lang: string) => fs.readdirSync(path.join(CONTENT, lang)).filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)).sort();
   const read = (lang: string, slug: string) => fs.readFileSync(path.join(CONTENT, lang, `${slug}.md`), "utf8");
 
-  it("there are 25 guides and Arabic has exactly the English slugs", () => {
-    expect(slugs("en")).toHaveLength(25);
+  it("there are 24 guides and Arabic has exactly the English slugs", () => {
+    expect(slugs("en")).toHaveLength(24);
     expect(slugs("ar")).toEqual(slugs("en"));
   });
 

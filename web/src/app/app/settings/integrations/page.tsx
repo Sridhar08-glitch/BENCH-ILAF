@@ -1,5 +1,6 @@
 "use client";
 
+import { EnterpriseGate } from "@/components/app/EnterpriseLock";
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -58,7 +59,7 @@ function deliveryText(d: Delivery, t: TFunction): string {
   return d.error || t("settings.failedCode", { code: d.response_status ?? t("settings.noAnswer") });
 }
 
-export default function IntegrationsPage() {
+function IntegrationsPageContent() {
   const { current, isManager, isCompany } = useWs();
   const { t, date } = useI18n();
   const toast = useToast();
@@ -316,4 +317,9 @@ function SecretDialog({ secret, onClose }: { secret: string; onClose: () => void
       <p className="hint"><Weave text={t("settings.secretUse", { header: slot(0) })} nodes={[<span key="h" className="ltr">{HEADERS[0].name}</span>]} /></p>
     </Dialog>
   );
+}
+
+export default function IntegrationsPage() {
+  const { t } = useI18n();
+  return <EnterpriseGate feature="integrations" title={t("settings.intTitle")}><IntegrationsPageContent /></EnterpriseGate>;
 }

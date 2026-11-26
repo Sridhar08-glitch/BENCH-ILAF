@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/Icon";
+import { TeamPrompt } from "@/components/app/TeamPrompt";
 import { ErrorBox, PageHead, QrPreview, SkeletonBlocks, UpgradeNotice, useToast } from "@/components/app/ui";
 import { useWs } from "@/components/app/WorkspaceContext";
 import { EmptyState } from "@/components/guide/EmptyState";
@@ -15,7 +16,7 @@ import { BulkActionDialog } from "@/components/ops/BulkActionDialog";
 import { Check, ResultsDialog, SelectionBar } from "@/components/ops/shared";
 import { api, isUpgradeError } from "@/lib/api";
 import { CARD_ACTIONS, allSelected, pruneSelection, selectAll, toggleId, type CardBulkAction } from "@/lib/ops/bulk";
-import { PUBLIC_HOST } from "@/lib/config";
+import { shortAddress } from "@/lib/card-address";
 import { keys, useCards, usePlans, useWorkspaceDetail } from "@/lib/hooks";
 import { VerifiedBadge } from "@/components/card/VerifiedBadge";
 import { cardAllowance, cardListName, moveId } from "@/lib/card-order";
@@ -44,6 +45,16 @@ export default function CardsPage() {
       qc.setQueryData(keys.card(c.id), c);
       void qc.invalidateQueries({ queryKey: keys.cards(current.id) });
       void qc.invalidateQueries({ queryKey: keys.workspaces });
+      router.push(`/app/cards/${c.id}`);
+    },
+    onError: setErr,
+  });
+  // The company's own card, for its own shop, hours or bookings: owners and admins make it once.
+  const companyCard = useMutation({
+    mutationFn: () => api.companyCard(current.id),
+    onSuccess: (c) => {
+      qc.setQueryData(keys.card(c.id), c);
+      void qc.invalidateQueries({ queryKey: keys.cards(current.id) });
       router.push(`/app/cards/${c.id}`);
     },
     onError: setErr,
@@ -127,6 +138,7 @@ export default function CardsPage() {
   }, [ids]);
   const bulkDef = CARD_ACTIONS.find((a) => a.id === bulk);
   const canCreate = isManager || list.length === 0;
+  const hasCompanyCard = list.some((c) => c.is_company);
   // A person's own workspace: the plan says how many cards fit, and the cards can be put in order.
   const personal = !isCompany;
   const maxCards = personal ? plans.data?.find((p) => p.code === current.subscription.plan_code)?.max_cards : undefined;
@@ -144,6 +156,13 @@ export default function CardsPage() {
         )}
       </PageHead>
 
+      {isManager && isCompany && !hasCompanyCard && !cards.isLoading && (
+        <div className="notice" role="status">
+          <div className="grow"><b>{t("cards.companyCardTitle")}</b> {t("cards.companyCardText")}</div>
+          <button type="button" className="btn sm" disabled={companyCard.isPending} onClick={() => { setErr(null); companyCard.mutate(); }}>{companyCard.isPending ? t("cards.creating") : t("cards.companyCardMake")}</button>
+        </div>
+      )}
+
       {verified && <VerifiedBadge domain={verified} label={t("cardx.verified")} tip={t("cardx.verifiedTip", { domain: verified })} align="start" />}
       {personal && allowance.max !== null && list.length > 0 && (
         <div className={`notice ${allowance.canAdd ? "" : "warn"}`} role="status">
@@ -156,6 +175,7 @@ export default function CardsPage() {
 
       {/* An employee has no home page, so their checklist sits here. */}
       {!isManager && <GettingStarted />}
+      <TeamPrompt />
 
       {cards.isLoading ? (
         <SkeletonBlocks rows={3} />
@@ -252,10 +272,10 @@ function CardTile({ card, order, manager, selectable, checked, onCheck, busy, on
         <span className="mq" style={{ width: 64, height: 64 }}><QrPreview text={card.public_url} label={t("dash.uiQrFor", { text: card.name })} /></span>
         <div style={{ minWidth: 0, flex: 1 }}>
           <b dir="auto" style={{ display: "block", overflowWrap: "anywhere" }}>{card.label ? cardListName(card, t("cards.untitled")) : card.name || t("cards.untitled")}</b>
-          <small className="mono ltr">{PUBLIC_HOST}/{card.slug ?? card.public_code}</small>
+          <small className="mono ltr">{shortAddress(card)}</small>
           <div className="row" style={{ marginBlockStart: 6 }}>
             <span className={`pill ${status.c}`}>{t(status.t)}</span>
-            {card.owner && <span className="pill" dir="auto">{card.owner.full_name}</span>}
+            {card.is_company ? <span className="pill dark">{t("cards.companyCardPill")}</span> : card.owner && <span className="pill" dir="auto">{card.owner.full_name}</span>}
             {order && card.is_default && <span className="pill dark">{t("cardx.default")}</span>}
           </div>
         </div>
@@ -263,11 +283,11 @@ function CardTile({ card, order, manager, selectable, checked, onCheck, busy, on
       <div className="row" style={{ color: "var(--mute)", fontSize: 12 }}>
         <span>{t("cards.nViews", { n: card.stats.views })}</span>
         <span>{t("cards.nSaves", { n: card.stats.saves })}</span>
-        <span>{t("cards.nContacts", { n: card.stats.leads })}</span>
+        {card.stats.leads !== null && <span>{t("cards.nContacts", { n: card.stats.leads })}</span>}
       </div>
       <div className="row" data-guide="cards-actions">
         <Link className="btn sm" href={`/app/cards/${card.id}`}>{t("cards.edit")}</Link>
-        <Link className="btn ghost sm" href={`/app/qr?card=${card.id}`}>QR</Link>
+        <Link className="btn ghost sm" href={`/app/share?card=${card.id}`}>QR</Link>
         {card.status === "published" && <button type="button" className="btn ghost sm" disabled={busy} onClick={() => onPublish(false)}>{t("cards.unpublish")}</button>}
         {card.status === "draft" && <button type="button" className="btn ghost sm" disabled={busy} onClick={() => onPublish(true)}>{t("cards.publish")}</button>}
         <button type="button" className="btn ghost sm" onClick={onCopy} aria-label={t("cards.copyLinkFor", { name })}><Icon name="copy" size="s" />{t("cards.copyLink")}</button>

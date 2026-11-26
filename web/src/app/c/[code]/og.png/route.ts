@@ -1,6 +1,7 @@
 import { APP_NAME } from "@/lib/config";
 import { CATALOGUES } from "@/lib/i18n/messages";
 import { fetchPublicCard } from "@/lib/public-api";
+import { customHostFrom } from "@/lib/server/custom-host";
 import { normalizeDesign, resolveColours } from "@/lib/library";
 import { toCompanyBrand } from "@/lib/library/company/brand";
 import { mostlyArabic } from "@/lib/card/bidi";
@@ -23,9 +24,9 @@ function png(body: Buffer, cache: string): Response {
   return new Response(new Uint8Array(body), { headers: { "Content-Type": "image/png", "Cache-Control": cache } });
 }
 
-export async function GET(_req: Request, { params }: { params: Promise<{ code: string }> }): Promise<Response> {
+export async function GET(req: Request, { params }: { params: Promise<{ code: string }> }): Promise<Response> {
   const { code } = await params;
-  const data = await fetchPublicCard(code).catch(() => null);
+  const data = await fetchPublicCard(code, customHostFrom(req.headers).host).catch(() => null);
 
   if (!data || data.state !== "live") {
     const key = cacheKey({ generic: "1" });

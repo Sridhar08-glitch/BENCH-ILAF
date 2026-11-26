@@ -4,7 +4,7 @@
 //   title: Create and edit your card
 //   summary: One sentence for the list and for search.
 //   audience: personal, company_owner, company_admin, employee
-//   pages: /app/cards, /app/qr
+//   pages: /app/cards, /app/share
 //   related: choose-a-design, publish-and-share
 //   updated: 2026-11-22
 //   ---

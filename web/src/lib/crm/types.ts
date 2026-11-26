@@ -116,6 +116,8 @@ export interface PersonRow {
   card_ids: string[];
   totals: Metrics;
   prev: Metrics;
+  /** False when the reader may not see this person's contacts: their contact number is then shown as a dash, not as zero. */
+  leads_visible?: boolean;
 }
 
 export interface PeopleResult {

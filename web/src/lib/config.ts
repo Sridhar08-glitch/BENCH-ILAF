@@ -3,6 +3,9 @@
 /** Product name shown in the logo, page titles, metadata and the card footer. */
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "BENCH";
 
+/** The Bench logo files (public/brand): black lettering for light surfaces, white lettering for dark ones, both with the three colour dots. */
+export const BRAND_WORDMARK = { ink: "/brand/bench-wordmark.png", white: "/brand/bench-wordmark-white.png", width: 318, height: 79 } as const;
+
 /** Full product name and tagline, used in the page description and the landing page. */
 export const APP_FULL_NAME = "Business Enhancement Network Cloud Hub";
 export const APP_TAGLINE = "Your business. One smart identity.";

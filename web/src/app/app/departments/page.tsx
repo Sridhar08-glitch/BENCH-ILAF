@@ -1,5 +1,6 @@
 "use client";
 
+import { EnterpriseGate } from "@/components/app/EnterpriseLock";
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ import { useI18n } from "@/lib/i18n/client";
 import { templateSummary } from "@/lib/ops/departments";
 import type { Department } from "@/lib/types";
 
-export default function DepartmentsPage() {
+function DepartmentsPageContent() {
   const { current, isManager, isCompany } = useWs();
   const i18n = useI18n();
   const { t, list: joinList } = i18n;
@@ -100,4 +101,9 @@ export default function DepartmentsPage() {
       )}
     </div>
   );
+}
+
+export default function DepartmentsPage() {
+  const { t } = useI18n();
+  return <EnterpriseGate feature="departments" title={t("company.deptsTitle")} sub={t("company.deptsSub")}><DepartmentsPageContent /></EnterpriseGate>;
 }

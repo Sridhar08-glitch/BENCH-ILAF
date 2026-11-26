@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fitInside, keyWhite, trimBounds } from "./logo-file";
 import { brandProblem, brandProblems } from "./errors";
-import { brandPatch, fullBrand, startColours, withColours, withMode } from "./state";
+import { brandPatch, designKey, dragged, fullBrand, logoSpotOf, paletteFor, startColours, textReadability, withColours, withLogoSpot, withMode } from "./state";
 import { ApiError } from "@/lib/api";
 import { defaultDesign } from "@/lib/library";
 import type { Brand } from "@/lib/types";
@@ -118,5 +118,46 @@ describe("brand page state", () => {
     expect(withMode(b, "none").artwork.mode).toBe("none");
     // the source brand is never changed
     expect(b.artwork.mode).toBe("none");
+  });
+});
+
+describe("logo size, logo place and own text colour", () => {
+  const base = () => fullBrand({ company_name: "Shark", website: "", design: defaultDesign(), lock_design: false, show_footer: true } as Brand);
+
+  it("starts at full size with no places and sends both with the save", () => {
+    const b = base();
+    expect(b.logo_size).toBe(100);
+    expect(b.logo_free).toEqual({});
+    const p = brandPatch({ ...b, logo_size: 80, logo_free: { f1: { x: 5, y: 6, w: 30 } } }, true);
+    expect(p.logo_size).toBe(80);
+    expect(p.logo_free).toEqual({ f1: { x: 5, y: 6, w: 30 } });
+    expect(brandPatch(b, false)).not.toHaveProperty("logo_size");
+  });
+
+  it("keys a place by the design: card face or page style", () => {
+    expect(designKey({ face: 12, top: 0 })).toBe("f12");
+    expect(designKey({ face: 12, top: 3 })).toBe("t3");
+  });
+
+  it("places the logo on the current design only, and puts it back to automatic", () => {
+    const b = base();
+    const placed = withLogoSpot(b, { x: 6.04, y: 8, w: 28 });
+    expect(logoSpotOf(placed)).toEqual({ x: 6, y: 8, w: 28 });
+    expect(logoSpotOf({ ...placed, design: { ...placed.design, face: 2 } })).toBeNull();
+    expect(logoSpotOf(withLogoSpot(placed, null))).toBeNull();
+  });
+
+  it("keeps a dragged logo inside the card", () => {
+    expect(dragged({ x: 5, y: 5, w: 30 }, 90, -4, 20)).toEqual({ x: 70, y: 0, w: 30 });
+    expect(dragged({ x: 5, y: 5, w: 30 }, 10, 95, 20)).toEqual({ x: 10, y: 80, w: 30 });
+  });
+
+  it("uses the owner's text colour in the palette and says if it is hard to read", () => {
+    const c = { primary: "#0b3a66", accent: "#f5a623", mode: "brand" as const };
+    expect(paletteFor(c).fg).not.toBe("#7a8cff");
+    expect(paletteFor({ ...c, text: "#7a8cff" }).fg).toBe("#7a8cff");
+    expect(textReadability(c).ok).toBe(true);
+    expect(textReadability({ ...c, text: "#7a8cff" }).ok).toBe(false);
+    expect(withColours(base(), { ...c, text: "#ffffff" }).palette?.fg).toBe("#ffffff");
   });
 });

@@ -1,0 +1,70 @@
+<section class="page" data-no="202" data-name="Private bank" data-style="Business" data-rtl="0">
+<!--recipe {"top":79,"style":"Business","name":"Private bank","slug":"079-private-bank","dir":"auto","split":"dk","avatar":"coin","cover":"hero","coverArt":["art"],"cond":{"bio":"bio"},"lists":[{"c":"vault","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: green marble and the vault dial are the style; the gold (hairlines, dial, coin ring, keyholes) is a champagne gold nudged toward the card accent so each colourway has its own metal */
+.p202 .in{--ink:#07261b;--gold:color-mix(in oklab,var(--cacc) 20%,#d6b66c);--gold-hi:color-mix(in oklab,var(--gold) 60%,#fff);--ac:var(--gold);--ac-t:oklch(from var(--gold) clamp(.8,l,.96) c h);--ser:"Cormorant Garamond","Amiri",Georgia,serif;--sc:"Cormorant SC","Cormorant Garamond","Amiri",Georgia,serif}
+.p202 *{box-sizing:border-box;margin:0}
+.p202 .in{font-family:var(--ser);color:#eef3ec;background:#072a1d;position:relative;overflow:hidden}
+.p202 a{color:inherit;text-decoration:none}
+.p202 :focus-visible{outline:0.769cqw solid var(--ac-t);outline-offset:0.5cqw}
+.p202 .hero{position:relative;min-height:124cqw;display:flex;flex-direction:column;justify-content:flex-end;padding:7cqw 7cqw 9cqw;background:#072a1d;overflow:hidden}
+.p202 .hero .art{position:absolute;inset:0;background:#072a1d url(/card-library/art/private-bank-bg.webp) center/cover no-repeat}
+.p202 .hero .scrim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,18,12,.9) 0,rgba(3,18,12,.5) 38%,rgba(3,18,12,0) 62%),linear-gradient(180deg,rgba(3,18,12,.5) 0,rgba(3,18,12,0) 22%)}
+.p202 .hero[style*="url("] .scrim{background:linear-gradient(0deg,rgba(3,18,12,.96) 0,rgba(3,18,12,.74) 42%,rgba(3,18,12,.38) 72%),linear-gradient(180deg,rgba(3,18,12,.6) 0,rgba(3,18,12,0) 24%)}
+.p202 .hero[style*="url("]:before{content:"";position:absolute;inset:0;background:rgba(6,56,38,.38);mix-blend-mode:multiply}
+.p202 .frame{position:absolute;inset:3.6cqw;border:1px solid color-mix(in oklab,var(--gold) 55%,transparent);pointer-events:none}
+.p202 .frame:after{content:"";position:absolute;inset:1.2cqw;border:1px solid color-mix(in oklab,var(--gold) 28%,transparent)}
+.p202 .dial{position:absolute;width:92cqw;height:92cqw;inset-inline-end:-26cqw;top:10cqw;color:var(--gold);opacity:.8;pointer-events:none}
+.p202[dir="rtl"] .dial{inset-inline-end:auto;inset-inline-start:-26cqw}
+.p202 .coin{position:absolute;top:21cqw;inset-inline-end:11cqw;width:39cqw;height:39cqw;border-radius:50%;border:1px solid var(--gold);box-shadow:0 0 0 1.6cqw rgba(5,40,27,.9),0 0 0 2.1cqw var(--gold),0 3cqw 8cqw rgba(0,0,0,.6);overflow:hidden;background:#0a3a29}
+.p202 .coin .pic,.p202 .coin svg{width:100%;height:100%;display:grid;place-items:center;background:linear-gradient(150deg,#0e4d37,#052a1c);color:var(--gold-hi);font-family:var(--ser);font-weight:500;font-size:38cqw;line-height:1}
+.p202 .top-l{position:absolute;inset-inline:8.6cqw;top:8cqw;display:flex;justify-content:space-between;gap:4cqw;font-family:var(--sc);font-weight:500;font-size:max(10px,2.9cqw);letter-spacing:.3em;text-transform:uppercase;color:var(--gold-hi);text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.p202 .top-l span{overflow-wrap:anywhere;min-width:0}
+.p202 .id{position:relative}
+.p202 h1{font-weight:500;font-size:15cqw;line-height:.92;letter-spacing:-.01em;text-shadow:0 2px 14px rgba(0,0,0,.55);overflow-wrap:anywhere}
+.p202 h1 span{display:block}.p202 h1 span+span{font-style:italic;color:var(--gold-hi)}
+.p202.wl2 h1{font-size:11.5cqw}.p202.wl3 h1{font-size:9cqw}.p202.nl3 h1{font-size:9.5cqw}.p202.nl3.wl3 h1{font-size:7.5cqw}
+.p202 .rule{margin:5cqw 0 3.6cqw;height:1px;background:linear-gradient(90deg,var(--gold),color-mix(in oklab,var(--gold) 0%,transparent))}
+.p202[dir="rtl"] .rule{background:linear-gradient(270deg,var(--gold),transparent)}
+.p202 .role{font-family:var(--sc);font-weight:500;font-size:max(11px,3.8cqw);letter-spacing:.2em;text-transform:uppercase;color:#f4f1e4;line-height:1.5;text-shadow:0 1px 8px rgba(0,0,0,.7);overflow-wrap:anywhere}
+.p202[dir="rtl"] h1{font-family:"Amiri",Georgia,serif;font-weight:700;line-height:1.3;font-size:13cqw}
+.p202[dir="rtl"].wl2 h1{font-size:10cqw}.p202[dir="rtl"].wl3 h1{font-size:8cqw}.p202[dir="rtl"].nl3 h1{font-size:8cqw}
+.p202[dir="rtl"] h1 span+span{font-style:normal}
+.p202[dir="rtl"] .top-l,.p202[dir="rtl"] .role{letter-spacing:0;font-family:"Amiri",serif;text-transform:none;font-size:max(12px,3.8cqw)}
+.p202[dir="rtl"] .role{font-size:max(12px,4.4cqw)}
+.p202 .dk{padding:8cqw 6cqw 9cqw;background:linear-gradient(rgba(3,22,15,.84),rgba(3,22,15,.9)),#072a1d url(/card-library/art/private-bank-bg.webp) center/cover}
+.p202 .bio{padding:0 2cqw 6.5cqw;margin-bottom:7cqw;border-bottom:1px solid color-mix(in oklab,var(--gold) 50%,transparent);font-size:5.4cqw;line-height:1.35;font-style:italic;font-weight:500;color:#eaf1e6;text-align:center;overflow-wrap:anywhere}
+.p202[dir="rtl"] .bio{font-family:"Amiri",serif;font-style:normal;font-size:5cqw;line-height:1.9}
+.p202 .vault{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3cqw}
+.p202 .vault>:last-child:nth-child(odd){grid-column:1/-1}
+.p202 .bx{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1.2cqw;min-height:39cqw;padding:3.4cqw 2.4cqw 3.4cqw;min-width:0;text-align:center;border-radius:0.8cqw;background:linear-gradient(150deg,rgba(255,255,255,.1) 0,rgba(255,255,255,0) 42%),linear-gradient(180deg,#0f4531,#08291d);box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--gold) 60%,transparent),inset 0 0 0 1.4cqw #0a3626,inset 0 0 0 1.7cqw color-mix(in oklab,var(--gold) 32%,transparent),0 2cqw 4cqw rgba(0,0,0,.45)}
+.p202 .bx:hover{filter:brightness(1.18)}
+.p202 .bx .no{position:absolute;inset-inline-start:4.4cqw;top:3.6cqw;font-family:var(--sc);font-weight:700;font-size:max(11px,3.4cqw);letter-spacing:.1em;color:var(--gold)}
+.p202 .bx .key{width:14cqw;height:14cqw;margin-top:2.6cqw;display:grid;place-items:center;border-radius:50%;color:var(--gold-hi);background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),rgba(0,0,0,.35));box-shadow:inset 0 0 0 1px var(--gold),0 0 0 1.1cqw rgba(214,182,108,.14)}
+.p202 .bx .key svg{width:6.4cqw;height:6.4cqw;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.p202 .bx b{margin-top:1.6cqw;font-family:var(--sc);font-weight:700;font-size:max(11px,3.4cqw);letter-spacing:.2em;text-transform:uppercase;color:#f6f1de;line-height:1.25;overflow-wrap:anywhere}
+.p202 .bx small{font-size:max(11px,3.5cqw);color:#cfe0d2;line-height:1.25;font-style:italic;overflow-wrap:anywhere;max-width:100%}
+.p202[dir="rtl"] .bx b{letter-spacing:0;font-family:"Amiri",serif;font-size:max(12px,4cqw)}
+</style>
+<div class="pg p202"><div class="in">
+<header class="hero">
+ <div class="art" aria-hidden="true"></div>
+ <div class="scrim" aria-hidden="true"></div>
+ <div class="frame" aria-hidden="true"></div>
+ <svg class="dial" viewBox="0 0 200 200" aria-hidden="true" fill="none" stroke="currentColor"><circle cx="100" cy="100" r="98" stroke-width=".7"/><circle cx="100" cy="100" r="92" stroke-width="5" stroke-dasharray=".9 8.53" opacity=".8"/><circle cx="100" cy="100" r="82" stroke-width=".5"/><circle cx="100" cy="100" r="76" stroke-width="2.2" stroke-dasharray=".7 14.6" opacity=".7"/><circle cx="100" cy="100" r="66" stroke-width=".5" opacity=".7"/></svg>
+ <div class="coin"></div>
+ <div class="top-l"><span>{co}</span><span>{city}</span></div>
+ <div class="id">
+  <h1><span>{first}</span><span>{last}</span></h1>
+  <div class="rule"></div>
+  <p class="role">{title}</p>
+ </div>
+</header>
+<div class="dk">
+ <p class="bio">{bio}</p>
+ <div class="vault">
+  <a class="bx"><span class="no">01</span><span class="key"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><b>Call</b><small>{phone}</small></a>
+ </div>
+</div>
+</div></div>
+</section>

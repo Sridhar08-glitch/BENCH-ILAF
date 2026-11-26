@@ -1,0 +1,94 @@
+<section class="page" data-no="122" data-name="Neon night" data-style="Digital" data-rtl="0">
+<!--recipe {"top":49,"style":"Digital","name":"Neon night","slug":"22-neon-night","dir":"auto","split":"street","avatar":"sign","drop":["save","foot","puddle","wet"],"lists":[{"c":"street","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: night skyline, magenta and amber signs are fixed; the card accent drives the cyan neon (sign frame, every third row, glow) */
+.p122 .in{--bg:#070812;--sig:#38e8ff;--ac:color-mix(in oklab,var(--cacc) 30%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.74,l,.96) c h);--cy:var(--ac-t);--mg:#ff3fa4;--am:#ffb23d;--ink:#eef0ff;--mute:#9aa0c4}
+.p122 *{box-sizing:border-box;margin:0}
+.p122 .in{font-family:"Space Grotesk","Cairo",system-ui,sans-serif;color:var(--ink)}
+.p122 .in{position:relative;overflow:hidden;background:linear-gradient(#0a0b1e 0,#0c0a22 36%,#070812 70%)}
+.p122 .sky{position:relative;height:64.103cqw}
+.p122 .sky svg.city{position:absolute;inset-inline:0;bottom:0;width:100%;height:100%}
+.p122 .sky::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 75% 105%,rgba(255,63,164,.28),transparent 70%),radial-gradient(ellipse 60% 50% at 10% 100%,color-mix(in srgb,var(--cy) 18%,transparent),transparent 70%)}
+.p122 .brand{position:absolute;inset-inline:5.128cqw;top:4.615cqw;display:flex;justify-content:space-between;gap:3cqw;font:500 max(10px,2.821cqw)/1.2 "Space Grotesk","Cairo",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);z-index:3}
+.p122 .brand span:last-child{text-align:end;max-width:60%;overflow-wrap:anywhere;letter-spacing:.1em}
+.p122 .sign{position:absolute;inset-inline-start:6.154cqw;top:15.897cqw;z-index:3;width:29.744cqw;height:29.744cqw;display:grid;place-items:center;border-radius:4.615cqw;border:0.769cqw solid var(--cy);color:var(--cy);box-shadow:0 0 1.538cqw var(--cy),0 0 5.641cqw color-mix(in srgb,var(--cy) 55%,transparent),inset 0 0 3.59cqw color-mix(in srgb,var(--cy) 40%,transparent);background:rgba(4,10,24,.85)}
+.p122 .sign::before{content:"";position:absolute;inset:1.795cqw;border-radius:2.821cqw;border:1.5px solid color-mix(in srgb,var(--cy) 45%,transparent);z-index:2;pointer-events:none}
+.p122 .sign .pic{object-fit:cover;display:grid;place-items:center;font:700 52cqw/1 "Barlow Condensed","Cairo",sans-serif;letter-spacing:.04em;color:var(--cy);background:rgba(4,10,24,.85);text-shadow:0 0 1.282cqw var(--cy),0 0 4.615cqw var(--cy);border-radius:3.6cqw}
+.p122 .wire{position:absolute;z-index:2;inset-inline-start:13.333cqw;top:0;height:16.41cqw;width:0.513cqw;background:#222744}
+.p122 .wire+.wire{inset-inline-start:28.718cqw}
+.p122 .moon{position:absolute;inset-inline-end:8.718cqw;top:11.795cqw;width:13.846cqw;height:13.846cqw;border-radius:50%;box-shadow:inset -3.59cqw 1.538cqw 0 0 var(--am);filter:drop-shadow(0 0 3.077cqw rgba(255,178,61,.7));opacity:.95;z-index:1}
+.p122[dir="rtl"] .moon{box-shadow:inset 3.59cqw 1.538cqw 0 0 var(--am)}
+.p122 .id{padding:1.538cqw 6.154cqw 0;position:relative;z-index:4}
+.p122 .kick{font-size:max(10px,2.821cqw);letter-spacing:.24em;text-transform:uppercase;color:var(--mg);text-shadow:0 0 2.564cqw rgba(255,63,164,.7);display:flex;align-items:center;gap:2.564cqw;line-height:1.3;overflow-wrap:anywhere}
+.p122 .kick::after{content:"";height:0.513cqw;min-width:6cqw;flex:1;background:var(--mg);box-shadow:0 0 2.051cqw var(--mg);opacity:.8;border-radius:2px}
+.p122 h1{font:700 19.487cqw/.9 "Barlow Condensed","Cairo",sans-serif;text-transform:uppercase;letter-spacing:.005em;margin-top:4.103cqw;overflow-wrap:anywhere}
+.p122 h1 span{display:block;color:transparent;-webkit-text-stroke:1.5px #fff}
+.p122.nl2 h1{font-size:15cqw}.p122.nl3 h1{font-size:11.5cqw}
+.p122.wl2 h1{font-size:14.5cqw}.p122.wl3 h1{font-size:10.5cqw}
+.p122.nl3.wl3 h1{font-size:9cqw}
+.p122[dir="rtl"] h1{font-family:"Cairo","Barlow Condensed",sans-serif;font-weight:800;line-height:1.25;letter-spacing:0;font-size:14cqw}
+.p122[dir="rtl"].nl2 h1,.p122[dir="rtl"].wl2 h1{font-size:11cqw}.p122[dir="rtl"].nl3 h1,.p122[dir="rtl"].wl3 h1{font-size:8.5cqw}
+.p122[dir="rtl"] h1 span{color:var(--cy);-webkit-text-stroke:0;text-shadow:0 0 3cqw color-mix(in srgb,var(--cy) 60%,transparent)}
+.p122 .role{margin-top:4.103cqw;font-size:max(12px,3.59cqw);color:var(--ink);letter-spacing:.02em;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.p122 .bio{margin:5.641cqw 0 0;padding-inline-start:3.59cqw;border-inline-start:2px solid var(--am);box-shadow:-1.538cqw 0 3.59cqw -2.051cqw var(--am);font-size:max(12px,3.846cqw);line-height:1.55;color:#d7daf5;overflow-wrap:anywhere}
+.p122[dir="rtl"] .bio{box-shadow:1.538cqw 0 3.59cqw -2.051cqw var(--am)}
+.p122 .id{padding-bottom:7.692cqw}
+.p122 .street{margin:0 5.128cqw;padding:7.692cqw 0;display:flex;flex-direction:column;gap:3.59cqw}
+.p122 .row{--c:var(--cy);position:relative;display:flex;align-items:center;gap:3.59cqw;min-height:15.385cqw;padding:2.564cqw 4.103cqw;border-radius:3.077cqw;text-decoration:none;color:var(--ink);border:1.5px solid var(--c);background:linear-gradient(90deg,color-mix(in srgb,var(--c) 10%,transparent),transparent 70%);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 2.051cqw color-mix(in srgb,var(--c) 70%,transparent),0 0 6.667cqw color-mix(in srgb,var(--c) 28%,transparent),inset 0 0 3.59cqw color-mix(in srgb,var(--c) 22%,transparent)}
+.p122 .row:nth-child(3n+2){--c:var(--mg)}
+.p122 .row:nth-child(3n){--c:var(--am)}
+.p122 .row:focus-visible{outline:2px solid #fff;outline-offset:1.026cqw}
+.p122 .row svg{flex:none;width:6.154cqw;height:6.154cqw;color:var(--c);stroke:var(--c);filter:drop-shadow(0 0 1.026cqw var(--c))}
+.p122 .row .t{flex:1;min-width:0}
+.p122 .row small{display:block;font:600 max(11px,3.2cqw)/1.1 "Barlow Condensed","Cairo",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--c);margin-bottom:1.282cqw;overflow-wrap:anywhere}
+.p122 .row strong{display:block;font-weight:500;font-size:max(12px,4.103cqw);overflow-wrap:anywhere;line-height:1.3}
+.p122 .row .go{width:4.615cqw;height:4.615cqw;opacity:.8;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.p122[dir="rtl"] .row .go{transform:scaleX(-1)}
+.p122[dir="rtl"] *{letter-spacing:0!important}
+@media (prefers-reduced-motion:no-preference){.p122 .kick{animation:fl 6s infinite}
+}
+@keyframes fl{0%,92%,100%{opacity:1}
+94%{opacity:.55}
+96%{opacity:1}
+98%{opacity:.7}
+}
+</style>
+<div class="pg p122"><div class="in">
+<header class="sky">
+    <div class="brand"><span>[[After dark|بعد الغروب]]</span><span>{city}</span></div>
+    <i class="moon" aria-hidden="true"></i>
+    <svg class="city" viewBox="0 0 430 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs>
+        <pattern id="win" width="9" height="11" patternUnits="userSpaceOnUse"><rect x="2" y="3" width="4" height="5" fill="#ffb23d" opacity=".55"/></pattern>
+        <pattern id="win2" width="9" height="11" patternUnits="userSpaceOnUse"><rect x="2" y="3" width="4" height="5" fill="#38e8ff" opacity=".4"/></pattern>
+        <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0a22" stop-opacity="0"/><stop offset="1" stop-color="#0c0a22"/></linearGradient>
+      </defs>
+      <g fill="#151838" stroke="#2a2f66" stroke-width="1">
+        <rect x="0" y="150" width="56" height="100"/><rect x="62" y="122" width="40" height="128"/><rect x="108" y="170" width="50" height="80"/>
+        <rect x="160" y="96" width="46" height="154"/><path d="M180 96l3-34h2l3 34z"/><rect x="212" y="146" width="58" height="104"/>
+        <rect x="276" y="108" width="44" height="142"/><rect x="326" y="160" width="40" height="90"/><rect x="370" y="128" width="60" height="122"/>
+      </g>
+      <g opacity=".9">
+        <rect x="0" y="150" width="56" height="100" fill="url(#win)"/><rect x="62" y="122" width="40" height="128" fill="url(#win2)"/>
+        <rect x="160" y="96" width="46" height="154" fill="url(#win)"/><rect x="276" y="108" width="44" height="142" fill="url(#win)"/>
+        <rect x="370" y="128" width="60" height="122" fill="url(#win2)"/><rect x="212" y="146" width="58" height="104" fill="url(#win2)"/>
+      </g>
+      <circle cx="185" cy="62" r="2.5" fill="#ff3fa4"/>
+      <rect y="190" width="430" height="60" fill="url(#fade)"/>
+    </svg>
+    <i class="wire" aria-hidden="true"></i><i class="wire" aria-hidden="true"></i>
+    <div class="sign"></div>
+  </header>
+
+  <div class="id">
+    <p class="kick">{co}</p>
+    <h1>{first}<span>{last}</span></h1>
+    <p class="role">{title}</p>
+    <p class="bio">{bio}</p>
+  </div>
+
+  <nav class="street">
+    <a class="row"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><span class="t"><small>Call</small><strong>{phone}</strong></span><svg class="go" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </nav>
+</div></div>
+</section>

@@ -85,6 +85,7 @@ export function describeEvent(e: Pick<AuditEvent, "action" | "target_label" | "d
       return d.card_policy ? t("company.evRemovedPolicy", { who, policy: word(POLICY, str(d.card_policy)) }) : t("company.evRemoved", { who });
     case "member.suspended": return t("company.evMemberSuspended", { who });
     case "member.restored": return t("company.evMemberRestored", { who });
+    case "member.share_contacts_changed": return t(d.share_contacts ? "company.evShareOn" : "company.evShareOff", { who });
     case "member.department_changed": return t("company.evMoved", { who, department: str(d.to) || t("company.noDepartment") });
     case "card.created": return t("dev.evCardCreated", { who });
     case "card.updated": return t("dev.evCardUpdated", { who });
@@ -95,6 +96,9 @@ export function describeEvent(e: Pick<AuditEvent, "action" | "target_label" | "d
     case "crm.disconnected": return t("dev.evCrmDisconnected", { who });
     case "crm.settings_changed": return t("dev.evCrmSettings", { who });
     case "crm.disabled": return t("dev.evCrmDisabled", { who });
+    case "enterprise.requested": return t("billing.evEntRequested");
+    case "enterprise.cancelled": return t("billing.evEntCancelled");
+    case "enterprise.accepted": return t("billing.evEntAccepted");
     case "card.published": return t("company.evCardPublished", { who });
     case "card.unpublished": return t("company.evCardUnpublished", { who });
     case "card.suspended": return d.by === "support" ? t("company.evCardSuspendedSupport", { app: APP_NAME, who }) : t("company.evCardSuspended", { who });
@@ -145,6 +149,10 @@ export function describeEvent(e: Pick<AuditEvent, "action" | "target_label" | "d
     case "company.reply_to_changed": return t("security.evReplyTo");
     case "domain.verified": return t("security.evDomainVerified", { domain: who });
     case "domain.removed": return t("security.evDomainRemoved", { domain: who });
+    case "custom_domain.added": return t("security.evCustomDomainAdded", { domain: who });
+    case "custom_domain.verified": return t("security.evCustomDomainVerified", { domain: who });
+    case "custom_domain.broken": return t("security.evCustomDomainBroken", { domain: who });
+    case "custom_domain.removed": return t("security.evCustomDomainRemoved", { domain: who });
     case "company.deletion_requested": return t("company.evDeletionRequested");
     case "company.deletion_cancelled": return t("company.evDeletionCancelled");
     case "design_request.created": return t("company.evDesignCreated");

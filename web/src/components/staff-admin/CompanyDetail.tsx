@@ -13,7 +13,7 @@ import { StartSupportDialog } from "./SupportView";
 import { STATUS_WORDS } from "./Companies";
 import { Await, Kpi, NoRows, Page, Pill, ReasonDialog, RoleButton, Table, Tabs, td, toneOf, useFail } from "./ui";
 import { cardStatusWord } from "@/lib/staff-admin/card-data";
-import { brandSwatches, cardStateWord, fontName, seatsInfo, viewsPoints } from "@/lib/staff-admin/company-page";
+import { brandSwatches, cardStateWord, extrasWords, fontName, logoWords, rightsWords, seatsInfo, viewsPoints } from "@/lib/staff-admin/company-page";
 import { BarChart } from "./charts";
 import { CardDrawer } from "./People";
 
@@ -194,12 +194,18 @@ export function BrandView({ b }: { b: BrandInfo }) {
         <dt className="hint">Company name</dt><dd style={{ margin: 0 }}>{b.company_name}</dd>
         <dt className="hint">Website</dt><dd style={{ margin: 0 }}>{b.website || "-"}</dd>
         <dt className="hint">Card font</dt><dd style={{ margin: 0 }}>{fontName(b.font)}</dd>
+        <dt className="hint">Text colour</dt><dd style={{ margin: 0 }}>{b.colours?.text ? `Owner's own (${b.colours.text})` : "Automatic"}</dd>
+        <dt className="hint">Logo</dt><dd style={{ margin: 0 }}>{logoWords(b)}</dd>
+        <dt className="hint">Artwork</dt><dd style={{ margin: 0 }}>{b.artwork_mode && b.artwork_mode !== "none" ? b.artwork_mode : "None"}</dd>
         <dt className="hint">Design locked</dt><dd style={{ margin: 0 }}>{b.lock_design ? "Yes" : "No"}</dd>
         <dt className="hint">Footer shown</dt><dd style={{ margin: 0 }}>{b.show_footer ? "Yes" : "No"}</dd>
+        <dt className="hint">Employees may add</dt><dd style={{ margin: 0 }}>{extrasWords(b.extras)}</dd>
+        <dt className="hint">Employee rights</dt><dd style={{ margin: 0 }}>{rightsWords(b.rights)}</dd>
+        <dt className="hint">Company card</dt><dd style={{ margin: 0 }}>{b.company_card ? b.company_card : "Not made"}</dd>
         <dt className="hint">Google sign-in required</dt><dd style={{ margin: 0 }}>{b.require_google_signin ? "Yes" : "No"}</dd>
         <dt className="hint">Allowed e-mail domains</dt><dd style={{ margin: 0 }}>{b.allowed_email_domains.join(", ") || "Any"}</dd>
         <dt className="hint">Directory</dt><dd style={{ margin: 0 }}>{b.directory_enabled ? `On (${b.directory_slug})` : "Off"}</dd>
-        <dt className="hint">Custom domain</dt><dd style={{ margin: 0 }}>{b.custom_domain || "-"}</dd>
+        <dt className="hint">Custom domain</dt><dd style={{ margin: 0 }}>{b.custom_domain_info ? `${b.custom_domain_info.domain} (${b.custom_domain_info.status}${b.custom_domain_info.serving ? ", serving" : ", not serving"}${b.custom_domain_info.last_error ? `, last check: ${b.custom_domain_info.last_error}` : ""})` : "-"}</dd>
       </dl>
     </div>
   );

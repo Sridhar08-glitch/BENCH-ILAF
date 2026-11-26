@@ -8,6 +8,7 @@ import { Icon } from "@/components/Icon";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { Switch } from "@/components/app/Switch";
 import { useToast } from "@/components/app/ui";
+import { EnterpriseLock } from "@/components/app/EnterpriseLock";
 import { useWs } from "@/components/app/WorkspaceContext";
 import { ApiError, api } from "@/lib/api";
 import { authApi, privacyApi, type Confirmation } from "@/lib/account-api";
@@ -125,7 +126,7 @@ export function SetPasswordPanel() {
 }
 
 export function CompanySecurityPanel() {
-  const { current, isCompany, role } = useWs();
+  const { current, isCompany, role, has } = useWs();
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
@@ -136,6 +137,14 @@ export function CompanySecurityPanel() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   if (!isCompany || (role !== "owner" && role !== "admin") || !security) return null;
+  if (!has("sign_in_rules")) {
+    return (
+      <div className="panel card">
+        <div className="head"><h2><span className="chip"><Icon name="lock" size="s" /></span>{t("settings.secTitle")}</h2></div>
+        <EnterpriseLock compact />
+      </div>
+    );
+  }
 
   const isOwner = role === "owner";
   const text = domains ?? security.allowed_email_domains.join("\n");

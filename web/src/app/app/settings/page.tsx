@@ -11,6 +11,7 @@ import { DigitsSwitcher, LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { PageHead, useToast } from "@/components/app/ui";
 import { useWs } from "@/components/app/WorkspaceContext";
 import { LeadSettingsPanel } from "@/components/app/LeadSettingsPanel";
+import { ShareContactsCard } from "@/components/app/ShareContactsCard";
 import { ProductUpdatesSwitch } from "@/components/app/ProductUpdatesSwitch";
 import { ApiError, api } from "@/lib/api";
 import { keys } from "@/lib/hooks";
@@ -127,10 +128,11 @@ export default function SettingsPage() {
           <div className="hint">{t("settings.reportsHint")}</div>
           <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
             <Link className="btn ghost sm" href="/app/settings/notifications">{t("settings.weeklyReport")}</Link>
-            <Link className="btn ghost sm" href="/app/settings/integrations">{t("settings.integrations")}</Link>
-            <Link className="btn ghost sm" href="/app/settings/developers">{t("dev.title")}</Link>
+            {isCompanyManager && <Link className="btn ghost sm" href="/app/settings/integrations">{t("settings.integrations")}</Link>}
+            {isCompanyManager && <Link className="btn ghost sm" href="/app/settings/developers">{t("dev.title")}</Link>}
           </div>
         </section>
+        <ShareContactsCard />
         <LeadSettingsPanel />
       </div>
     </div>

@@ -4,7 +4,7 @@ summary: Decide what employees may change, and approve what needs you.
 audience: company_owner, company_admin
 pages: /app/fields
 related: manage-roles-bulk-reassign-and-offboarding, company-brand-setup
-updated: 2026-11-22
+updated: 2026-11-25
 ---
 
 Open Fields and approvals. Owners and admins are never held back by these rules. They apply to employees.
@@ -16,6 +16,11 @@ For name, job title, photo, company line and address, and for adding, changing a
 - **Locked.**
 
 Card settings (web address, contact form, Save contact file) can only be free or locked.
+
+There is also a single choice for how much people can change, in the Brand page under Your team: anything, changes need approval, or nothing. It sets all of these at once, and you can still adjust each one here afterwards.
+
+## Extras
+In the Brand page under Your team, choose which extras employees may add under their cards: any, only some (you tick which), or none. Owners, admins and the company's own card are not limited. Extras a person added earlier are kept but hidden from their public card, and their old orders stay reachable.
 
 You can also choose which button kinds employees may use, ban link domains (one per line, subdomains included) and add required buttons that every employee card keeps.
 

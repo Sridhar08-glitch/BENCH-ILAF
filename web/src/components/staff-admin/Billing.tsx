@@ -62,7 +62,7 @@ export default function Billing() {
             <h2 style={{ fontSize: 16 }}>Plans</h2>
             <Table head={["Plan", "Kind", "Price", "Per seat", "Cards", "Companies", "Active"]}>
               {d.plans.map((p) => (
-                <tr key={p.code}><td style={td}><b>{p.name}</b><div className="hint">{p.code}</div></td><td style={td}>{p.kind}</td><td style={td}>{(p.price_minor / 100).toFixed(2)} {p.currency} per {p.interval}</td><td style={td}>{p.per_seat ? `Yes (min ${p.min_seats})` : "No"}</td><td style={td}>{p.max_cards}</td><td style={td}>{p.companies}</td><td style={td}>{p.active ? <Pill tone="ok">Yes</Pill> : <Pill>No</Pill>}</td></tr>
+                <tr key={p.code}><td style={td}><b>{p.name}</b><div className="hint">{p.code}</div></td><td style={td}>{p.kind}</td><td style={td}>{p.code === "enterprise" ? "By quote (set per customer)" : `${(p.price_minor / 100).toFixed(2)} ${p.currency} per ${p.interval}`}</td><td style={td}>{p.per_seat ? `Yes (min ${p.min_seats})` : "No"}</td><td style={td}>{p.max_cards}</td><td style={td}>{p.companies}</td><td style={td}>{p.active ? <Pill tone="ok">Yes</Pill> : <Pill>No</Pill>}</td></tr>
               ))}
             </Table>
             <h2 style={{ fontSize: 16 }}>Free periods granted by hand</h2>

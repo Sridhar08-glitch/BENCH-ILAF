@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import { CardView, type CardViewData } from "@/components/card/CardView";
+import { CardTail } from "@/components/card/CardTail";
 import { useI18n } from "@/lib/i18n/client";
 import { previewHref, publishDraft } from "@/lib/preview-bridge";
 import { fitScale } from "@/lib/preview-fit";
@@ -42,6 +43,8 @@ interface Props {
   /** A row above the card (the sample employee chooser). */
   top?: ReactNode;
   hint?: string;
+  /** Drawn under the card inside the same screen (the extras of the card). */
+  extra?: ReactNode;
   /** Raise the floating button above a bar that sticks to the bottom of the page (the brand steps). */
   lift?: boolean;
 }
@@ -78,7 +81,7 @@ function Fitted({ fit, children }: { fit: boolean; children: ReactNode }) {
   );
 }
 
-export function PreviewDock({ data, shareKey, href, playKey, onReplay, onSave, overlay, top, hint, lift }: Props) {
+export function PreviewDock({ data, shareKey, href, playKey, onReplay, onSave, overlay, top, hint, lift, extra }: Props) {
   const { t } = useI18n();
   const narrow = useMedia("(max-width: 980px)");
   const [open, setOpen] = useState(false);
@@ -116,7 +119,9 @@ export function PreviewDock({ data, shareKey, href, playKey, onReplay, onSave, o
       <Fitted fit={fit}>
         <div className="device" style={{ maxWidth: "none" }}>
           <div className="scr">
-            <CardView data={data} mode="preview" playKey={playKey} onSave={onSave} />
+            <CardView data={data} mode="preview" playKey={playKey} onSave={onSave} noTail />
+            {extra}
+            <CardTail data={data} />
             {overlay}
           </div>
         </div>

@@ -30,6 +30,8 @@ import { support as en_support } from "./en/support";
 import { bo as en_bo } from "./en/bo";
 import { security as en_security } from "./en/security";
 import { cardx as en_cardx } from "./en/cardx";
+import { content as en_content } from "./en/content";
+import { commerce as en_commerce } from "./en/commerce";
 import { common as ar_common } from "./ar/common";
 import { err as ar_err } from "./ar/err";
 import { apiError as ar_apiError } from "./ar/apiError";
@@ -59,12 +61,14 @@ import { support as ar_support } from "./ar/support";
 import { bo as ar_bo } from "./ar/bo";
 import { security as ar_security } from "./ar/security";
 import { cardx as ar_cardx } from "./ar/cardx";
+import { content as ar_content } from "./ar/content";
+import { commerce as ar_commerce } from "./ar/commerce";
 
 /** The shape of a language file: the same keys as the English file, every value a string. */
 export type Messages<T> = { [K in keyof T]: string };
 
 /** The areas, in the order the files are merged. A key starts with its area name and a dot. */
-export const AREAS = ["common", "err", "apiError", "auth", "shell", "card", "editor", "cards", "team", "contacts", "analytics", "brand", "company", "tools", "settings", "billing", "dash", "legal", "guide", "help", "dev", "designs", "staff", "growth", "support", "bo", "security", "cardx"] as const;
+export const AREAS = ["common", "err", "apiError", "auth", "shell", "card", "editor", "cards", "team", "contacts", "analytics", "brand", "company", "tools", "settings", "billing", "dash", "legal", "guide", "help", "dev", "designs", "staff", "growth", "support", "bo", "security", "cardx", "content", "commerce"] as const;
 export type Area = (typeof AREAS)[number];
 
 export const en = {
@@ -96,6 +100,8 @@ export const en = {
   ...en_bo,
   ...en_security,
   ...en_cardx,
+  ...en_content,
+  ...en_commerce,
 };
 
 export type MessageKey = Extract<keyof typeof en, string>;
@@ -130,6 +136,8 @@ const ar: Catalogue = {
   ...ar_bo,
   ...ar_security,
   ...ar_cardx,
+  ...ar_content,
+  ...ar_commerce,
 };
 
 /** Every language. A language added here must be listed in config.ts too. */

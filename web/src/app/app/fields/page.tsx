@@ -1,5 +1,6 @@
 "use client";
 
+import { EnterpriseGate } from "@/components/app/EnterpriseLock";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +39,7 @@ const BUTTON_ROWS: { key: "button_add" | "button_edit" | "button_remove"; label:
 ];
 const STATUS_WORD: Record<string, MessageKey> = { approved: tk("company.statusApproved"), rejected: tk("company.statusRejected"), withdrawn: tk("company.statusWithdrawn") };
 
-export default function FieldsPage() {
+function FieldsPageContent() {
   const { current, isManager, isCompany } = useWs();
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>("rules");
@@ -159,6 +160,12 @@ function RulesForm({ wsId, saved }: { wsId: string; saved: FieldRules }) {
           ))}
         </div>
         <div className="hint">{t("company.settingsHint")}</div>
+      </section>
+
+      <section className="panel card" aria-label={t("company.extrasSection")}>
+        <div className="head"><h2><span className="chip"><Icon name="gem" size="s" /></span>{t("company.extrasSection")}</h2></div>
+        <div className="hint">{t("company.extrasHint")}</div>
+        <div><Link className="btn ghost sm" href="/app/brand">{t("company.extrasOpen")}</Link></div>
       </section>
 
       <section className="panel card" aria-label={t("company.buttonsSection")}>
@@ -372,4 +379,9 @@ function ChangeCard({ c, checked, onCheck, reason, onReason, busy, onDecide }: {
       </div>
     </div>
   );
+}
+
+export default function FieldsPage() {
+  const { t } = useI18n();
+  return <EnterpriseGate feature="field_rules" title={t("company.fieldsTitle")} sub={t("company.fieldsSubShort")}><FieldsPageContent /></EnterpriseGate>;
 }

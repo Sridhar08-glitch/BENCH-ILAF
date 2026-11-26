@@ -4,7 +4,7 @@ import {
   backPlacement, choosePlacement, chipFor, isSym, monogramMark, nameLines, place, plan, resolveSpec, shapeBox, specList, specsFromData, specData,
   type Box, type Mark, type MarkSources,
 } from "./marks";
-import { defaultArtwork, measureList, normalizeArtwork, sampleColours, toCompanyBrand } from "./brand";
+import { asLogoFree, asLogoSize, defaultArtwork, measureList, normalizeArtwork, sampleColours, toCompanyBrand } from "./brand";
 import { scrimFor, templateInfo, minAlpha, sampleBgSvg, templateSvg } from "./artwork";
 import { pageBackground } from "../page";
 import { COMPANY_COLOUR, defaultDesign, effectiveColour, normalizeDesign, resolveColours } from "../index";
@@ -387,5 +387,61 @@ describe("company card markup", () => {
     const input = buildInput(data, "live");
     const html = withoutScriptTabs(input, drawPage(input, data, "live").html);
     expect(html.length).toBeGreaterThan(1000);
+  });
+});
+
+describe("logo size and the place the owner gave the logo", () => {
+  const headImg = (html: string) => /<div class="cohead"[\s\S]*?<img[^>]*style="height:([0-9.]+)px/.exec(html);
+
+  it("reads the size and the places from the API and keeps them in range", () => {
+    expect(asLogoSize(undefined)).toBe(100);
+    expect(asLogoSize(20)).toBe(50);
+    expect(asLogoSize(400)).toBe(150);
+    expect(asLogoSize(87.4)).toBe(87);
+    expect(asLogoFree(null)).toEqual({});
+    expect(asLogoFree({ f12: { x: 6, y: 8, w: 28 }, bad: { x: 1, y: 1, w: 20 }, t3: { x: 1, y: 1, w: 5 }, f1: { x: 95, y: 3, w: 30 } })).toEqual({
+      f12: { x: 6, y: 8, w: 28 },
+      f1: { x: 70, y: 3, w: 30 },
+    });
+    const b = toCompanyBrand({ company_name: "N", logo_url: "https://media.test/l.png", logo_size: 80, logo_free: { f2: { x: 5, y: 5, w: 25 } } } as never);
+    expect(b?.logoSize).toBe(80);
+    expect(b?.logoFree).toEqual({ f2: { x: 5, y: 5, w: 25 } });
+  });
+
+  it("makes the logo above the card smaller or larger", () => {
+    const at = (logoSize: number) => Number(headImg(renderCardPage(card({ brand: brand({}, { logoSize }) }), "live").html)?.[1]);
+    expect(at(50)).toBeLessThan(at(100));
+    expect(at(150)).toBeGreaterThan(at(100));
+    expect(at(100)).toBeGreaterThan(0);
+  });
+
+  it("tells the browser the size so the corner logo is placed at that size", () => {
+    expect(renderCardPage(card({ brand: brand({}, { logoSize: 70 }) }), "live").html).toContain('data-size="70"');
+  });
+
+  it("draws the logo at the owner's place on that design only", () => {
+    const b = brand({}, { logoFree: { f3: { x: 12, y: 40, w: 30 } } });
+    const on = renderCardPage(card({ design: { ...defaultDesign(), colour: 4, face: 3 }, brand: b }), "live").html;
+    expect(on).toContain('data-co="free"');
+    expect(on).toContain("left:12.0%;top:40.0%;width:30.0%");
+    expect(on).not.toContain('data-co="front"');
+    const other = renderCardPage(card({ design: { ...defaultDesign(), colour: 4, face: 4 }, brand: b }), "live").html;
+    expect(other).not.toContain('data-co="free"');
+    expect(other).toContain('data-co="front"');
+  });
+
+  it("uses a page style's own key, and leaves the card alone when the logo is only above it", () => {
+    const b = brand({}, { logoFree: { t3: { x: 10, y: 10, w: 30 }, f1: { x: 10, y: 10, w: 30 } } });
+    const style = renderCardPage(card({ design: { ...defaultDesign(), colour: 4, top: 3, below: 403 }, brand: b }), "live").html;
+    expect(style).toContain('data-co="free"');
+    const above = renderCardPage(card({ design: { ...defaultDesign(), colour: 4, face: 1 }, brand: { ...b, logoPlacement: "above" } }), "live").html;
+    expect(above).not.toContain('data-co="free"');
+  });
+
+  it("has no logo above the card when it is placed on the card only", () => {
+    const b = brand({}, { logoPlacement: "card", logoFree: { f1: { x: 10, y: 10, w: 30 } } });
+    const html = renderCardPage(card({ design: { ...defaultDesign(), colour: 4, face: 1 }, brand: b }), "live").html;
+    expect(html).toContain('data-co="free"');
+    expect(html).not.toContain('class="cohead"');
   });
 });

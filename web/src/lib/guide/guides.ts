@@ -41,7 +41,7 @@ const share: Step = {
   id: "share",
   title: tk("guide.step.share.title"),
   text: tk("guide.step.share.text"),
-  route: "/app/qr",
+  route: "/app/share",
   doneWhen: { is: "shared_qr_opened" },
   focus: { target: at("qr-main") },
 };

@@ -1,0 +1,89 @@
+<section class="page" data-no="109" data-name="Letterpress" data-style="Editorial" data-rtl="0">
+<!--recipe {"top":36,"style":"Editorial","name":"Letterpress","slug":"09-letterpress","dir":"auto","split":"fr2","avatar":"phw","drop":["save","foot"],"cond":{"bio":"bio","role":"title"},"lists":[{"c":"colo","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: oxblood paper stock, cream ink and the deckled edge are the signature and stay fixed; the accent (rule, label icons, seal ring) is the card accent mixed into the warm blush ink via --ac / --ac-t (dark page). */
+.p109 .in{--stock:#4a1420;--stock2:#3a0e18;--ink:#f1d9cb;--dim:#cfa89b;--fringe:#d8bfae;--table:#16080c;
+ --sig:#cfa89b;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.74,l,.96) c h);
+ --fr:"Fraunces","Georgia",serif;--sans:"DM Sans","Helvetica Neue",Arial,sans-serif;--ar:"Amiri","Times New Roman",serif;
+ --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .75  0 0 0 0 .65  0 0 0 .5 0'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='.5'/></svg>")}
+.p109[dir="rtl"] .in{--fr:"Amiri","Fraunces",serif;--sans:"IBM Plex Sans Arabic","DM Sans",Arial,sans-serif}
+.p109 *{box-sizing:border-box;margin:0;padding:0}
+.p109 .in{font-family:var(--sans);color:var(--ink);position:relative;isolation:isolate;background:var(--table);padding:10cqw 11cqw 11cqw}
+.p109 .stock,.p109 .fringe{position:absolute;z-index:-1;pointer-events:none}
+.p109 .fringe{inset:2.2cqw 2.4cqw 1.8cqw 2.2cqw;background:var(--fringe);box-shadow:0 1.5cqw 3cqw rgba(0,0,0,.6);filter:url(#deckle);opacity:.95}
+.p109 .stock{inset:3.4cqw;background:var(--grain),radial-gradient(120% 60% at 20% 0%,#5c1b2a,transparent 65%),var(--stock);filter:url(#deckle2)}
+.p109 .clip{position:absolute;inset:5.4cqw;overflow:hidden;pointer-events:none;z-index:-1}
+.p109 .N{position:absolute;inset-inline-end:-17.949cqw;top:-23.59cqw;font-family:var(--fr);font-weight:700;font-size:133.333cqw;line-height:1;letter-spacing:0;color:#4e1624;text-shadow:-2px -2px 0.769cqw rgba(0,0,0,.55),2px 2px 2px rgba(255,170,150,.2);user-select:none}
+.p109[dir="rtl"] .N{inset-inline-end:-10cqw}
+.p109 a{color:inherit;text-decoration:none}
+.p109 a:focus-visible{outline:2px solid var(--ink);outline-offset:1.026cqw}
+.p109 .imp{color:var(--ink);text-shadow:0 -1px 0 rgba(0,0,0,.65),0 1px 0 rgba(255,190,170,.22),0 0 1px rgba(0,0,0,.4)}
+.p109 .meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1cqw 3.077cqw;font-size:max(10px,2.821cqw);letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--dim)}
+.p109 .meta>span{min-width:0;overflow-wrap:break-word}
+.p109 .meta>span:last-child{margin-inline-start:auto;text-align:end}
+.p109 h1{font-family:var(--fr);font-weight:700;font-size:15.5cqw;line-height:.98;letter-spacing:-.035em;margin-top:11cqw;font-variation-settings:"opsz" 144;overflow-wrap:anywhere}
+.p109 h1 .f{display:block}
+.p109 h1 .la{display:block;margin-inline-start:.5em;font-style:italic;font-weight:500;letter-spacing:-.03em}
+.p109.nl2 h1{font-size:11.5cqw}
+.p109.nl3 h1{font-size:8.8cqw}
+.p109[dir="rtl"] h1{letter-spacing:0;line-height:1.25}
+.p109[dir="rtl"] h1 .la{font-style:normal}
+.p109 .rule{height:0.256cqw;background:var(--ac-t);opacity:.7;margin-top:6cqw;box-shadow:0 1px 0 rgba(255,190,170,.15);width:62%}
+.p109 .idrow{display:flex;align-items:center;gap:4cqw;margin-top:4.5cqw}
+.p109 .role{flex:1 1 0;min-width:0;font-size:max(10px,3.205cqw);letter-spacing:.22em;text-transform:uppercase;font-weight:700;line-height:1.7;overflow-wrap:anywhere}
+.p109[dir="rtl"] .role{letter-spacing:0;text-transform:none;font-size:4.2cqw;line-height:1.6}
+.p109 .seal{position:relative;flex:none;width:29cqw;height:29cqw;margin-inline-start:auto;transform:rotate(-8deg)}
+.p109[dir="rtl"] .seal{transform:rotate(8deg)}
+.p109 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.p109 .seal .ring{position:absolute;inset:0;width:100%;height:100%}
+.p109 .phw{position:absolute;inset:15%;border-radius:50%;overflow:hidden;background:#5a1a2b;box-shadow:0 0 0 1.5px rgba(0,0,0,.5),0 1.5px 0 1.5px rgba(255,170,150,.22)}
+.p109 .phw svg{display:block;width:100%;height:100%}
+.p109 .phw .pic{object-fit:cover;filter:grayscale(1) contrast(1.15) brightness(1.1);mix-blend-mode:screen;opacity:.8}
+.p109 .phw span.pic{display:grid;place-items:center;mix-blend-mode:normal;opacity:1;filter:none;background:#4f1725;color:#3a0e18;font-family:var(--fr);font-style:italic;font-weight:700;letter-spacing:-.04em;font-size:30cqw;line-height:1;text-shadow:0 -1px 0 rgba(0,0,0,.5),0 1px 0 rgba(255,170,150,.28)}
+.p109 .bio{font-family:var(--fr);font-style:italic;font-weight:500;font-size:5.256cqw;line-height:1.36;margin-top:7cqw;font-variation-settings:"opsz" 36;overflow-wrap:anywhere}
+.p109[dir="rtl"] .bio{font-style:normal;line-height:1.7;font-size:5cqw}
+.p109 .colo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:3.59cqw;row-gap:1.538cqw;padding-top:1.538cqw;border-top:1px solid rgba(207,168,155,.5)}
+.p109 .colo a{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:1.795cqw;align-content:start;min-height:16.41cqw;padding:4.103cqw 0 2.051cqw;position:relative;transition:transform .2s}
+.p109 .colo a:last-child:nth-child(odd){grid-column:1/-1}
+.p109 .colo a:hover{transform:translateX(1.026cqw)}
+.p109[dir="rtl"] .colo a:hover{transform:translateX(-1.026cqw)}
+.p109 .colo .gi{display:grid;place-items:center;color:var(--ac-t);align-self:center}
+.p109 .colo .gi svg{width:3.9cqw;height:3.9cqw;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.p109 .colo .k{display:block;font-size:max(10px,2.692cqw);letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--dim);overflow-wrap:anywhere;align-self:center}
+.p109[dir="rtl"] .colo .k{letter-spacing:0;text-transform:none;font-size:3.4cqw}
+.p109 .colo .v{display:block;grid-column:1/-1;font-family:var(--fr);font-size:3.9cqw;font-weight:500;margin-top:1.795cqw;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:lining-nums;unicode-bidi:plaintext}
+.p109 .prn{margin-top:9cqw;font-family:var(--fr);font-style:italic;font-weight:400;font-size:3.9cqw;color:var(--dim);line-height:1.5}
+.p109[dir="rtl"] .prn{font-style:normal}
+</style>
+<div class="pg p109"><div class="in">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <filter id="deckle" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035 .06" numOctaves="4" seed="4" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="16"/></filter>
+  <filter id="deckle2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".05 .09" numOctaves="3" seed="11" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="9"/></filter>
+</defs></svg>
+  <div class="fringe" aria-hidden="true"></div>
+  <div class="stock" aria-hidden="true"></div>
+  <div class="clip" aria-hidden="true"><div class="N">{mono}</div></div>
+
+  <div class="meta imp"><span>{co}</span><span>{city}</span></div>
+  <h1 class="imp"><span class="f">{first}</span><span class="la">{last}</span></h1>
+  <div class="rule"></div>
+  <div class="idrow">
+    <p class="role imp">{title}</p>
+    <div class="seal"><span class="sr">[[Portrait|صورة]]</span>
+      <svg class="ring" viewBox="0 0 250 250" aria-hidden="true">
+        <g fill="none" stroke="#3a0e18" stroke-width="2.4"><circle cx="125" cy="125" r="118"/><circle cx="125" cy="125" r="108" stroke-dasharray="1.5 9.2" stroke-width="5"/><circle cx="125" cy="125" r="100"/></g>
+        <g fill="none" stroke="rgba(255,170,150,.22)" stroke-width="1.5" transform="translate(1.5 1.5)"><circle cx="125" cy="125" r="118"/><circle cx="125" cy="125" r="100"/></g>
+      </svg>
+      <div class="phw"><svg viewBox="0 0 10 10" aria-hidden="true"><rect width="10" height="10" fill="#4f1725"/></svg></div>
+    </div>
+  </div>
+  <p class="bio imp">{bio}</p>
+
+  <div class="fringe fr2" aria-hidden="true"></div>
+  <div class="stock" aria-hidden="true"></div>
+  <nav class="colo imp" aria-label="Colophon">
+    <a><span class="gi"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.500 1.500a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><span class="k">Telephone</span><span class="v">{phone}</span></a>
+  </nav>
+  <p class="prn imp">[[Printed one at a time.|طُبعت نسخةً نسخةً.]]</p>
+</div></div>
+</section>

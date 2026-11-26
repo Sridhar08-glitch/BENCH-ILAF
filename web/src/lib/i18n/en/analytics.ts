@@ -120,4 +120,5 @@ export const analytics = {
   "analytics.colSource": "Source",
   "analytics.colLeadsPer100": "Leads / 100",
   "analytics.sourcesNote": "Leads are counted by how the visitor reached the card when they shared their details. A card link opened from an NFC tag counts as NFC. Leads with no known way in are shown under Other.",
+  "analytics.contactsHidden": "Contacts are private to the person whose card they came in on.",
 } satisfies Record<string, string>;

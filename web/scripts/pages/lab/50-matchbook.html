@@ -1,0 +1,70 @@
+<section class="page" data-no="150" data-name="Matchbook" data-style="Creative" data-rtl="0">
+<!--recipe {"top":77,"style":"Creative","name":"Matchbook","slug":"50-matchbook","dir":"auto","split":"tear","avatar":"halft","cond":{"bio":"bio","role":"title"},"lists":[{"c":"mt","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: matchbook stock (cream) and navy are the signature and stay fixed; the red is hooked to the card colour: --ac for fills/borders/match heads, --ac-t for red text on the cream stock, --ac-on for the icon on a match head */
+.p150 .in{--stock:#f0e4c4;--navy:#1b3358;--ink:#1b3358;--sig:#d3392b;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h)}
+.p150 *{box-sizing:border-box;margin:0}
+.p150 .in{font-family:"Courier Prime","Special Elite",Courier,Cairo,monospace;color:var(--navy)}
+.p150 a{color:inherit;text-decoration:none}
+.p150 :focus-visible{outline:0.769cqw solid var(--ac);outline-offset:0.769cqw}
+.p150 .in{background:var(--stock);position:relative;overflow:hidden;padding-bottom:4.103cqw}
+.p150 .paper{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:multiply;opacity:.6;z-index:4}
+.p150 .cover{position:relative;margin:3.59cqw 0 0;border:0.769cqw solid var(--ac);padding:1.282cqw}
+.p150 .cover{margin-inline:3.59cqw}
+.p150 .cover>.inner{border:1.5px solid var(--navy);padding:4.103cqw 3.59cqw 4.615cqw;text-align:center;position:relative}
+.p150 .rib{font-family:"Special Elite","Courier Prime",monospace;font-size:max(10px,2.821cqw);letter-spacing:.2em;text-transform:uppercase;color:var(--ac-t);display:flex;justify-content:space-between;gap:1.538cqw;line-height:1.3}
+.p150 .rib:not(:has(span)){display:none}
+.p150 .rib span{min-width:0;overflow-wrap:anywhere}
+.p150 .rib .l:before{content:"\2605\00a0"}.p150 .rib .r:after{content:"\00a0\2605"}
+.p150 .rib span:only-child{margin-inline:auto}
+.p150 .halft{width:53.846cqw;height:53.846cqw;margin:3.59cqw auto 1.538cqw;display:block;position:relative;border-radius:50%;background:#f6ecd0;border:0.9cqw solid var(--navy);box-shadow:0 0 0 1.2cqw var(--stock),0 0 0 1.9cqw var(--ac);overflow:hidden;isolation:isolate}
+.p150 .halft svg{display:none}
+.p150 .halft .pic{width:100%;height:100%;object-fit:cover;border-radius:50%;filter:grayscale(1) contrast(1.35) brightness(1.05);display:grid;place-items:center;background:#f6ecd0;color:var(--navy);font-family:"Alfa Slab One",Georgia,serif;font-size:36cqw;letter-spacing:.01em;padding-top:2%;filter:none}
+.p150 .halft img.pic{filter:grayscale(1) contrast(1.35) brightness(1.05)}
+.p150 .halft:before{content:"";position:absolute;inset:0;z-index:1;background:var(--navy);mix-blend-mode:lighten;pointer-events:none}
+.p150 .halft:after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(circle,transparent 0 45%,rgba(246,236,208,.7) 55%) 0 0/1.7cqw 1.7cqw;mix-blend-mode:screen;opacity:.65}
+.p150 .nm{display:block;margin-top:2.5cqw}
+.p150 h1{font-family:"Alfa Slab One",Georgia,Cairo,serif;font-weight:400;font-size:10.256cqw;line-height:1.02;color:var(--ac-t);text-transform:uppercase;letter-spacing:.01em;text-shadow:0.769cqw 0.6cqw 0 rgba(27,51,88,.9);overflow-wrap:anywhere}
+.p150.wl2 h1{font-size:8cqw}.p150.wl3 h1{font-size:6.2cqw}
+.p150 .role{display:inline-block;max-width:100%;margin-top:3.59cqw;background:var(--navy);color:var(--stock);font-family:"Special Elite","Courier Prime",monospace;font-size:max(10px,3.333cqw);letter-spacing:.18em;text-transform:uppercase;padding:1.538cqw 3.077cqw;line-height:1.35;overflow-wrap:anywhere}
+.p150 .bio{margin-top:3.077cqw;font-size:max(11px,3.846cqw);line-height:1.45;font-weight:700;max-width:30ch;margin-inline:auto;overflow-wrap:anywhere}
+.p150 .bio:before,.p150 .bio:after{content:"\2605";color:var(--ac-t);display:block;font-size:max(10px,3.077cqw);margin:1.538cqw 0}
+.p150 .tear{display:flex;align-items:center;gap:2.051cqw;margin:2.5cqw 3.59cqw 3.59cqw;font-family:"Special Elite","Courier Prime",monospace;font-size:max(10px,2.564cqw);letter-spacing:.28em;text-transform:uppercase;color:var(--ac-t)}
+.p150 .tear:before,.p150 .tear:after{content:"";flex:1;border-top:2px dashed var(--ac)}
+.p150 .tear svg{width:4.615cqw;height:4.615cqw;fill:none;stroke:var(--ac-t);stroke-width:1.8;stroke-linecap:round}
+.p150 .inside{margin:0 3.59cqw;position:relative;padding-top:4.615cqw}
+.p150 .staple{position:absolute;top:0;inset-inline:0;margin-inline:auto;width:17.949cqw;height:2.051cqw;border-radius:2px;background:linear-gradient(#cfd5dc,#7b8794);box-shadow:0 2px 0 rgba(0,0,0,.3);transform:translateY(-2px)}
+.p150 .matches{display:flex;flex-direction:column;gap:2.051cqw}
+.p150 .mt{display:flex;align-items:center;min-height:14.359cqw;position:relative}
+.p150 .mt .head{flex:none;width:9.5cqw;height:9.5cqw;border-radius:50%;background:radial-gradient(circle at 35% 30%,color-mix(in oklab,var(--ac) 60%,#fff),var(--ac) 55%,color-mix(in oklab,var(--ac) 45%,#000));box-shadow:1px 2px 0 rgba(0,0,0,.35);z-index:1;margin-inline-end:-2.564cqw;display:grid;place-items:center;color:var(--ac-on)}
+.p150 .mt:nth-child(even) .head{background:radial-gradient(circle at 35% 30%,#6d8bc0,var(--navy) 55%,#0c1a30);color:#fff}
+.p150 .mt .head svg{width:4.6cqw;height:4.6cqw;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.p150 .mt .stick{flex:1;min-width:0;min-height:11.282cqw;background:linear-gradient(#f9efcf,#e5d3a0);border:1.5px solid var(--navy);border-inline-start:0;padding:1.026cqw 3.077cqw 1.026cqw 4.615cqw;padding-inline:4.615cqw 3.077cqw;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5cqw 2.564cqw;position:relative}
+.p150 .mt:hover .stick{background:#fff8e0}
+.p150 .mt .stick b{font-family:"Alfa Slab One",Cairo,serif;font-weight:400;font-size:max(11px,4.1cqw);text-transform:uppercase;letter-spacing:.02em;overflow-wrap:anywhere}
+.p150 .mt .stick span{font-size:max(10px,3.077cqw);font-weight:700;text-align:end;overflow-wrap:anywhere;min-width:0;flex:1 1 auto}
+.p150[dir="rtl"] .rib,.p150[dir="rtl"] .tear,.p150[dir="rtl"] .role{letter-spacing:0}
+.p150[dir="rtl"] h1,.p150[dir="rtl"] .mt .stick b{font-family:Cairo,"Segoe UI",sans-serif;font-weight:800;text-transform:none}
+.p150[dir="rtl"] .in{font-family:Cairo,"Courier Prime",sans-serif}
+</style>
+<div class="pg p150"><div class="in">
+<svg class="paper" aria-hidden="true"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" seed="6"/><feColorMatrix values="0 0 0 0 .5  0 0 0 0 .4  0 0 0 0 .25  0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="cover" aria-label="Card">
+ <div class="inner">
+  <div class="rib"><span class="l">{co}</span><span class="r">{city}</span></div>
+  <div class="halft"><svg viewBox="0 0 210 210" aria-hidden="true"><rect width="210" height="210" fill="#f6ecd0"/></svg></div>
+  <div class="nm"><h1>{first}<br>{last}</h1></div>
+  <span class="role">{title}</span>
+  <p class="bio">{bio}</p>
+ </div>
+</div>
+<div class="tear"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.500 8l12 10M8.500 16l12-10"/></svg>[[Tear off a match|مزّق عود ثقاب]]</div>
+<div class="inside">
+ <span class="staple" aria-hidden="true"></span>
+ <nav class="matches" aria-label="Contact">
+  <a class="mt"><i class="head"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.500 1.500a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></i><span class="stick"><b>Call</b><span>{phone}</span></span></a>
+  <a class="mt"><i class="head"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></i><span class="stick"><b>Email</b><span>{email}</span></span></a>
+ </nav>
+</div>
+</div></div>
+</section>

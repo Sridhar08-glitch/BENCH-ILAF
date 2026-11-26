@@ -1,13 +1,13 @@
 "use client";
 
-// What the three tool pages (signature, call background, scan) share: choosing one of the user's cards, and
+// What the three tool pages (signature, scan) share: choosing one of the user's cards, and
 // the card's colours and company logo, so every tool looks like the card it belongs to.
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, type ReactNode } from "react";
 import { Empty, ErrorBox, PageHead, SkeletonBlocks } from "@/components/app/ui";
 import { useWs } from "@/components/app/WorkspaceContext";
-import { PUBLIC_HOST } from "@/lib/config";
+import { shortAddress } from "@/lib/card-address";
 import { useCards, useWorkspaceDetail } from "@/lib/hooks";
 import { useI18n } from "@/lib/i18n/client";
 import { normalizeDesign, resolveColours } from "@/lib/library";
@@ -58,7 +58,7 @@ export function ToolCardPage({ title, sub, children }: Props) {
         <label style={{ maxWidth: 420 }}>
           {t("dash.toolCardLabel")}
           <select value={card.id} onChange={(e) => router.replace(`?card=${e.target.value}`)}>
-            {list.map((c) => <option key={c.id} value={c.id}>{c.name || t("dash.toolUntitled")} - {PUBLIC_HOST}/{c.slug ?? c.public_code}</option>)}
+            {list.map((c) => <option key={c.id} value={c.id}>{c.name || t("dash.toolUntitled")} - {shortAddress(c)}</option>)}
           </select>
         </label>
       ) : null,

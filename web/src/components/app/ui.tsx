@@ -85,11 +85,16 @@ export function Empty({ title, children, action }: { title: string; children?: R
   );
 }
 
+/** Set by a page that holds other pages as sections (Share): their headings become second-level headings. */
+export const EmbeddedPage = createContext(false);
+
 export function PageHead({ title, sub, children }: { title: string; sub?: string; children?: React.ReactNode }) {
+  const embedded = useContext(EmbeddedPage);
+  const Heading = embedded ? "h2" : "h1";
   return (
     <div className="top">
       <div>
-        <h1>{title}</h1>
+        <Heading className={embedded ? "embtitle" : undefined}>{title}</Heading>
         {sub && <p className="sub">{sub}</p>}
       </div>
       {children && <div className="row">{children}</div>}

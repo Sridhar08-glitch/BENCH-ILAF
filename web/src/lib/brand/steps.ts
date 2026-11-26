@@ -4,7 +4,7 @@ import { belowInfo, faceInfo, introInfo, COMPANY_COLOUR } from "@/lib/library";
 import { tk, type I18n, type MessageKey } from "@/lib/i18n";
 import type { FullBrand } from "./state";
 
-export type StepId = "company" | "colours" | "logo" | "artwork" | "style" | "finish";
+export type StepId = "style" | "company" | "logo" | "team" | "more";
 
 export interface StepDef {
   id: StepId;
@@ -14,17 +14,16 @@ export interface StepDef {
 }
 
 const ALL: StepDef[] = [
-  { id: "company", title: tk("brand.stepCompany"), hint: tk("brand.stepCompanyHint") },
-  { id: "colours", title: tk("brand.stepColours"), hint: tk("brand.stepColoursHint") },
+  { id: "style", title: tk("brand.stepLook"), hint: tk("brand.stepLookHint") },
+  { id: "company", title: tk("brand.stepDetails"), hint: tk("brand.stepDetailsHint") },
   { id: "logo", title: tk("brand.stepLogo"), hint: tk("brand.stepLogoHint") },
-  { id: "artwork", title: tk("brand.stepArtwork"), hint: tk("brand.stepArtworkHint") },
-  { id: "style", title: tk("brand.stepStyle"), hint: tk("brand.stepStyleHint") },
-  { id: "finish", title: tk("brand.stepFinish"), hint: tk("brand.stepFinishHint") },
+  { id: "team", title: tk("brand.stepTeam"), hint: tk("brand.stepTeamHint") },
+  { id: "more", title: tk("brand.stepMore"), hint: tk("brand.stepMoreHint") },
 ];
 
-/** A company goes through all six steps; a personal workspace only has the ones that apply to it. */
+/** The look comes first, then the details, as for a personal card. A company goes through all five steps; a personal workspace only has the ones that apply to it. */
 export function stepsFor(company: boolean): StepDef[] {
-  return company ? ALL : ALL.filter((s) => s.id === "company" || s.id === "style" || s.id === "finish");
+  return company ? ALL : ALL.filter((s) => s.id === "style" || s.id === "company" || s.id === "more");
 }
 
 export interface Flow {

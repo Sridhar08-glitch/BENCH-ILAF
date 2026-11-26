@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/Icon";
 import { DesignTab } from "@/components/editor/DesignTab";
 import type { EditorApi } from "@/components/editor/types";
@@ -14,6 +14,7 @@ import { TourButton } from "@/components/guide/TourButton";
 import { announce } from "@/lib/guide/api";
 import { ErrorBox, SkeletonBlocks, useToast } from "@/components/app/ui";
 import { useWs } from "@/components/app/WorkspaceContext";
+import { DomainPanel } from "@/components/brand/DomainPanel";
 import { ColoursPanel, LogoFilesPanel, LogoLookPanel, LookPanel, type Update } from "@/components/brand/BrandPanels";
 import s from "@/components/brand/brand.module.css";
 import { ApiError, api, isUpgradeError } from "@/lib/api";
@@ -25,9 +26,12 @@ import { brandPatch, fullBrand, type FullBrand } from "@/lib/brand/state";
 import { backStep, goTo, isDone, isFirst, isLast, nextLabel, nextStep, shouldWarnOnLeave, startFlow, stepsFor, summaryRows, type StepId } from "@/lib/brand/steps";
 import { useI18n } from "@/lib/i18n/client";
 import { clearDraft } from "@/lib/preview-bridge";
-import { keys, useWorkspaceDetail } from "@/lib/hooks";
+import { keys, keys as hooksKeys, useWorkspaceDetail } from "@/lib/hooks";
+import { presetOf, presetRules, ruleChanges, type RightsPreset } from "@/lib/ops/fields";
+import { ExtrasRule } from "@/components/ops/ExtrasRule";
+import { tk, type MessageKey } from "@/lib/i18n";
 import { toCompanyBrand } from "@/lib/library/company/brand";
-import type { ArtworkMode, Card, Design, WorkspaceDetail } from "@/lib/types";
+import type { ArtworkMode, Card, Design, FieldRules, WorkspaceDetail } from "@/lib/types";
 
 export default function BrandPage() {
   const { current } = useWs();
@@ -48,7 +52,6 @@ function BrandFlow({ ws }: { ws: WorkspaceDetail }) {
   const [flow, setFlow] = useState(startFlow);
   const [name, setName] = useState(ws.name);
   const [b, setB] = useState<FullBrand>(() => fullBrand(ws.brand));
-  const [domain, setDomain] = useState(ws.custom_domain ?? "");
   const [country, setCountry] = useState(ws.country ?? "");
   const [err, setErr] = useState<unknown>(null);
   const [dirty, setDirty] = useState(false);
@@ -58,7 +61,7 @@ function BrandFlow({ ws }: { ws: WorkspaceDetail }) {
   const top = useRef<HTMLDivElement>(null);
 
   const save = useMutation({
-    mutationFn: () => api.updateWorkspace(ws.id, { name: name.trim(), brand: brandPatch(b, company), custom_domain: domain.trim() || null, ...(company ? { country: country || null } : {}) }),
+    mutationFn: () => api.updateWorkspace(ws.id, { name: name.trim(), brand: brandPatch(b, company), ...(company ? { country: country || null } : {}) }),
     onSuccess: (w) => {
       qc.setQueryData(keys.workspace(ws.id), w);
       void qc.invalidateQueries({ queryKey: keys.workspaces });
@@ -214,8 +217,8 @@ function BrandFlow({ ws }: { ws: WorkspaceDetail }) {
             <p className="sub">{t(step.hint)}</p>
           </div>
           <StepBody
-            id={step.id} company={company} name={name} setName={(v) => { setName(v); setDirty(true); }} domain={domain} setDomain={(v) => { setDomain(v); setDirty(true); }} country={country} setCountry={(v) => { setCountry(v); setDirty(true); }}
-            b={b} change={change} panels={panels} measured={measured} panel={panel} setPanel={setPanel} ed={ed} update={update} workspaceName={ws.name} donePath={donePath}
+            id={step.id} company={company} name={name} setName={(v) => { setName(v); setDirty(true); }} country={country} setCountry={(v) => { setCountry(v); setDirty(true); }}
+            b={b} change={change} panels={panels} measured={measured} panel={panel} setPanel={setPanel} ed={ed} update={update} workspaceName={ws.name} donePath={donePath} wsId={ws.id}
           />
         </section>
 
@@ -253,8 +256,6 @@ interface BodyProps {
   company: boolean;
   name: string;
   setName: (v: string) => void;
-  domain: string;
-  setDomain: (v: string) => void;
   country: string;
   setCountry: (v: string) => void;
   b: FullBrand;
@@ -267,35 +268,13 @@ interface BodyProps {
   ed: EditorApi;
   workspaceName: string;
   donePath: string;
+  wsId: string;
 }
 
 /** The controls of one step. Only the step on screen is drawn. */
-function StepBody({ id, company, name, setName, domain, setDomain, country, setCountry, b, change, update, panels, measured, panel, setPanel, ed, workspaceName, donePath }: BodyProps) {
+function StepBody({ id, company, name, setName, country, setCountry, b, change, update, panels, measured, panel, setPanel, ed, workspaceName, donePath, wsId }: BodyProps) {
   const { t, number, locale } = useI18n();
-  if (id === "company") {
-    return (
-      <div className="pane">
-        <label>{t("brand.workspaceName")}<input dir="auto" value={name} onChange={(e) => setName(e.target.value)} /></label>
-        {company && <CountrySelect value={country} onChange={setCountry} />}
-        <div className="two">
-          <label>{t("brand.companyNameOnCards")}<input dir="auto" value={b.company_name} onChange={(e) => change({ company_name: e.target.value })} /></label>
-          <label>{t("brand.website")}<input className="ltr" value={b.website} placeholder="company.com" onChange={(e) => change({ website: e.target.value })} /></label>
-        </div>
-        <label>
-          {t("brand.customDomain")}
-          <input className="ltr" value={domain} placeholder="card.company.com" onChange={(e) => setDomain(e.target.value)} />
-        </label>
-        <div className="hint">{t("brand.domainHint")}</div>
-        <div className={s.sub}>
-          <h3>{t("brand.logoAndSymbol")}</h3>
-          <LogoFilesPanel {...panels} simple={!company} />
-        </div>
-      </div>
-    );
-  }
-  if (id === "colours") return <ColoursPanel {...panels} />;
-  if (id === "logo") return <LogoLookPanel b={b} update={update} />;
-  if (id === "artwork") return <LookPanel {...panels} measured={measured} panel={panel} setPanel={setPanel} />;
+  const { has } = useWs();
   if (id === "style") {
     return (
       <div className="pane">
@@ -309,20 +288,60 @@ function StepBody({ id, company, name, setName, domain, setDomain, country, setC
       </div>
     );
   }
+  if (id === "company") {
+    return (
+      <div className="pane">
+        {company ? <CountrySelect value={country} onChange={setCountry} /> : null}
+        <label>{t("brand.companyNameOnCards")}<input dir="auto" value={b.company_name} onChange={(e) => change({ company_name: e.target.value })} /></label>
+        <div className={s.sub}>
+          <h3>{t("brand.logoAndSymbol")}</h3>
+          <LogoFilesPanel {...panels} simple={!company} />
+        </div>
+        {company && (
+          <div className={s.sub}>
+            <h3>{t("brand.detailsColours")}</h3>
+            <ColoursPanel {...panels} />
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (id === "logo") return <LogoLookPanel b={b} update={update} />;
+  if (id === "team") return <TeamStep wsId={wsId} />;
   return (
     <div className="pane">
-      <div>
-        <ToggleRow first title={t("brand.lockDesign")} hint={t("brand.lockDesignHint")} checked={b.lock_design} onChange={(v) => change({ lock_design: v })} />
-        {company && b.lock_design && (
-          <ToggleRow title={t("brand.lockDepts")} hint={t("brand.lockDeptsHint")} checked={!!b.lock_allows_departments} onChange={(v) => change({ lock_allows_departments: v })} />
-        )}
-        <ToggleRow title={t("brand.poweredBy")} checked={b.show_footer} onChange={(v) => change({ show_footer: v })} />
-      </div>
-      <dl className={s.summary}>
-        {summaryRows(b, workspaceName, company, { t, number }, countryName(country, locale)).map((r) => (
-          <div key={r.label}><dt>{r.label}</dt><dd dir="auto">{r.value}</dd></div>
-        ))}
-      </dl>
+      <details className={s.more} open>
+        <summary>{t("brand.moreCompany")}</summary>
+        <div className="pane">
+          <label>{t("brand.workspaceName")}<input dir="auto" value={name} onChange={(e) => setName(e.target.value)} /></label>
+          <label>{t("brand.website")}<input className="ltr" value={b.website} placeholder="company.com" onChange={(e) => change({ website: e.target.value })} /></label>
+          {company && <DomainPanel wsId={wsId} allowed={has("custom_domain")} />}
+        </div>
+      </details>
+      {company && (
+        <details className={s.more}>
+          <summary>{t("brand.moreArtwork")}</summary>
+          <LookPanel {...panels} measured={measured} panel={panel} setPanel={setPanel} />
+        </details>
+      )}
+      <details className={s.more}>
+        <summary>{t("brand.moreLock")}</summary>
+        <div>
+          <ToggleRow first title={t("brand.lockDesign")} hint={t("brand.lockDesignHint")} checked={b.lock_design} onChange={(v) => change({ lock_design: v })} />
+          {company && b.lock_design && (
+            <ToggleRow title={t("brand.lockDepts")} hint={t("brand.lockDeptsHint")} checked={!!b.lock_allows_departments} onChange={(v) => change({ lock_allows_departments: v })} />
+          )}
+          <ToggleRow title={t("brand.poweredBy")} checked={b.show_footer} onChange={(v) => change({ show_footer: v })} />
+        </div>
+      </details>
+      <details className={s.more}>
+        <summary>{t("brand.moreSummary")}</summary>
+        <dl className={s.summary}>
+          {summaryRows(b, workspaceName, company, { t, number }, countryName(country, locale)).map((r) => (
+            <div key={r.label}><dt>{r.label}</dt><dd dir="auto">{r.value}</dd></div>
+          ))}
+        </dl>
+      </details>
       <div className="notice" role="status">
         <Icon name="users" />
         <div className="grow">
@@ -330,6 +349,50 @@ function StepBody({ id, company, name, setName, domain, setDomain, country, setC
           {t("brand.nextInviteText")}
           {company && <div style={{ marginBlockStart: 8 }}><Link className="btn ghost sm" href={donePath}>{t("brand.goToTeam")}</Link></div>}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** How much people can change on their own cards, as one choice. The rules are saved at once (they are not part of the brand's Save). */
+function TeamStep({ wsId }: { wsId: string }) {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const q = useQuery({ queryKey: hooksKeys.fieldRules(wsId), queryFn: () => api.fieldRules(wsId) });
+  const save = useMutation({
+    mutationFn: (p: RightsPreset) => api.updateFieldRules(wsId, ruleChanges(q.data as FieldRules, presetRules(p, q.data as FieldRules))),
+    onSuccess: (r) => {
+      qc.setQueryData(hooksKeys.fieldRules(wsId), r);
+      toast(t("brand.rightsSaved"));
+    },
+    onError: () => toast(t("brand.rightsFailed")),
+  });
+  if (q.isLoading) return <SkeletonBlocks rows={2} />;
+  if (q.error || !q.data) return <ErrorBox error={q.error} onRetry={() => void q.refetch()} />;
+  const now = presetOf(q.data);
+  const options: [RightsPreset, MessageKey, MessageKey][] = [
+    ["free", tk("brand.rightsFree"), tk("brand.rightsFreeHint")],
+    ["approval", tk("brand.rightsApproval"), tk("brand.rightsApprovalHint")],
+    ["locked", tk("brand.rightsLocked"), tk("brand.rightsLockedHint")],
+  ];
+  return (
+    <div className="pane">
+      <h3>{t("brand.rightsTitle")}</h3>
+      <div role="radiogroup" aria-label={t("brand.rightsTitle")} className={s.rights}>
+        {options.map(([v, title, hint]) => (
+          <button key={v} type="button" role="radio" aria-checked={now === v} className={`${s.right} ${now === v ? s.rightOn : ""}`} disabled={save.isPending} onClick={() => now !== v && save.mutate(v)}>
+            <b>{t(title)}</b>
+            <small>{t(hint)}</small>
+          </button>
+        ))}
+      </div>
+      {now === null && <div className={s.note} role="status"><b>{t("brand.rightsCustom")}</b> {t("brand.rightsCustomHint")}</div>}
+      <p className="hint">{t("brand.rightsNote")}</p>
+      <ExtrasRule wsId={wsId} />
+      <div className="row">
+        <Link className="btn" href="/app/team">{t("brand.rightsInvite")}</Link>
+        <Link className="btn ghost" href="/app/fields">{t("brand.rightsPerField")}</Link>
       </div>
     </div>
   );

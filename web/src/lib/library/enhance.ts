@@ -245,7 +245,8 @@ function refineCard(card: HTMLElement) {
         const bgs = pts.map((p) => bgAt(mea, fr, r[0] + (r[2] - r[0]) * p[0], r[1] + (r[3] - r[1]) * p[1]));
         return surf ? bgs.map((b) => (b && b.toLowerCase() === pbg ? surf : b)) : bgs;
       };
-      const pl = plan(specs, (s) => place({ spec: s, pref, setting, obstacles, bgsAt, own, fallbackBgs: [] }));
+      const size = Number(front.dataset.size || 100) / 100;
+      const pl = plan(specs, (s) => place({ spec: s, pref, setting, obstacles, bgsAt, own, fallbackBgs: [], size }));
       const backEl = card.querySelector<HTMLElement>('.colg[data-co="back"]');
       const head = card.closest(".cfl")?.querySelector<HTMLElement>(".cohead");
       if (pl.moved) {

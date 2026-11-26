@@ -11,7 +11,9 @@ export interface Design {
   custom_face?: number | null;
   /** 0 to 3 pick one of the face's own four colourways; 4 is the company colours (only with a company palette) */
   colour: number;
-  /** 1 to 400, how the area below the card is laid out */
+  /** 0 is the classic face card; 1 to 27 draw a photo header from the page styles in its place (paid plans) */
+  top: number;
+  /** 1 to 427, how the area below the card is laid out (401 to 427 are the button sets of the page styles) */
   below: number;
   /** 0 to 400, the opening animation (0 = none, 1 = fade-up) */
   intro: number;
@@ -70,7 +72,8 @@ export interface CardStats {
   views: number;
   scans: number;
   saves: number;
-  leads: number;
+  /** The number of contacts. null when the reader may not see this card's contacts (an owner or admin on an employee's card). */
+  leads: number | null;
 }
 
 export interface Card {
@@ -86,10 +89,14 @@ export interface Card {
   sort_order?: number;
   /** The card "My QR" and event mode open first. */
   is_default?: boolean;
+  /** The company's own card (it belongs to the company, not to a person). */
+  is_company?: boolean;
   name: string;
   title: string;
   company: string;
   address: string;
+  /** A short text about the person (at most 300 characters), shown by the page-style headers. */
+  bio?: string;
   photo_url: string | null;
   cover_url?: string | null;
   save_contact: boolean;
@@ -172,6 +179,61 @@ export interface Subscription {
   ends_at: string | null;
   grace_ends_at: string | null;
   live: boolean;
+  /** Stripe charges again at `renews_at` (the end of the period) until the owner turns it off. */
+  auto_renew?: boolean;
+  /** The owner switched the renewal off: the period runs to `ends_at` and stops. */
+  cancel_at_period_end?: boolean;
+  renews_at?: string | null;
+  /** The last renewal payment failed: the owner must fix the payment method. */
+  payment_failed?: boolean;
+  /** A Stripe customer exists: the owner can open the billing portal. */
+  can_manage_billing?: boolean;
+  /** The company may use the Enterprise-only features (Enterprise plan, or a Company period bought before Enterprise existed). */
+  enterprise?: boolean;
+  grandfathered?: boolean;
+  features?: Partial<Record<EnterpriseFeature, boolean>>;
+}
+
+export type CustomDomainStatus = "pending" | "verified" | "failed" | "expired" | "dns_broken";
+export interface DnsRecord { type: "TXT" | "CNAME" | "A"; name: string; value: string }
+/** A company's custom-domain claim (API_CONTRACT.md, "Custom domains"). */
+export interface CustomDomainInfo {
+  domain: string;
+  status: CustomDomainStatus;
+  /** The domain is answering visitors right now (verified or in its grace period, and the plan is Enterprise-live). */
+  serving: boolean;
+  verified_at: string | null;
+  last_checked_at: string | null;
+  /** txt_missing, txt_mismatch, cname_missing, cname_wrong, dns_error, domain_taken, dns_released; null when the last check was fine. */
+  last_error: string | null;
+  last_error_message: string | null;
+  expires_at: string | null;
+  grace_ends_at: string | null;
+  records: { txt: DnsRecord; cname: DnsRecord; a: DnsRecord[]; apex: boolean };
+  url: string;
+}
+export interface DomainCheckResult { ok: boolean; reason: string | null; txt_ok: boolean; routing_ok: boolean; message: string | null }
+
+export type EnterpriseFeature = "departments" | "directory" | "field_rules" | "activity_log" | "integrations" | "custom_domain" | "sign_in_rules";
+
+export type EnterpriseStatus = "requested" | "quoted" | "accepted" | "declined" | "cancelled";
+/** A company's request for an Enterprise quote and, once staff answered, the quote (price per seat, per year). */
+export interface EnterpriseRequest {
+  id: string;
+  status: EnterpriseStatus;
+  seats_wanted: number;
+  message: string;
+  phone: string;
+  quoted_seats: number | null;
+  quoted_price_per_seat_minor: number | null;
+  quoted_total_minor: number | null;
+  currency: string;
+  interval: string;
+  staff_note: string;
+  seats_used: number;
+  created_at: string;
+  quoted_at: string | null;
+  decided_at: string | null;
 }
 
 export type Role = "owner" | "admin" | "employee";
@@ -190,6 +252,8 @@ export interface BrandColours {
   primary: string;
   accent: string;
   mode: BrandMode;
+  /** The owner's own text colour; absent means the text colour is worked out so it is always readable. */
+  text?: string;
 }
 /** The five card colours made from the brand colours, all "#rrggbb". */
 export interface BrandPalette {
@@ -203,6 +267,14 @@ export type LogoDisplay = "auto" | "symbol" | "symbol_name" | "full";
 export type LogoPlacement = "card" | "above" | "both";
 export type LogoCorner = "auto" | "tl" | "tr" | "bl" | "br";
 export type LogoChip = "auto" | "always" | "never" | "white" | "black";
+/** Where the owner put the logo on one design: left and top, and the width, in percent of the card. */
+export interface LogoSpot {
+  x: number;
+  y: number;
+  w: number;
+}
+/** The places the owner gave the logo, by design: "f12" is card face 12, "t3" is page style 3. */
+export type LogoFree = Record<string, LogoSpot>;
 export type ArtworkMode = "none" | "background" | "pattern" | "template";
 export type TemplateZone = "A" | "B" | "C" | "D";
 
@@ -222,6 +294,9 @@ export interface BrandLook {
   logo_corner?: LogoCorner;
   logo_chip?: LogoChip;
   show_company_name?: boolean;
+  /** The logo's size as a percentage of its automatic size (50 to 150). */
+  logo_size?: number;
+  logo_free?: LogoFree;
   artwork?: BrandArtwork;
   logo_url?: string | null;
   symbol_url?: string | null;
@@ -251,7 +326,10 @@ export interface WorkspaceDetail {
   country?: string | null;
   role: Role;
   brand: Brand;
+  /** The company's own domain once it is VERIFIED, else null. */
   custom_domain: string | null;
+  /** The claim with what to add to DNS (owner and admin of a company only). */
+  custom_domain_info?: CustomDomainInfo | null;
   subscription: Subscription;
   /** Company sign-in rules (owner and admins of a company only), and the deletion date when one is scheduled. */
   security?: {
@@ -280,6 +358,10 @@ export interface Plan {
   per_seat: boolean;
   min_seats: number;
   features: string[];
+  /** false for the free trial plan and the retired Business plan: they are never offered for purchase. */
+  purchasable?: boolean;
+  /** Enterprise: no list price, the company asks for a quote. */
+  by_quote?: boolean;
 }
 
 export interface Invoice {
@@ -306,6 +388,17 @@ export interface Member {
   invite_sent_at?: string | null;
   can_resend_at?: string | null;
   joined_at: string | null;
+  /** Whether this employee shares their new contacts with the company (null for owners and admins). Only the employee can change it. */
+  share_contacts?: boolean | null;
+}
+
+/** The caller's own place in a company: the employee's "share my new contacts with the company" switch. */
+export interface MyMembership {
+  member_id: string;
+  role: Role;
+  can_share_contacts: boolean;
+  share_contacts: boolean;
+  share_contacts_changed_at: string | null;
 }
 
 export type LeadStatus = "new" | "contacted" | "qualified" | "won" | "lost";
@@ -331,6 +424,8 @@ export interface Lead {
   assigned_at?: string | null;
   consented_at?: string | null;
   note_count?: number;
+  /** The card holder shared this contact with the company (their switch was on when it arrived). */
+  shared_with_company?: boolean;
   created_at: string;
 }
 
@@ -354,7 +449,7 @@ export interface Analytics {
   devices: { key: "ios" | "android" | "desktop" | "other"; count: number }[];
   hours: number[];
   top_buttons: { kind: string; count: number }[];
-  cards: { card_id: string; name: string; views: number; saves: number; leads: number }[];
+  cards: { card_id: string; name: string; views: number; saves: number; leads: number; leads_visible?: boolean }[];
 }
 
 // ---- public card page
@@ -364,6 +459,7 @@ export interface PublicCardData {
   title: string;
   company: string;
   address: string;
+  bio?: string;
   photo_url: string | null;
   cover_url?: string | null;
   items: { kind: ItemKind; value: string; label: string; icon?: ItemIcon | null }[];
@@ -408,12 +504,26 @@ export interface MandatoryButton {
 }
 
 /** What an employee may do on their card, as the card payload tells the editor. */
+/** What the menu shows for orders and bookings, and the extras a person may add. */
+export interface CommerceAccess {
+  orders: boolean;
+  bookings: boolean;
+  extras: ExtraKind[];
+}
+
+/** The extras that can go under a card. */
+export type ExtraKind = "video" | "products" | "hours" | "booking" | "team" | "gallery" | "event" | "map";
+export const EXTRA_KINDS: readonly ExtraKind[] = ["video", "products", "hours", "booking", "team", "gallery", "event", "map"];
+export type ExtrasMode = "all" | "some" | "none";
+
 export interface FieldAccess {
   name: FieldPermission;
   title: FieldPermission;
   photo: FieldPermission;
   company: FieldPermission;
   address: FieldPermission;
+  /** The short bio follows the address rule; the API may leave it out. */
+  bio?: FieldPermission;
   /** The web address, the card features (exchange form) and the contact-file options: free or locked. */
   slug: FieldPermission;
   features: FieldPermission;
@@ -422,6 +532,8 @@ export interface FieldAccess {
   allowed_kinds: ItemKind[] | null;
   banned_domains: string[];
   mandatory_buttons: MandatoryButton[];
+  /** The extras (video, shop, hours ...) this person may add to their card. The API may leave it out for older answers: everything is then allowed. */
+  extras?: ExtraKind[];
 }
 
 export interface PendingChange {
@@ -447,6 +559,9 @@ export interface FieldRules {
   allowed_kinds: ItemKind[] | null;
   banned_domains: string[];
   mandatory_buttons: MandatoryButton[];
+  /** What employees may add under their cards: everything, only the kinds in extra_kinds, or nothing. */
+  extras: ExtrasMode;
+  extra_kinds: ExtraKind[];
 }
 
 export type ChangeStatus = "pending" | "approved" | "rejected" | "withdrawn" | "superseded";
@@ -459,7 +574,7 @@ export interface ChangeRequest {
   id: string;
   card_id: string;
   card_name: string;
-  field: "name" | "title" | "company" | "address" | "photo" | "buttons";
+  field: "name" | "title" | "company" | "address" | "bio" | "photo" | "buttons";
   old: unknown;
   new: unknown;
   status: ChangeStatus;
@@ -544,6 +659,8 @@ export interface DirectoryPage {
     show_company_name: boolean;
     /** The company's proven e-mail domain, or null. */
     verified_domain?: string | null;
+    /** Where the directory lives: the company's own domain once verified, else the Bench /d/<slug> address. */
+    url?: string | null;
   };
   total: number;
   count: number;

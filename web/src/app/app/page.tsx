@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { GettingStarted } from "@/components/guide/GettingStarted";
+import { TeamPrompt } from "@/components/app/TeamPrompt";
 import { announce } from "@/lib/guide/api";
 import { Bars, COLORS, LineChart, Spark, delta } from "@/components/app/charts";
 import { Empty, ErrorBox, PageHead, QrPreview, SkeletonBlocks } from "@/components/app/ui";
 import { useWs } from "@/components/app/WorkspaceContext";
 import { useAnalytics, useCards, useLeads, usePlans } from "@/lib/hooks";
 import { platformName } from "@/lib/card/catalogue";
-import { PUBLIC_HOST } from "@/lib/config";
+import { shortAddress } from "@/lib/card-address";
 import { useI18n } from "@/lib/i18n/client";
 
 export default function OverviewPage() {
@@ -47,11 +48,12 @@ export default function OverviewPage() {
         title={t("dash.hello", { name: first })}
         sub={a ? t("dash.heroViews", { views: a.totals.views, period: t("analytics.rangeDays", { days }) }) : t("dash.heroDefault")}
       >
-        <Link className="btn ghost" href="/app/qr"><Icon name="share" size="s" />{t("common.share")}</Link>
+        <Link className="btn ghost" href="/app/share"><Icon name="share" size="s" />{t("common.share")}</Link>
         <Link className="btn" href="/app/cards"><Icon name="card" size="s" />{t("dash.editCards")}</Link>
       </PageHead>
 
       <GettingStarted />
+      <TeamPrompt />
 
       {analytics.isLoading ? (
         <SkeletonBlocks rows={2} />
@@ -110,10 +112,10 @@ export default function OverviewPage() {
                 <div className="li" key={c.id}>
                   <span className="mq"><QrPreview text={c.public_url} label={t("dash.uiQrFor", { text: c.name })} /></span>
                   <div className="t">
-                    <b dir="auto">{c.name || t("cards.untitled")}</b>
-                    <small><span className="ltr">{PUBLIC_HOST}/{c.slug ?? c.public_code}</span> &middot; {t("dash.viewsCount", { n: c.stats.views })}</small>
+                    <b dir="auto">{c.name || t("cards.untitled")}{c.is_company && <span className="pill dark" style={{ marginInlineStart: 8 }}>{t("cards.companyCardPill")}</span>}</b>
+                    <small><span className="ltr">{shortAddress(c)}</span> &middot; {t("dash.viewsCount", { n: c.stats.views })}</small>
                   </div>
-                  <Link className="btn ghost sm" href={`/app/qr?card=${c.id}`}>QR</Link>
+                  <Link className="btn ghost sm" href={`/app/share?card=${c.id}`}>QR</Link>
                 </div>
               ))}
             </div>

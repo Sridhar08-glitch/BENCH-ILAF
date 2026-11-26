@@ -1,5 +1,6 @@
 "use client";
 
+import { EnterpriseGate } from "@/components/app/EnterpriseLock";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/Icon";
@@ -13,7 +14,7 @@ import { ACTION_GROUPS, EMPTY_FILTERS, actorName, describeEvent, hasFilters, las
 
 const PAGE_SIZE = 25;
 
-export default function ActivityPage() {
+function ActivityPageContent() {
   const { current, isManager, isCompany } = useWs();
   const i18n = useI18n();
   const { t } = i18n;
@@ -109,4 +110,9 @@ export default function ActivityPage() {
       </div>
     </div>
   );
+}
+
+export default function ActivityPage() {
+  const { t } = useI18n();
+  return <EnterpriseGate feature="activity_log" title={t("company.actTitle")} sub={t("company.actSubShort")}><ActivityPageContent /></EnterpriseGate>;
 }

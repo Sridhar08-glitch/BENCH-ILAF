@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { APP_NAME, WEB_URL } from "@/lib/config";
 import { fetchDirectory } from "@/lib/public-api";
+import { getCustomHost } from "@/lib/server/custom-host";
+import { cardHref, directoryHref } from "@/lib/card-address";
 import { VerifiedBadge } from "@/components/card/VerifiedBadge";
 import { getI18n } from "@/lib/i18n/server";
 import { directoryMeta, directoryPath, directoryQuery, parsePage, resultsLine } from "@/lib/ops/directory";
@@ -21,10 +23,12 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const { slug } = await params;
   const sp = await searchParams;
   const { t } = await getI18n();
-  const data = await fetchDirectory(slug, {}).catch(() => null);
+  const { host } = await getCustomHost();
+  const data = await fetchDirectory(slug, {}, host).catch(() => null);
   if (!data) return { title: t("company.pubNotFound"), robots: { index: false } };
   const meta = directoryMeta(data.company.name, data.total, t);
-  const url = `${WEB_URL}${directoryPath(data.company.slug)}`;
+  // The API says where the directory lives: the company's own domain (its root) once verified, else the Bench /d/<slug> address.
+  const url = data.company.url || `${WEB_URL}${directoryPath(data.company.slug)}`;
   // Only the plain first page is for search engines; searches and later pages point back to it.
   const plain = !first(sp.q) && !first(sp.department) && parsePage(sp.page) === 1;
   return {
@@ -53,7 +57,8 @@ export default async function DirectoryPage({ params, searchParams }: Props) {
   const q = first(sp.q).slice(0, 80);
   const department = first(sp.department);
   const page = parsePage(sp.page);
-  const data = await fetchDirectory(slug, { q, department, page });
+  const { host } = await getCustomHost();
+  const data = await fetchDirectory(slug, { q, department, page }, host);
   if (!data) notFound();
 
   const { company } = data;
@@ -68,7 +73,7 @@ export default async function DirectoryPage({ params, searchParams }: Props) {
     "--d-line": "color-mix(in srgb, var(--d-fg) 18%, var(--d-bg))",
   } as CSSProperties;
   const logo = company.logo_url ?? company.symbol_url;
-  const base = directoryPath(company.slug);
+  const base = directoryHref(company.slug, host);
   const hasFilter = !!q || !!department;
   const [footBefore = "", footAfter = ""] = t("company.pubFooter", { app: "\u0001" }).split("\u0001");
   const prev = page > 1 ? `${base}${directoryQuery({ q, department, page: page - 1 })}` : null;
@@ -129,7 +134,7 @@ export default async function DirectoryPage({ params, searchParams }: Props) {
           <ul className={styles.grid}>
             {data.results.map((p) => (
               <li key={p.code}>
-                <Link className={styles.person} href={`/c/${p.code}`}>
+                <Link className={styles.person} href={cardHref(p.code, host)}>
                   <span className={styles.photo} aria-hidden="true">{p.photo_url ? <img src={p.photo_url} alt="" loading="lazy" /> : initials(p.name)}</span>
                   <span className={styles.who}>
                     <b dir="auto">{p.name}</b>

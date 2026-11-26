@@ -27,7 +27,7 @@ export function emptyContext(): GuideContext {
   return {
     is_company: false, is_manager: false, card_id: null, cards_count: 0, published_count: 0,
     has_name: false, has_title: false, has_photo: false, items_count: 0, design_changed: false, card_published: false,
-    shared_qr_opened: false, signature_copied: false, background_opened: false, approval_sent: false,
+    shared_qr_opened: false, signature_copied: false, approval_sent: false,
     brand_logo_set: false, brand_colours_set: false, brand_style_set: false, lock_enabled: false,
     team_size: 0, invites_sent: 0, members_active: 0, departments_count: 0, leads_count: 0, webhooks_count: 0,
     directory_enabled: false, approval_rules: false, invite_accepted: false,
@@ -69,7 +69,6 @@ export function buildContext(input: GuideInput): GuideContext {
   ctx.card_published = mine?.status === "published";
   ctx.shared_qr_opened = !!flags.shared_qr_opened;
   ctx.signature_copied = !!flags.signature_copied;
-  ctx.background_opened = !!flags.background_opened;
   ctx.approval_sent = !!flags.approval_sent;
 
   const brand = input.brand;

@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/Icon";
 import { useWs } from "./WorkspaceContext";
 import { useI18n } from "@/lib/i18n/client";
-import { BELL_POLL_MS, bellApi, bellBadge, bellInterval, bellItemKey, bellKey, onContactsPage, type BellData, type BellItem } from "@/lib/leadBell";
+import { BELL_POLL_MS, bellApi, bellBadge, bellInterval, bellItemKey, bellKey, bellTotal, onContactsPage, type BellData, type BellItem } from "@/lib/leadBell";
 import s from "./LeadBell.module.css";
 
 export function LeadBell() {
@@ -19,6 +19,7 @@ export function LeadBell() {
   const [open, setOpen] = useState(false);
   // The list as it was when the person opened it: the server forgets it as soon as it is marked seen.
   const [shown, setShown] = useState<BellItem[]>([]);
+  const [shownCounts, setShownCounts] = useState({ orders: 0, bookings: 0 });
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   // A closed or suspended company has no contacts to show, so nothing is asked.
@@ -34,12 +35,12 @@ export function LeadBell() {
     refetchInterval: () => bellInterval(active, typeof document !== "undefined" && document.hidden),
   });
   const data = query.isError ? undefined : query.data;
-  const unread = data?.unread ?? 0;
+  const unread = bellTotal(data);
   const badge = bellBadge(unread);
 
   const seen = useMutation({
     mutationFn: () => bellApi.seen(current.id),
-    onSuccess: () => qc.setQueryData<BellData>(bellKey(current.id), { unread: 0, latest: [] }),
+    onSuccess: () => qc.setQueryData<BellData>(bellKey(current.id), { unread: 0, latest: [], orders: 0, bookings: 0 }),
   });
   const markSeen = seen.mutate;
 
@@ -50,8 +51,8 @@ export function LeadBell() {
   // Being on the Contacts page is looking at the contacts.
   const onContacts = onContactsPage(pathname);
   useEffect(() => {
-    if (active && onContacts && unread > 0) markSeen();
-  }, [active, onContacts, unread, markSeen]);
+    if (active && onContacts && (data?.unread ?? 0) > 0) markSeen();
+  }, [active, onContacts, data?.unread, markSeen]);
 
   useEffect(() => {
     if (!open) return;
@@ -75,6 +76,7 @@ export function LeadBell() {
   function toggle() {
     if (!open) {
       setShown(data?.latest ?? []);
+      setShownCounts({ orders: data?.orders ?? 0, bookings: data?.bookings ?? 0 });
       if (unread > 0) markSeen();
     }
     setOpen((o) => !o);
@@ -91,9 +93,29 @@ export function LeadBell() {
       {open && (
         <div className={s.pop} role="dialog" aria-label={t("shell.bell.title")}>
           <b className={s.head}>{t("shell.bell.title")}</b>
-          {shown.length === 0 ? (
+          {(shownCounts.orders > 0 || shownCounts.bookings > 0) && (
+            <ul className={s.list}>
+              {shownCounts.orders > 0 && (
+                <li>
+                  <Link href="/app/orders" className={s.item} onClick={() => setOpen(false)}>
+                    <span className={s.dot} aria-hidden="true"><Icon name="gem" size="s" /></span>
+                    <span className={s.text}><span className={s.name}>{t("commerce.bellOrders", { n: shownCounts.orders })}</span></span>
+                  </Link>
+                </li>
+              )}
+              {shownCounts.bookings > 0 && (
+                <li>
+                  <Link href="/app/bookings" className={s.item} onClick={() => setOpen(false)}>
+                    <span className={s.dot} aria-hidden="true"><Icon name="clock" size="s" /></span>
+                    <span className={s.text}><span className={s.name}>{t("commerce.bellBookings", { n: shownCounts.bookings })}</span></span>
+                  </Link>
+                </li>
+              )}
+            </ul>
+          )}
+          {shown.length === 0 && shownCounts.orders === 0 && shownCounts.bookings === 0 ? (
             <p className={s.empty}>{t("shell.bell.empty")}</p>
-          ) : (
+          ) : shown.length === 0 ? null : (
             <ul className={s.list}>
               {shown.map((l) => (
                 <li key={l.id}>

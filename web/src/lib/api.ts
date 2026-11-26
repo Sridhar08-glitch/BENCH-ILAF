@@ -4,8 +4,8 @@ import { noteThrottle, parseRetryAfter, secondsLeft } from "@/lib/throttle";
 // Browser calls go to this app's /api/proxy, which adds the signed-in token. One error type carries
 // the contract's error fields (code, message, fields).
 import type {
-  Analytics, AuditPage, BulkResult, Card, CardPatch, ChangeRequest, ChangeStatus, Department, DepartmentDesign, FieldRules, Invoice, Lead,
-  LeadSettings, LeadStatus, Member, MandatoryButton, Plan, Role, Subscription, User, WorkspaceDetail, WorkspaceSummary, Brand, BrandArtwork,
+  Analytics, AuditPage, BulkResult, Card, CardPatch, ChangeRequest, CommerceAccess, ChangeStatus, CustomDomainInfo, Department, DepartmentDesign, DomainCheckResult, EnterpriseRequest, FieldRules, Invoice, Lead,
+  LeadSettings, LeadStatus, Member, MyMembership, MandatoryButton, Plan, Role, Subscription, User, WorkspaceDetail, WorkspaceSummary, Brand, BrandArtwork,
 } from "./types";
 
 export class ApiError extends Error {
@@ -83,7 +83,7 @@ export { waitingError };
 type Query = Record<string, string | number | boolean | undefined | null>;
 
 interface Options {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   form?: FormData;
   query?: Query;
@@ -244,12 +244,23 @@ export const api = {
     request<{ checkout_url: string }>(`workspaces/${ws}/checkout`, { method: "POST", body: { plan_code, seats } }),
   subscription: (ws: string) => request<Subscription>(`workspaces/${ws}/subscription`),
   invoices: (ws: string) => request<Invoice[]>(`workspaces/${ws}/invoices`),
+  billingPortal: (ws: string) => request<{ url: string }>(`workspaces/${ws}/billing-portal`, { method: "POST" }),
+  enterpriseRequest: (ws: string) => request<{ request: EnterpriseRequest | null }>(`workspaces/${ws}/enterprise-request`),
+  requestEnterprise: (ws: string, b: { seats_wanted: number; message?: string; phone?: string }) =>
+    request<{ request: EnterpriseRequest | null }>(`workspaces/${ws}/enterprise-request`, { method: "POST", body: b }),
+  cancelEnterprise: (ws: string) => request<{ request: EnterpriseRequest | null }>(`workspaces/${ws}/enterprise-request`, { method: "DELETE" }),
+  acceptEnterprise: (ws: string) => request<{ checkout_url: string }>(`workspaces/${ws}/enterprise-request/accept`, { method: "POST" }),
 
   // workspaces
   createWorkspace: (name: string, country?: string) => request<WorkspaceDetail>("workspaces", { method: "POST", body: country ? { name, country } : { name } }),
   workspace: (ws: string) => request<WorkspaceDetail>(`workspaces/${ws}`),
   updateWorkspace: (ws: string, b: { name?: string; brand?: BrandPatch; custom_domain?: string | null; country?: string | null }) =>
     request<WorkspaceDetail>(`workspaces/${ws}`, { method: "PATCH", body: b }),
+  // custom domain (Enterprise): the claim, the DNS records to add, a DNS check on demand
+  domain: (ws: string) => request<{ domain: CustomDomainInfo | null }>(`workspaces/${ws}/domain`),
+  setDomain: (ws: string, domain: string) => request<{ domain: CustomDomainInfo }>(`workspaces/${ws}/domain`, { method: "PUT", body: { domain } }),
+  removeDomain: (ws: string) => request<void>(`workspaces/${ws}/domain`, { method: "DELETE" }),
+  checkDomain: (ws: string) => request<{ domain: CustomDomainInfo; result: DomainCheckResult }>(`workspaces/${ws}/domain/check`, { method: "POST" }),
   uploadLogo: (ws: string, file: File | Blob) => {
     const f = new FormData();
     f.append("file", file, file instanceof File ? file.name : "logo.png");
@@ -267,6 +278,10 @@ export const api = {
   // cards
   cards: (ws: string) => request<Card[]>(`workspaces/${ws}/cards`),
   createCard: (ws: string, b: CardPatch = {}) => request<Card>(`workspaces/${ws}/cards`, { method: "POST", body: b }),
+  /** The company's own card (owners and admins). Asking again answers the card that exists. */
+  companyCard: (ws: string) => request<Card>(`workspaces/${ws}/company-card`, { method: "POST" }),
+  /** Which of the Orders and Bookings pages this person has, and the extras their company lets them add. */
+  commerceAccess: (ws: string) => request<CommerceAccess>(`workspaces/${ws}/commerce-access`),
   card: (id: string) => request<Card>(`cards/${id}`),
   updateCard: (id: string, b: CardPatch) => request<Card>(`cards/${id}`, { method: "PATCH", body: b }),
   deleteCard: (id: string) => request<void>(`cards/${id}`, { method: "DELETE" }),
@@ -293,6 +308,8 @@ export const api = {
 
   // team
   members: (ws: string) => request<Member[]>(`workspaces/${ws}/members`),
+  myMembership: (ws: string) => request<MyMembership>(`workspaces/${ws}/me`),
+  setShareContacts: (ws: string, share_contacts: boolean) => request<MyMembership>(`workspaces/${ws}/me`, { method: "PATCH", body: { share_contacts } }),
   inviteMembers: (ws: string, invites: MemberInvite[]) => request<Member[]>(`workspaces/${ws}/invites`, { method: "POST", body: { invites } }),
   updateMember: (ws: string, id: string, b: { role?: Role; status?: "active" | "suspended" }) =>
     request<Member>(`workspaces/${ws}/members/${id}`, { method: "PATCH", body: b }),

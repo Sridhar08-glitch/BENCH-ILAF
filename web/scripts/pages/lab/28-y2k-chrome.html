@@ -1,0 +1,88 @@
+<section class="page" data-no="128" data-name="Y2K chrome" data-style="Digital" data-rtl="0">
+<!--recipe {"top":55,"style":"Digital","name":"Y2K chrome","slug":"28-y2k-chrome","dir":"auto","split":"grid","avatar":"orb","drop":["save","foot","x-top"],"lists":[{"c":"s","role":"tiles","items":"all","tint":"none"}]}-->
+<style>
+/* colour: the pastel holo page, the chrome name and the sticker pastels are the signature and stay fixed; the glossy icon bubbles, focus ring and the bubble hairlines take the card accent mixed 55% into the signature violet (white or dark glyph via --ac-on) */
+.p128 .in{--ink:#1f1a45;--mute:#4b4476;--sig:#7a5cff;--ac:color-mix(in oklab,var(--cacc) 55%,var(--sig));--ac-on:oklch(from var(--ac) clamp(0,(0.68 - l)*1000,1) 0 0);--ac-t:oklch(from var(--ac) clamp(.3,l,.5) c h);--vi:var(--ac-t);--pk:#ff6fb5}
+.p128 *{box-sizing:border-box;margin:0}
+.p128 .in{font-family:"DM Sans","Cairo",system-ui,sans-serif;color:var(--ink)}
+.p128 .in{position:relative;overflow:hidden;padding:5.641cqw 5.128cqw 7.692cqw;background:
+ radial-gradient(circle at 10% 8%,#ffd1ec 0,transparent 38%),radial-gradient(circle at 95% 22%,#bfe9ff 0,transparent 40%),radial-gradient(circle at 8% 60%,#d8cbff 0,transparent 40%),radial-gradient(circle at 92% 88%,#c7ffe9 0,transparent 42%),linear-gradient(160deg,#f6f0ff,#e4ecff 50%,#f9ecff)}
+.p128 .in::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.0) 0 4.615cqw,rgba(255,255,255,.35) 4.615cqw 5.128cqw);pointer-events:none}
+.p128 .in>*{position:relative}
+.p128 a{color:inherit;text-decoration:none}
+.p128 .sticker{border:0.897cqw solid #fff;box-shadow:0 0 0 1px rgba(80,60,160,.22),0 2.564cqw 4.615cqw -1.538cqw rgba(80,60,160,.35)}
+.p128 .hero{display:flex;align-items:center;gap:3cqw;margin-top:2cqw}
+.p128 .hero:not(:has(.side>*)){justify-content:center}
+.p128 .orbw{position:relative;flex:none;width:40cqw;height:40cqw;border-radius:50%;box-shadow:0 5.641cqw 7.692cqw -2.564cqw rgba(110,80,220,.55)}
+.p128 .orb{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 22%,#fff 0 5%,rgba(255,255,255,0) 14%),conic-gradient(from 210deg,#cfe3ff,#fff 12%,#b9a3ff 30%,#ffd1ec 50%,#a9f0e6 68%,#fff 82%,#cfe3ff)}
+.p128 .orb::before{content:"";position:absolute;inset:0;border-radius:50%;z-index:2;pointer-events:none;box-shadow:inset -3.077cqw -4.103cqw 6.667cqw rgba(90,60,200,.38),inset 2.564cqw 3.077cqw 4.615cqw rgba(255,255,255,.9)}
+.p128 .orb::after{content:"";position:absolute;inset-inline-start:5.641cqw;top:3.077cqw;width:15.385cqw;height:6.667cqw;border-radius:50%;background:linear-gradient(rgba(255,255,255,.95),rgba(255,255,255,0));transform:rotate(-24deg);z-index:3;pointer-events:none}
+.p128 .orb img.pic{object-fit:cover}
+.p128 .orb span.pic{display:grid;place-items:center;font-family:"Bagel Fat One","Cairo",sans-serif;font-weight:400;font-size:38cqw;line-height:1;letter-spacing:-.01em;color:transparent;background:linear-gradient(#fff 0,#dfe9ff 40%,#6f58e6 52%,#c9b8ff 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:max(1px,.38cqw) #4a36b8;filter:drop-shadow(0 .6cqw 0 rgba(58,38,150,.5))}
+.p128 .spark{position:absolute;width:6.667cqw;height:6.667cqw;fill:#fff;stroke:var(--vi);stroke-width:1.4;filter:drop-shadow(0 2px 0.769cqw rgba(80,60,160,.4));z-index:4}
+.p128 .spark.a{top:11cqw;inset-inline-end:-3cqw}
+.p128 .spark.b{top:28cqw;inset-inline-start:-1cqw;width:4.6cqw;height:4.6cqw}
+.p128 .side{display:flex;flex-direction:column;gap:3.077cqw;align-items:flex-start;min-width:0;flex:1}
+.p128 .side:not(:has(*)){display:none}
+.p128 .side>*{max-width:100%;overflow-wrap:anywhere}
+.p128 .tape{padding:2.051cqw 3.59cqw;border-radius:2.564cqw;font-weight:700;font-size:max(10px,3.333cqw);line-height:1.25;transform:rotate(-4deg);background:linear-gradient(100deg,#c8ffe9,#cfe3ff)}
+.p128[dir="rtl"] .tape{transform:rotate(4deg)}
+.p128 .co{padding:1.795cqw 3.59cqw;border-radius:4cqw;font-weight:700;font-size:max(10px,3.333cqw);line-height:1.25;background:linear-gradient(100deg,#ffe9a8,#ffd1ec);transform:rotate(2.5deg)}
+.p128[dir="rtl"] .co{transform:rotate(-2.5deg)}
+.p128 .city{font-size:max(10px,3.333cqw);font-weight:700;color:var(--mute);line-height:1.3;padding-inline-start:1cqw}
+.p128 h1{margin-top:5.128cqw;font-family:"Bagel Fat One","Cairo",sans-serif;font-weight:400;font-size:15.5cqw;line-height:1;letter-spacing:-.01em;color:transparent;background:linear-gradient(#fff 0,#ecf1ff 38%,#8a72ff 52%,#ff9bd0 76%,#ffe3f3 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:max(1px,.51cqw) #4a36b8;paint-order:stroke fill;filter:drop-shadow(0 1.026cqw 0 rgba(58,38,150,.55)) drop-shadow(0 3.077cqw 3.59cqw rgba(110,80,220,.25));overflow-wrap:anywhere}
+.p128 h1 span{display:block}
+.p128 h1 .l:empty{display:none}
+.p128.nl2 h1{font-size:11cqw}.p128.nl3 h1{font-size:8.2cqw}
+.p128[dir="rtl"] h1{font-size:14cqw;font-weight:800;line-height:1.25;letter-spacing:0}
+.p128[dir="rtl"].nl2 h1{font-size:10.5cqw}.p128[dir="rtl"].nl3 h1{font-size:8cqw}
+.p128 .bio{position:relative;margin-top:5.641cqw;padding:4.615cqw 5.128cqw;border-radius:6.667cqw;font-size:max(11px,3.974cqw);line-height:1.5;font-weight:500;background:linear-gradient(180deg,#fff,#f1ecff);overflow-wrap:anywhere}
+.p128 .bio::after{content:"";position:absolute;inset-inline-start:8.718cqw;bottom:-3.59cqw;width:5.641cqw;height:5.641cqw;background:#f1ecff;transform:rotate(45deg);border-inline-end:0.897cqw solid #fff;border-bottom:0.897cqw solid #fff;box-shadow:1.538cqw 1.538cqw 2.051cqw -1.026cqw rgba(80,60,160,.3)}
+.p128 .grid{display:grid;grid-template-columns:1fr 1fr;gap:4.103cqw 3.59cqw;padding-top:3cqw}
+.p128 .s{display:flex;flex-direction:column;gap:2.051cqw;min-height:23.59cqw;min-width:0;padding:3.077cqw 3.59cqw;color:var(--ink);border-radius:6.667cqw;transition:transform .2s}
+.p128 .s:nth-child(odd){transform:rotate(-1.8deg)}
+.p128 .s:nth-child(even){transform:rotate(1.6deg)}
+.p128[dir="rtl"] .s:nth-child(odd){transform:rotate(1.8deg)}
+.p128[dir="rtl"] .s:nth-child(even){transform:rotate(-1.6deg)}
+.p128 .s:hover{transform:rotate(0) scale(1.03)}
+.p128 a:focus-visible{outline:0.769cqw solid var(--vi);outline-offset:0.769cqw}
+.p128 .s .i{width:9.744cqw;height:9.744cqw;flex:none;border-radius:50%;display:grid;place-items:center;color:var(--ac-on);background:radial-gradient(circle at 30% 25%,#fff,rgba(255,255,255,.2) 45%),linear-gradient(145deg,var(--ac),color-mix(in oklab,var(--ac) 65%,#ff6fb5));box-shadow:inset -0.769cqw -1.026cqw 1.538cqw rgba(60,30,150,.4),0 0.769cqw 1.538cqw -2px rgba(60,30,150,.5)}
+.p128 .s .i svg{width:5.128cqw;height:5.128cqw;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px rgba(40,10,120,.5))}
+.p128 .s b{display:block;font-size:max(11px,4.103cqw);font-weight:700;overflow-wrap:anywhere}
+.p128 .s small{display:block;font-size:max(10px,3.205cqw);font-weight:500;color:var(--mute);overflow-wrap:anywhere;margin-top:0.513cqw}
+.p128 .s>span:last-child{min-width:0}
+.p128 .s:nth-child(5n+1){background:linear-gradient(135deg,#ffe2f3,#e6dcff)}
+.p128 .s:nth-child(5n+2){background:linear-gradient(135deg,#c9ffe9,#d6ecff)}
+.p128 .s:nth-child(5n+3){background:linear-gradient(135deg,#d6e7ff,#f0dcff)}
+.p128 .s:nth-child(5n+4){background:linear-gradient(135deg,#fff0b8,#ffd9ee)}
+.p128 .s:nth-child(5n){background:linear-gradient(135deg,#e5dcff,#c9f3ff)}
+.p128 .s:last-child:nth-child(odd){grid-column:1/-1;flex-direction:row;align-items:center;gap:3.59cqw;transform:rotate(-1deg)}
+@media (prefers-reduced-motion:no-preference){.p128 .spark{animation:tw 3s ease-in-out infinite alternate}
+}
+@keyframes tw{to{transform:scale(.7) rotate(20deg)}
+}
+</style>
+<div class="pg p128"><div class="in">
+<header class="hero">
+    <div class="orbw">
+      <div class="orb"></div>
+      <svg class="spark a" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1c1 6 5 10 11 11-6 1-10 5-11 11-1-6-5-10-11-11 6-1 10-5 11-11z"/></svg>
+      <svg class="spark b" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 1c1 6 5 10 11 11-6 1-10 5-11 11-1-6-5-10-11-11 6-1 10-5 11-11z"/></svg>
+    </div>
+    <div class="side">
+      <span class="tape sticker">{title}</span>
+      <span class="co sticker">{co}</span>
+      <span class="city">{city}</span>
+    </div>
+  </header>
+
+  <h1><span>{first}</span><span class="l">{last}</span></h1>
+
+  <p class="bio sticker">{bio}</p>
+
+  <nav class="grid" aria-label="Contact actions">
+    <a class="s sticker"><span class="i"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><span><b>Call me</b><small><bdi>{phone}</bdi></small></span></a>
+    <a class="s sticker"><span class="i"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><span><b>Email</b><small><bdi>{email}</bdi></small></span></a>
+  </nav>
+</div></div>
+</section>

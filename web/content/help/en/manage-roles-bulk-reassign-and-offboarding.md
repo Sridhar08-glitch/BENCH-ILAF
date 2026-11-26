@@ -8,7 +8,7 @@ updated: 2026-11-22
 ---
 
 ## Roles
-Each person is an Owner, an Admin (manages everything) or an Employee (own card only). Change a role from the row on the Team page.
+Each person is an Owner, an Admin (manages everything) or an Employee (own card only). Change a role from the row on the Team page. An employee's row also shows Shares contacts or Private: it tells you whether they chose to share the new contacts of their card with the company. Only the employee can change it, and changing someone's role switches it off.
 
 ## Bulk actions
 Tick several people and a bar appears: publish, unpublish, suspend, restore, change role, change department or remove. Anything that cannot be done is listed afterwards with the reason.
@@ -22,6 +22,6 @@ Remove opens a choice for the person's card:
 - **Hand it on**: it goes to a colleague with the same link and QR code.
 - **Delete it.**
 
-The seat is free again. Contacts collected on their card always stay with the company. Suspend a person instead to switch their card off without removing them.
+The seat is free again. Contacts the person shared with the company stay with it, and so do all the contacts of a card you keep without a holder. Suspend a person instead to switch their card off without removing them.
 
 > Every one of these actions is recorded on the Activity page.

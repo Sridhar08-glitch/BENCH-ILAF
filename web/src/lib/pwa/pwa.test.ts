@@ -34,7 +34,7 @@ describe("service worker routing", () => {
   });
   it("uses network first for the signed-in screens", () => {
     expect(route("/app")).toBe("page");
-    expect(route("/app/qr")).toBe("page");
+    expect(route("/app/share")).toBe("page");
     expect(route("/app/cards/123")).toBe("page");
   });
   it("leaves the card preview tab, the sign-in and everything else to the network", () => {

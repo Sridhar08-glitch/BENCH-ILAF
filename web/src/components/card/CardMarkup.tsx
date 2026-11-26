@@ -5,7 +5,7 @@
 // so the card is never painted unstyled. The font stylesheet comes after the card in the body: a stylesheet
 // in the body only holds back what follows it, so a slow font file never delays the card itself. The fonts are self-hosted (public/card-fonts), never fetched from a third party.
 import type { CSSProperties } from "react";
-import { CSS_URL } from "@/lib/library";
+import { CSS_URL, PAGES_CSS_URL } from "@/lib/library";
 import { FONTS_CSS_URL } from "@/lib/library/generated/fonts";
 import { TEXT_CSS } from "@/lib/library/text";
 import { COMPANY_CSS } from "./company-css";
@@ -19,6 +19,9 @@ interface Props {
   wrapClass?: string;
 }
 
+/** The rules of the page styles are a stylesheet of their own: only a card that draws one (a header or the layout under it) loads it. */
+const usesPageStyle = (html: string) => /class="pg-(top|bt) /.test(html);
+
 export function CardMarkup({ html, pageVars, fullHeight, thumb, wrapClass }: Props) {
   // "tx-" classes come from the typeface and size settings, every other class from the company brand.
   const classes = (wrapClass ?? "").split(" ").filter(Boolean);
@@ -27,6 +30,7 @@ export function CardMarkup({ html, pageVars, fullHeight, thumb, wrapClass }: Pro
   return (
     <>
       <link rel="stylesheet" href={CSS_URL} precedence="card-library" />
+      {usesPageStyle(html) ? <link rel="stylesheet" href={PAGES_CSS_URL} precedence="card-library" /> : null}
       {company ? <style href="card-library-company" precedence="card-library">{COMPANY_CSS}</style> : null}
       {text ? <style href="card-library-text" precedence="card-library">{TEXT_CSS}</style> : null}
       <div dir="ltr" className={`cfl${fullHeight ? " full" : ""}${thumb ? " thumb" : ""}${wrapClass ? " " + wrapClass : ""}`} style={pageVars as CSSProperties} dangerouslySetInnerHTML={{ __html: html }} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { EnterpriseGate } from "@/components/app/EnterpriseLock";
 import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ import { useI18n } from "@/lib/i18n/client";
 import { directorySlugProblem, directoryUrl, normaliseDirectorySlug } from "@/lib/ops/directory";
 import type { WorkspaceDetail } from "@/lib/types";
 
-export default function DirectoryPage() {
+function DirectoryPageContent() {
   const { current, isManager, isCompany } = useWs();
   const { t } = useI18n();
   const ws = useWorkspaceDetail(isManager && isCompany ? current.id : "");
@@ -49,7 +50,8 @@ function DirectorySettings({ ws, isOwner }: { ws: WorkspaceDetail; isOwner: bool
   const problem = on || slug ? directorySlugProblem(slug, t) : null;
   const dirty = on !== enabled || clean !== (ws.brand.directory_slug ?? "");
   const savedSlug = ws.brand.directory_slug;
-  const link = savedSlug ? directoryUrl(WEB_URL, savedSlug) : "";
+  // The directory is the root of the company's own domain once that is verified; before that it is /d/<address> on Bench.
+  const link = savedSlug ? (ws.custom_domain ? `https://${ws.custom_domain}/` : directoryUrl(WEB_URL, savedSlug)) : "";
 
   const live = (cards.data ?? []).filter((c) => c.status === "published");
   const hidden = live.filter((c) => c.hide_from_directory).length;
@@ -115,7 +117,7 @@ function DirectorySettings({ ws, isOwner }: { ws: WorkspaceDetail; isOwner: bool
               <div className={s.dirLink}>
                 <code className="ltr">{link}</code>
                 <button type="button" className="btn ghost sm" onClick={() => void copy()}><Icon name="copy" size="s" />{t("company.copyLink")}</button>
-                <a className="btn sm" href={`/d/${savedSlug}`} target="_blank" rel="noreferrer"><Icon name="arrow" size="s" />{t("common.open")}</a>
+                <a className="btn sm" href={ws.custom_domain ? link : `/d/${savedSlug}`} target="_blank" rel="noreferrer"><Icon name="arrow" size="s" />{t("common.open")}</a>
               </div>
               <p className="hint">
                 {t("company.dirCount", { shown: live.length - hidden, total: live.length })}
@@ -127,4 +129,9 @@ function DirectorySettings({ ws, isOwner }: { ws: WorkspaceDetail; isOwner: bool
       )}
     </div>
   );
+}
+
+export default function DirectoryPage() {
+  const { t } = useI18n();
+  return <EnterpriseGate feature="directory" title={t("company.dirTitle")} sub={t("company.dirSubShort")}><DirectoryPageContent /></EnterpriseGate>;
 }

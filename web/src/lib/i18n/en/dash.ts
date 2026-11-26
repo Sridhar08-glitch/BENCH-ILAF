@@ -69,4 +69,10 @@ export const dash = {
   "dash.endedOn": "Ended on",
   "dash.renewsOn": "Renews on",
   "dash.managePlan": "Manage plan",
+  "dash.teamPromptTitle": "Your colleagues could have a card too",
+  "dash.teamPromptText": "Turn this into a team: everyone gets a card in your company's look, and you manage them all in one place.",
+  "dash.teamPromptSeats": "Company plans start at {n} seats.",
+  "dash.teamPromptAction": "Turn this into a team",
+  "dash.teamPromptDismiss": "Not now",
+  "dash.teamPromptDismissAria": "Hide this suggestion for 30 days",
 } satisfies Record<string, string>;

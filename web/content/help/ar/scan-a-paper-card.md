@@ -2,12 +2,12 @@
 title: مسح بطاقة ورقية
 summary: حوّل بطاقة أعمال استلمتها إلى جهة اتصال أو عميل محتمل.
 audience: personal, company_owner, company_admin, employee
-pages: /app/scan, /app/contacts
+pages: /app/contacts/scan, /app/contacts
 related: exchange-contacts-and-leads
 updated: 2026-11-22
 ---
 
-افتح المسح في قسم الأدوات.
+افتح جهات الاتصال ثم اختر إضافة جهة اتصال ثم مسح بطاقة ورقية.
 
 ## قراءة البطاقة
 صوّر البطاقة الورقية أو اختر صورة لها. تُقرأ العربية والإنجليزية. وتتم قراءة الصورة على جهازك ولا تُرفع أبداً. ضع البطاقة مسطحة في إضاءة جيدة لتملأ الصورة.

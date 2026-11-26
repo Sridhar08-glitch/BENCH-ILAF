@@ -9,7 +9,7 @@ import {
 import { defaultArtwork, sampleColours } from "./brand";
 import { WHITE, type CompanyPalette } from "./colour";
 import {
-  backPlacement, headerHtml, markOf, monogramMark, overlayHtml, place, plan, resolveSpec, specData, specList, type Mark, type MarkSources,
+  backPlacement, freeOverlayHtml, headerHtml, markOf, monogramMark, overlayHtml, place, plan, resolveSpec, specData, specList, type Mark, type MarkSources,
 } from "./marks";
 import type { CompanyBrand, EngineInput, EngineResult } from "../types";
 
@@ -125,6 +125,10 @@ export function composeCompany(out: EngineResult, input: EngineInput, brand: Com
   const pref = brand.logoCorner ?? "auto";
   const setting = brand.logoChip ?? "auto";
   const placement = brand.logoPlacement ?? "both";
+  const size = Math.min(150, Math.max(50, brand.logoSize ?? 100)) / 100;
+  // A place the owner gave the logo on this design (f12 = card face 12, t3 = page style 3).
+  const spot = (input.design.top > 0 ? brand.logoFree?.[`t${input.design.top}`] : brand.logoFree?.[`f${input.design.face}`]) ?? null;
+  const free = !!spot && placement !== "above" && !opts.customLogo;
   let html = out.html;
   const vars: Record<string, string> = {};
   const cls = ["co"];
@@ -166,10 +170,21 @@ export function composeCompany(out: EngineResult, input: EngineInput, brand: Com
     if (pattern) {
       html = html.replace('</div><div class="face back">', () => PATTERN_LAYER + '</div><div class="face back">').replace('<div class="qrt">', () => PATTERN_LAYER + '<div class="qrt">');
     }
-    if (placement !== "above") {
+    if (free && spot) {
+      const sp = resolveSpec(marks, "tight");
+      const front = freeOverlayHtml(sp, spot, setting, fallbackBgs, brand.companyName, ' data-co="free"');
+      if (input.design.top > 0) {
+        // A page style has no card face: the logo goes on the header itself.
+        html = html.replace(/(<div class="pg-top[^"]*"[^>]*>)/, (m) => m + front);
+      } else {
+        const bp = backPlacement(resolveSpec(marks, "tight"), setting, fallbackBgs);
+        const back = overlayHtml(bp, brand.companyName, ' data-co="back"');
+        html = html.replace('</div><div class="face back">', () => front + '</div><div class="face back">').replace('<div class="qrt">', () => back + '<div class="qrt">');
+      }
+    } else if (placement !== "above") {
       const specs = specList(marks);
-      const pl = plan(specs, (s) => place({ spec: s, pref, setting, obstacles: null, bgsAt: null, own, fallbackBgs }));
-      const extra = ` data-co="front" data-specs="${specData(specs)}" data-pref="${pref}" data-chip="${setting}" data-own="${own.join(",")}" data-alt="${esc(brand.companyName)}"${scrim ? ` data-surf="${scrim.surface}" data-bg="${pal.bg}"` : ""}`;
+      const pl = plan(specs, (s) => place({ spec: s, pref, setting, obstacles: null, bgsAt: null, own, fallbackBgs, size }));
+      const extra = ` data-co="front" data-size="${Math.round(size * 100)}" data-specs="${specData(specs)}" data-pref="${pref}" data-chip="${setting}" data-own="${own.join(",")}" data-alt="${esc(brand.companyName)}"${scrim ? ` data-surf="${scrim.surface}" data-bg="${pal.bg}"` : ""}`;
       // In automatic mode the corner is chosen in the browser from the real face. Until then the mark is not drawn on the
       // card (the one above the card is shown instead, also without scripts), so it can never cover a name.
       const wait = pref === "auto" && !thumb;
@@ -186,12 +201,13 @@ export function composeCompany(out: EngineResult, input: EngineInput, brand: Com
 
   // the mark above the card: shown for "above" and "both"; kept hidden for "card" so the browser can show it when no corner is clean
   if (!thumb) {
-    const head = headerHtml(resolveSpec(marks, "card"), setting, scrim ? scrim.surface : pal.bg2, brand.companyName, own, placement === "card" || !!opts.customLogo);
+    // With the logo placed by the owner on the card only, there is no logo above it.
+    const head = free && placement === "card" ? "" : headerHtml(resolveSpec(marks, "card"), setting, scrim ? scrim.surface : pal.bg2, brand.companyName, own, placement === "card" || !!opts.customLogo, size);
     html = html.replace('<div class="pg ls-rise">', () => '<div class="pg ls-rise">' + head);
   }
 
   // Without scripts the mark above the card is always shown, even when the owner wants it on the card only.
-  if (!thumb && placement !== "above" && !tpl && pref === "auto" && !opts.customLogo) html += NO_SCRIPT_HEAD;
+  if (!thumb && placement !== "above" && !tpl && pref === "auto" && !opts.customLogo && !free) html += NO_SCRIPT_HEAD;
 
   return { html, pageVars: { ...out.pageVars, ...vars }, wrapClass: cls.join(" ") };
 }
