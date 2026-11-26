@@ -179,7 +179,11 @@ def _owner_email(lead_payload, lead):
         return assignee["email"]
     card = getattr(lead, "card", None)
     member = getattr(card, "member", None) if card is not None else None
-    return member.email if member is not None else ""
+    if member is not None:
+        return member.email
+    # the company's own card has no member: the person who made it holds its contacts in the CRM
+    owner = getattr(card, "owner", None) if card is not None else None
+    return owner.email if owner is not None else ""
 
 
 def enqueue(conn, kind, lead_payload, lead_id=None, owner_email=""):
@@ -226,14 +230,14 @@ def sample_lead():
 
 def queue_backfill(conn, now=None):
     """Queue the company's leads of the last 30 days (newest first, at most 500) that this CRM has not received."""
-    from leads.models import Lead
+    from leads.models import company_owned_leads
     from leads.webhooks import lead_payload
 
     now = now or timezone.now()
     sent = set(CrmLeadLink.objects.filter(connection=conn).values_list("lead_id", flat=True))
     waiting = set(CrmSyncJob.objects.filter(connection=conn, status="pending", kind="upsert").values_list("lead_id", flat=True))
     leads = (
-        Lead.objects.filter(Q(workspace=conn.workspace) | Q(card__workspace=conn.workspace), created_at__gte=now - timedelta(days=BACKFILL_DAYS))
+        company_owned_leads(conn.workspace).filter(created_at__gte=now - timedelta(days=BACKFILL_DAYS))
         .select_related("card", "card__member", "assignee").order_by("-created_at")[:MAX_BACKFILL]
     )
     count = 0

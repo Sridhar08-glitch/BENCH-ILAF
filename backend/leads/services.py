@@ -20,6 +20,7 @@ from ilaf.errors import ApiError, validation_error
 from ilaf.i18n import language_for_email, tr
 from ilaf.utils import clean_line, clean_multiline, client_ip
 from workspaces.models import Member
+from workspaces.sharing import card_shares_with_company
 
 from . import workflow
 from .models import Lead
@@ -167,15 +168,17 @@ def clean_meeting(data):
     return {"name": name, "email": email, "phone": phone, "note": message, "meeting_times": times}
 
 
-def card_recipients(card):
-    """E-mail addresses told about a new lead: the card's holder, plus company admins when the company asks."""
+def card_recipients(card, lead=None):
+    """E-mail addresses told about a new lead: the card's holder. Company admins are told only about the company's own card (when the
+    company asks), about a lead the holder shared (`lead.shared_with_company`), or when a card has no holder; they are never told about
+    the other contacts of an employee's card."""
     found = []
     if card.owner_id and card.owner.email:
         found.append(card.owner.email)
     elif card.member_id and card.member.email:
         found.append(card.member.email)
     ws = card.workspace
-    notify_admins = bool((ws.lead_settings or {}).get("notify_admins")) and ws.kind == "company"
+    notify_admins = bool((ws.lead_settings or {}).get("notify_admins")) and ws.kind == "company" and (card.is_company or bool(lead is not None and lead.shared_with_company))
     if notify_admins or not found:
         if ws.kind == "company":
             admins = Member.objects.filter(workspace=ws, role__in=("owner", "admin"), status="active").exclude(email="")
@@ -221,7 +224,7 @@ def notify_lead(card, lead):
     """E-mail the lead's details to the card's holder (and company admins when enabled). Never raises."""
     sent = 0
     try:
-        for address in card_recipients(card):
+        for address in card_recipients(card, lead):
             if not _recipient_has_room(address):
                 continue
             lang = language_for_email(address)
@@ -256,7 +259,7 @@ def notify_lead(card, lead):
     try:
         from notify.services import notify_new_lead
 
-        notify_new_lead(card, lead, card_recipients(card))  # the same people, in their browser (needs opt-in and VAPID keys)
+        notify_new_lead(card, lead, card_recipients(card, lead))  # the same people, in their browser (needs opt-in and VAPID keys)
     except Exception:
         pass
     return sent
@@ -265,7 +268,8 @@ def notify_lead(card, lead):
 def save_lead(card, source, fields, data, consent=True):
     lead = Lead.objects.create(
         card=card, workspace_id=card.workspace_id, card_name=(card.name or "")[:120], source=source,
-        channel=_channel(data), consented_at=timezone.now() if consent else None, **fields,
+        channel=_channel(data), consented_at=timezone.now() if consent else None,
+        shared_with_company=card_shares_with_company(card), **fields,
     )
     try:
         workflow.note_created(lead)

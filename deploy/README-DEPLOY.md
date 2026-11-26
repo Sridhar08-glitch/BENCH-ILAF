@@ -229,6 +229,7 @@ asks it a few questions, prints `DRILL OK` and deletes the scratch copy. Repeat 
 | cleanup_data_exports | hourly | deletes download files after use or after 24 hours |
 | purge_deleted_accounts | daily 03:10 | erases accounts and companies after their 14 days of grace |
 | expire_subscriptions | daily 03:20 | ends plans after the grace days |
+| check_custom_domains | hourly (at :25) | custom domains (Enterprise): re-checks pending DNS records, expires claims after 7 days, re-verifies verified domains about once a day, e-mails the owner when the records stay missing |
 | flushexpiredtokens | daily 03:30 | cleans old sign-in tokens from the database |
 | prune_analytics | daily 03:40 | rolls visit events older than 400 days into summary rows, deletes webhook deliveries older than 90 days, old reset rows and expired invitation links |
 | send_renewal_reminders | daily 07:00 | e-mails owners 7 days and 1 day before a plan ends |
@@ -350,6 +351,13 @@ restore the database and the pictures as above.
 4. Company e-mails: set `EMAIL_LOGO_CHECK=1` in `.env` so a company logo that cannot be fetched is left out of its e-mails.
 5. nginx: copy `deploy/nginx/bench-api.conf` again and reload: uploaded PDFs under `/media/files/` are always downloaded and never shown inside the site. With a storage bucket set the same `Content-Disposition: attachment` header on `files/`.
 6. The web app must be rebuilt (`deploy.sh`): new pages, service worker version 2 (people see "Update available" once).
+
+## Custom domains for companies (Enterprise)
+
+A company on the Enterprise plan can serve its cards on its own domain (`https://cards.northgate.com/ahmed`). It needs a Caddy (recommended) or
+an nginx catch-all block for certificates and traffic, the hourly `check_custom_domains` job (already in `deploy/cron/bench-cron`), the
+`CARD_DOMAIN_*` / `DOMAIN_ASK_TOKEN` settings in `.env` and `WEB_EXTRA_HOSTS` if needed. Everything, including the DNS instructions for customers, rate limits,
+the security model and a staging test plan, is in **`deploy/CUSTOM_DOMAINS.md`**. Not tested against real DNS or certificates yet: run the test plan there first.
 
 ## Card domain (later)
 

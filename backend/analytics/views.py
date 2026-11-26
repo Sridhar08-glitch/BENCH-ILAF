@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from ilaf.errors import ApiError
 from leads.models import Lead
-from workspaces.access import MANAGER_ROLES, get_workspace_and_member, visible_cards
+from workspaces.access import MANAGER_ROLES, commerce_cards, get_workspace_and_member, visible_cards
 
 from . import breakdowns, periods
 from .models import Event, event_count
@@ -30,6 +30,13 @@ def _totals(events, leads):
         "views": agg["views"], "unique_visitors": unique, "scans": agg["scans"], "taps": agg["taps"],
         "saves": agg["saves"], "leads": leads.count(), "link_clicks": agg["link_clicks"],
     }
+
+
+def lead_cards_of(member, cards):
+    """Of these cards, the ones whose contacts this person may see (their own, and the company card for owners and admins). Views, scans
+    and saves are counted on every card; the number of contacts only on these, plus the contacts an employee shared (breakdowns.lead_scope), so
+    an admin does not learn who got how many from an employee's card beyond what was shared."""
+    return cards.filter(pk__in=commerce_cards(member).values("pk"))
 
 
 def scoped_cards(request, workspace_id):
@@ -61,19 +68,20 @@ class AnalyticsView(APIView):
     """The overview. `days=` or `from=&to=`, `group=day|week|month`, `tz=`, `card_id=` (see the contract)."""
 
     def get(self, request, workspace_id):
-        _, _, cards = scoped_cards(request, workspace_id)
+        _, member, cards = scoped_cards(request, workspace_id)
         window = periods.parse_window(request.query_params)
         group = periods.parse_group(request.query_params, window)
+        lead_cards = lead_cards_of(member, cards)
 
         all_events = Event.objects.filter(card__in=cards)
-        all_leads = Lead.objects.filter(card__in=cards)
+        all_leads = breakdowns.lead_scope(cards, lead_cards)
         events = all_events.filter(created_at__gte=window.start, created_at__lt=window.end)
         leads = all_leads.filter(created_at__gte=window.start, created_at__lt=window.end)
         prev_events = all_events.filter(created_at__gte=window.prev_start, created_at__lt=window.start)
         prev_leads = all_leads.filter(created_at__gte=window.prev_start, created_at__lt=window.start)
 
         views = events.filter(type="view")
-        series = breakdowns.series(cards, window, group)
+        series = breakdowns.series(cards, window, group, lead_cards=lead_cards)
 
         source_counts = {key: 0 for key in SOURCES}
         for row in views.values("source").annotate(n=event_count()):
@@ -93,12 +101,13 @@ class AnalyticsView(APIView):
             )
         }
         lead_per_card = {r["card_id"]: r["n"] for r in leads.values("card_id").annotate(n=Count("id"))}
+        lead_ids = set(lead_cards.values_list("id", flat=True))
         card_rows = []
         for card in cards.order_by("created_at"):
             row = per_card.get(card.id, {})
             card_rows.append({
                 "card_id": str(card.id), "name": card.name, "views": row.get("views", 0),
-                "saves": row.get("saves", 0), "leads": lead_per_card.get(card.id, 0),
+                "saves": row.get("saves", 0), "leads": lead_per_card.get(card.id, 0), "leads_visible": card.id in lead_ids or card.id in lead_per_card,
             })
         card_rows.sort(key=lambda r: r["views"], reverse=True)
 
@@ -129,10 +138,10 @@ class PeopleView(APIView):
     Managers see everyone; an employee sees only their own cards."""
 
     def get(self, request, workspace_id):
-        _, _, cards = scoped_cards(request, workspace_id)
+        _, member, cards = scoped_cards(request, workspace_id)
         window = periods.parse_window(request.query_params)
         by = "card" if request.query_params.get("by") == "card" else "person"
-        rows = breakdowns.people_rows(cards, window, by=by)
+        rows = breakdowns.people_rows(cards, window, by=by, lead_cards=lead_cards_of(member, cards))
         return Response({
             "period": period_json(window), "by": by, "rows": rows,
             "totals": breakdowns.totals_of(rows), "prev_totals": breakdowns.totals_of(rows, "prev"),
@@ -148,7 +157,7 @@ class DepartmentsView(APIView):
             raise ApiError("forbidden", "You do not have permission to do that.", 403)
         window = periods.parse_window(request.query_params)
         cards = visible_cards(member)
-        rows = breakdowns.department_rows(workspace, cards, window) if workspace.kind == "company" else []
+        rows = breakdowns.department_rows(workspace, cards, window, lead_cards=lead_cards_of(member, cards)) if workspace.kind == "company" else []
         return Response({
             "period": period_json(window), "rows": rows,
             "totals": breakdowns.totals_of(rows), "prev_totals": breakdowns.totals_of(rows, "prev"),
@@ -166,11 +175,12 @@ class LinksView(APIView):
 
 class SourcesView(APIView):
     def get(self, request, workspace_id):
-        _, _, cards = scoped_cards(request, workspace_id)
+        _, member, cards = scoped_cards(request, workspace_id)
         window = periods.parse_window(request.query_params)
         group = periods.parse_group(request.query_params, window)
-        rows, total = breakdowns.source_rows(cards, window)
+        lead_cards = lead_cards_of(member, cards)
+        rows, total = breakdowns.source_rows(cards, window, lead_cards=lead_cards)
         return Response({
             "period": period_json(window, group), "rows": rows, "total": total,
-            "series": breakdowns.series(cards, window, group, by_source=True),
+            "series": breakdowns.series(cards, window, group, by_source=True, lead_cards=lead_cards),
         })

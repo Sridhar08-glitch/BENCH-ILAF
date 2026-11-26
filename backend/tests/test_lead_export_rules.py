@@ -18,6 +18,9 @@ class CsvTests(LeadWorkflowCase):
         super().setUp()
         self.lead_for(self.eve, "Eve Lead")
         self.lead_for(self.sam, "Sam Lead")
+        # the owner and the admins read the company card's contacts, never an employee's
+        self.lead_for(self.co, "Company Lead")
+        self.lead_for(self.co, "Company Lead Two")
 
     def csv(self, client, **params):
         return client.get(self.url("leads.csv"), params)
@@ -56,7 +59,7 @@ class CsvTests(LeadWorkflowCase):
         self.assertNotIn("internal_notes", text)
 
     def test_formula_injection_is_still_escaped(self):
-        Lead.objects.filter(name="Eve Lead").update(name="=HYPERLINK(\"http://x\")", note="@cmd")
+        Lead.objects.filter(name="Company Lead").update(name="=HYPERLINK(\"http://x\")", note="@cmd")
         text = body(self.csv(self.owner.client)).decode("utf-8-sig")
         self.assertIn("'=HYPERLINK", text)
         self.assertIn("'@cmd", text)
@@ -105,7 +108,7 @@ class WebhookPlanTests(LeadWorkflowCase):
 
     def test_no_events_are_queued_for_an_expired_plan(self):
         endpoint = WebhookEndpoint.objects.create(workspace_id=self.ws, url="https://hooks.example.com/in", secret="s", events=["lead.created"])
-        self.lead_for(self.eve, "Before Expiry")
+        self.lead_for(self.co, "Before Expiry")
         before = endpoint.deliveries.count()
         self.assertEqual(before, 1)
         self.expire()

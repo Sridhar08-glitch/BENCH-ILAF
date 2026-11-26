@@ -21,6 +21,12 @@ class LeadBellCase(OpsTestCase):
             res = self.owner.client.post(f"{API}cards/{person.card_id}/publish")
             self.assertEqual(res.status_code, 200, res.content)
             person.code = res.data["public_code"]
+        # The company's own card: its contacts are the owner's and the admins'. An employee's contacts are never theirs to see.
+        company = self.owner.client.post(f"{API}workspaces/{self.ws}/company-card")
+        self.assertEqual(company.status_code, 201, company.content)
+        published = self.owner.client.post(f"{API}cards/{company.data['id']}/publish")
+        self.assertEqual(published.status_code, 200, published.content)
+        self.co = type("Co", (), {"code": published.data["public_code"]})()
 
     def bell_url(self, ws=None, seen=False):
         return f"{API}workspaces/{ws or self.ws}/lead-bell" + ("/seen" if seen else "")
@@ -38,15 +44,19 @@ class LeadBellCase(OpsTestCase):
 
 
 class BellVisibilityTests(LeadBellCase):
-    def test_owner_and_admin_see_every_lead_of_the_company(self):
+    def test_owner_and_admin_see_only_the_company_cards_leads(self):
         self.lead_for(self.eve, "Visitor One")
         self.lead_for(self.sam, "Visitor Two")
-        self.assertEqual(self.bell(self.owner.client)["unread"], 2)
-        self.assertEqual(self.bell(self.admin.client)["unread"], 2)
+        self.lead_for(self.co, "Visitor Three")
+        for person in (self.owner, self.admin):
+            data = self.bell(person.client)
+            self.assertEqual((data["unread"], [x["name"] for x in data["latest"]]), (1, ["Visitor Three"]))
+        self.assertEqual(self.bell(self.eve.client)["unread"], 1)
+        self.assertEqual(self.bell(self.sam.client)["unread"], 1)
 
     def test_employee_sees_own_card_and_assigned_leads_only(self):
         self.lead_for(self.eve, "Visitor One")
-        other = self.lead_for(self.sam, "Visitor Two")
+        other = self.lead_for(self.co, "Visitor Two")
         data = self.bell(self.eve.client)
         self.assertEqual([x["name"] for x in data["latest"]], ["Visitor One"])
         self.assertEqual(data["unread"], 1)
@@ -58,7 +68,7 @@ class BellVisibilityTests(LeadBellCase):
         person = self.signup("solo@example.com", "Solo Person")
         self.buy(person)
         card = self.published_card(person)
-        self.assertEqual(self.bell(person.client, person.ws), {"unread": 0, "latest": []})
+        self.assertEqual(self.bell(person.client, person.ws), {"unread": 0, "orders": 0, "bookings": 0, "latest": []})
         res = APIClient().post(
             f"{API}public/cards/{card['public_code']}/leads", {"name": "Solo Visitor", "email": "solo.visitor@example.com", "consent": True}, format="json"
         )
@@ -97,7 +107,7 @@ class BellVisibilityTests(LeadBellCase):
 class BellCountTests(LeadBellCase):
     def test_latest_is_newest_first_capped_at_five_and_count_is_full(self):
         for n in range(7):
-            lead = self.lead_for(self.eve, f"Visitor N{n}")
+            lead = self.lead_for(self.co, f"Visitor N{n}")
             Lead.objects.filter(pk=lead.pk).update(created_at=timezone.now() - timedelta(minutes=10 - n))
         data = self.bell(self.owner.client)
         self.assertEqual(data["unread"], 7)
@@ -105,11 +115,11 @@ class BellCountTests(LeadBellCase):
         self.assertEqual(set(data["latest"][0]), {"id", "name", "card_name", "source", "created_at", "kind"})
 
     def test_seen_resets_the_count_only_for_that_person(self):
-        self.lead_for(self.eve)
+        self.lead_for(self.co)
         self.assertEqual(self.owner.client.post(self.bell_url(seen=True)).status_code, 204)
-        self.assertEqual(self.bell(self.owner.client), {"unread": 0, "latest": []})
+        self.assertEqual(self.bell(self.owner.client), {"unread": 0, "orders": 0, "bookings": 0, "latest": []})
         self.assertEqual(self.bell(self.admin.client)["unread"], 1)
-        self.lead_for(self.eve, "Visitor Later")
+        self.lead_for(self.co, "Visitor Later")
         data = self.bell(self.owner.client)
         self.assertEqual((data["unread"], data["latest"][0]["name"]), (1, "Visitor Later"))
         # Marking seen twice keeps one row.
@@ -117,28 +127,28 @@ class BellCountTests(LeadBellCase):
         self.assertEqual(LeadSeen.objects.filter(workspace_id=self.ws).count(), 1)
 
     def test_seen_is_kept_per_workspace(self):
-        self.lead_for(self.eve)
+        self.lead_for(self.co)
         mine = self.owner.ws
         self.assertEqual(self.owner.client.post(self.bell_url(mine, seen=True)).status_code, 204)
         self.assertEqual(self.bell(self.owner.client)["unread"], 1)
 
     def test_never_seen_is_capped_to_the_last_thirty_days(self):
-        old = self.lead_for(self.eve, "Visitor Old")
+        old = self.lead_for(self.co, "Visitor Old")
         Lead.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=31))
-        recent = self.lead_for(self.eve, "Visitor Recent")
+        recent = self.lead_for(self.co, "Visitor Recent")
         Lead.objects.filter(pk=recent.pk).update(created_at=timezone.now() - timedelta(days=29))
         data = self.bell(self.owner.client)
         self.assertEqual(data["unread"], 1)
         self.assertEqual(data["latest"][0]["name"], "Visitor Recent")
 
     def test_an_old_seen_marker_does_not_widen_the_window(self):
-        old = self.lead_for(self.eve, "Visitor Old")
+        old = self.lead_for(self.co, "Visitor Old")
         Lead.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=40))
         LeadSeen.objects.create(user_id=self.owner.user["id"], workspace_id=self.ws, seen_at=timezone.now() - timedelta(days=90))
         self.assertEqual(self.bell(self.owner.client)["unread"], 0)
 
     def test_meeting_request_kind_and_card_name(self):
-        lead = self.lead_for(self.eve, "Visitor Meet")
+        lead = self.lead_for(self.co, "Visitor Meet")
         Lead.objects.filter(pk=lead.pk).update(source="meeting_request")
         item = self.bell(self.owner.client)["latest"][0]
         self.assertEqual(item["kind"], "meeting_request")
@@ -146,14 +156,14 @@ class BellCountTests(LeadBellCase):
         self.assertTrue(item["card_name"])
 
     def test_one_query_for_the_seen_marker_and_one_for_the_list(self):
-        self.lead_for(self.eve)
-        with self.assertNumQueries(4):  # user, member and workspace, seen marker, latest list
+        self.lead_for(self.co)
+        with self.assertNumQueries(6):  # user, member and workspace, seen marker, latest list, orders count, bookings count
             self.owner.client.get(self.bell_url())
 
 
 class BellClosedWorkspaceTests(LeadBellCase):
     def test_suspended_company_is_closed(self):
-        self.lead_for(self.eve)
+        self.lead_for(self.co)
         Workspace.objects.filter(pk=self.ws).update(suspended_at=timezone.now())
         self.assertEqual(self.owner.client.get(self.bell_url()).status_code, 403)
         self.assertEqual(self.owner.client.post(self.bell_url(seen=True)).status_code, 403)

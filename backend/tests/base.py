@@ -111,13 +111,39 @@ class ApiTestCase(TestCase):
         assert res.status_code == 200, res.content
         return res
 
-    def company(self, owner, name="Acme Ltd", seats=5):
-        """Create a company workspace for `owner` and activate the company plan."""
+    def company(self, owner, name="Acme Ltd", seats=5, plan="enterprise"):
+        """Create a company workspace for `owner` and activate a plan: Enterprise by default (most company features need
+        it; the seats are what staff quoted), or plan="company" for the plain Company plan (at least 5 seats)."""
         res = owner.client.post(API + "workspaces", {"name": name}, format="json")
         assert res.status_code == 201, res.content
         ws = res.data["id"]
-        self.buy(owner, "company", ws=ws, seats=seats)
+        if plan == "enterprise":
+            self.enterprise(ws, seats)
+        else:
+            self.buy(owner, plan, ws=ws, seats=seats)
         return ws
+
+    def enterprise(self, ws, seats=5, price_per_seat=2500):
+        """Put a company on the Enterprise plan the way a paid quote does (a payment of the quoted amount, no Stripe)."""
+        from billing.models import Plan
+        from billing.services import activate
+        from workspaces.models import Workspace
+
+        return activate(
+            Workspace.objects.get(pk=ws), Plan.objects.get(code="enterprise"), seats,
+            amount_minor=seats * price_per_seat, source="dev",
+        )[0]
+
+    def age_company_plan(self, ws, before="2026-11-01"):
+        """Make a company's current period look as if it was bought before the Enterprise plan existed: its start and its
+        payments are moved back (what the data of a customer who paid earlier looks like)."""
+        from datetime import datetime, timedelta, timezone as tz
+
+        from billing.models import Payment, Subscription
+
+        when = datetime.fromisoformat(before).replace(tzinfo=tz.utc)
+        Subscription.objects.filter(workspace_id=ws).update(starts_at=when)
+        Payment.objects.filter(workspace_id=ws).update(paid_at=when, period_start=when)
 
     # ---------------------------------------------------------------- cards
     def make_card(self, person, ws=None, **fields):

@@ -8,7 +8,7 @@ import uuid
 from django.db import transaction
 from django.utils import timezone
 
-from billing.services import is_live
+from billing.services import ensure_trial, is_live, require_enterprise
 from cards.models import Card
 from cards.services import delete_card
 from ilaf.errors import ApiError
@@ -43,6 +43,7 @@ def publish_card(request, card, actor, extra=None):
         refuse("This card is suspended. Restore it first.")
     if card.status == "published":
         refuse("This card is already published.", "validation_error", 400)
+    ensure_trial(card.workspace)
     if not is_live(card.workspace):
         refuse("An active plan is required to publish.", "subscription_required", 402)
     if not card.name:
@@ -198,7 +199,9 @@ def member_set_role(request, workspace, actor, target, role, extra=None):
         refuse(f"Already {role}.", "validation_error", 400)
     before = target.role
     target.role = role
-    target.save(update_fields=["role"])
+    # The sharing switch belongs to employees: whoever changes role starts again with it off.
+    target.share_contacts = False
+    target.save(update_fields=["role", "share_contacts"])
     if before == "admin" and role == "employee":
         _end_sessions(target)
     audit.log(request, workspace, "member.role_changed", "member", target.id, target.full_name or target.email,
@@ -208,6 +211,8 @@ def member_set_role(request, workspace, actor, target, role, extra=None):
 def member_set_department(request, workspace, actor, target, department, extra=None):
     if department is not None and department.workspace_id != workspace.id:
         refuse("Department not found.", "not_found", 404)
+    if department is not None:
+        require_enterprise(workspace)  # departments are an Enterprise feature; taking someone out of one stays possible
     if target.department_id == (department.id if department else None):
         refuse("Already in that department.", "validation_error", 400)
     before = target.department.name if target.department_id else None

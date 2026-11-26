@@ -33,6 +33,9 @@ urlpatterns = [
     path("api/v1/", include("support.urls")),
     path("api/v1/", include("security.urls")),
     path("api/v1/", include("notify.urls")),
+    path("api/v1/", include("cards.urls_commerce")),
+    path("api/v1/", include("public.urls_commerce")),
+    path("api/v1/", include("orders.urls")),
 ]
 
 if settings.DEBUG:

@@ -57,7 +57,11 @@ class PeopleTests(BreakdownCase):
         data = self.get("people", days=7)
         rows = {r["name"]: r for r in data["rows"]}
         eve = rows["Eve Employee"]
-        self.assertEqual((eve["totals"]["views"], eve["totals"]["scans"], eve["totals"]["saves"], eve["totals"]["leads"]), (6, 1, 1, 1))
+        # an owner or admin does not learn how many contacts an employee got: the number is left out, and not counted
+        self.assertEqual((eve["totals"]["views"], eve["totals"]["scans"], eve["totals"]["saves"], eve["totals"]["leads"]), (6, 1, 1, 0))
+        self.assertIs(eve["leads_visible"], False)
+        mine = {r["name"]: r for r in self.get("people", client=self.eve.client, days=7)["rows"]}["Eve Employee"]
+        self.assertEqual((mine["totals"]["leads"], mine["leads_visible"]), (1, True))
         self.assertEqual(eve["prev"]["views"], 2)
         self.assertEqual(eve["department"], "Sales")
         self.assertEqual(rows["Sam Seller"]["totals"]["link_clicks"], 1)
@@ -109,7 +113,7 @@ class DepartmentTests(BreakdownCase):
         self.assertEqual(rows["Sales"]["totals"]["views"], 5)
         self.assertEqual(rows["Sales"]["people"], 2)
         self.assertEqual(rows["Sales"]["top_person"], {"name": "Eve Employee", "views": 3})
-        self.assertEqual((rows["Support"]["totals"]["views"], rows["Support"]["totals"]["leads"]), (1, 1))
+        self.assertEqual((rows["Support"]["totals"]["views"], rows["Support"]["totals"]["leads"]), (1, 0))
         self.assertNotIn("No department", rows)
         self.assertEqual(data["rows"][0]["name"], "Sales")
 
@@ -163,7 +167,9 @@ class LinksAndSourcesTests(BreakdownCase):
         self.ev("eve", source="qr", when=at(10))
         self.lead("eve", channel="qr")
         self.lead("eve", channel="")
-        data = self.get("sources", days=7)
+        # the contacts of Eve's card are Eve's: she sees them counted, an owner or admin sees none
+        self.assertEqual({r["key"]: r for r in self.get("sources", days=7)["rows"]}["qr"]["leads"], 0)
+        data = self.get("sources", client=self.eve.client, days=7)
         rows = {r["key"]: r for r in data["rows"]}
         self.assertEqual((rows["qr"]["views"], rows["qr"]["prev_views"], rows["qr"]["leads"]), (2, 1, 1))
         self.assertEqual(rows["other"]["views"], 1)
@@ -207,6 +213,6 @@ class OverviewTests(BreakdownCase):
     def test_many_events_stay_cheap(self):
         card = self.cards["eve"]
         Event.objects.bulk_create([Event(card=card, type="view", source="qr") for _ in range(600)])
-        with self.assertNumQueries(18):
+        with self.assertNumQueries(19):
             res = self.owner.client.get(self.url("analytics"), {"days": 30})
         self.assertEqual(res.data["totals"]["views"], 600)

@@ -24,8 +24,27 @@ def zero():
     return {m: 0 for m in METRICS}
 
 
-def per_card(cards, window):
-    """{card_id: {"now": {metric: n}, "prev": {metric: n}}} for the cards (a queryset) over the range and the period before it."""
+def lead_scope(cards, lead_cards=None):
+    """The contacts of these cards the reader may see: all of them when `lead_cards` is None, else those of `lead_cards` and the ones an
+    employee shared with the company (`shared_with_company`) on the other cards."""
+    if lead_cards is None:
+        return Lead.objects.filter(card__in=cards)
+    return Lead.objects.filter(Q(card__in=lead_cards) | Q(card__in=cards, shared_with_company=True))
+
+
+def shown_card_ids(cards, lead_cards=None):
+    """The ids of the cards whose number of contacts may be shown: those of `lead_cards`, plus cards that have shared contacts (the number
+    then counts the shared ones only). None when everything is shown."""
+    if lead_cards is None:
+        return None
+    shown = set(lead_cards.values_list("id", flat=True))
+    shown.update(Lead.objects.filter(card__in=cards, shared_with_company=True).values_list("card_id", flat=True).distinct())
+    return shown
+
+
+def per_card(cards, window, lead_cards=None):
+    """{card_id: {"now": {metric: n}, "prev": {metric: n}}} for the cards (a queryset) over the range and the period before it.
+    Contacts are counted only on `lead_cards` (the cards whose contacts the reader may see); views, scans and saves count on all of them."""
     out = {}
 
     def slot(card_id):
@@ -46,7 +65,7 @@ def per_card(cards, window):
         "leads": Count("id", filter=now_range), "prev_leads": Count("id", filter=~now_range),
         "won": Count("id", filter=now_range & Q(status="won")), "prev_won": Count("id", filter=~now_range & Q(status="won")),
     }
-    leads = Lead.objects.filter(card__in=cards, created_at__gte=window.prev_start, created_at__lt=window.end)
+    leads = lead_scope(cards, lead_cards).filter(created_at__gte=window.prev_start, created_at__lt=window.end)
     for row in leads.values("card_id").annotate(**lead_aggs):
         s = slot(row["card_id"])
         s["now"]["leads"], s["prev"]["leads"] = row["leads"], row["prev_leads"]
@@ -69,9 +88,10 @@ def person_of(card):
     return f"c:{card.id}", card.name or "Card", None, None, None
 
 
-def people_rows(cards, window, by="person"):
+def people_rows(cards, window, by="person", lead_cards=None):
     """Rows for the people table. `by="card"` gives one row per card instead of one per person."""
-    stats = per_card(cards, window)
+    stats = per_card(cards, window, lead_cards)
+    shown = shown_card_ids(cards, lead_cards)
     rows = {}
     for card in cards.select_related("member", "member__department", "owner").order_by("created_at"):
         key, name, dept_id, dept_name, member_id = person_of(card)
@@ -83,9 +103,13 @@ def people_rows(cards, window, by="person"):
                 "key": key, "member_id": member_id, "name": name if by == "person" else (card.name or name),
                 "person": name, "department_id": str(dept_id) if dept_id else None, "department": dept_name,
                 "cards": 0, "card_ids": [], "totals": zero(), "prev": zero(),
+                # False when the reader may not see this person's contacts: the number of contacts is then left out, not shown as zero.
+                "leads_visible": shown is None,
             }
         row["cards"] += 1
         row["card_ids"].append(str(card.id))
+        if shown is not None and card.id in shown:
+            row["leads_visible"] = True
         s = stats.get(card.id)
         if s:
             add_into(row["totals"], s["now"])
@@ -95,9 +119,9 @@ def people_rows(cards, window, by="person"):
     return out
 
 
-def department_rows(workspace, cards, window):
+def department_rows(workspace, cards, window, lead_cards=None):
     """One row per department of the company, plus a row for people without one."""
-    people = people_rows(cards, window, by="person")
+    people = people_rows(cards, window, by="person", lead_cards=lead_cards)
     from operations.models import Department
 
     rows = {}
@@ -159,7 +183,7 @@ def link_rows(cards, window):
     return out, total
 
 
-def source_rows(cards, window):
+def source_rows(cards, window, lead_cards=None):
     """How people reached the card (QR, NFC, link, e-mail): views, saves and leads per source, with the previous period."""
     now_range = Q(created_at__gte=window.start)
     rows = {k: {"key": k, "views": 0, "prev_views": 0, "saves": 0, "leads": 0} for k in SOURCE_KEYS}
@@ -172,7 +196,7 @@ def source_rows(cards, window):
         rows[key]["views"] += row["views"]
         rows[key]["prev_views"] += row["prev"]
         rows[key]["saves"] += row["saves"]
-    leads = Lead.objects.filter(card__in=cards, created_at__gte=window.start, created_at__lt=window.end)
+    leads = lead_scope(cards, lead_cards).filter(created_at__gte=window.start, created_at__lt=window.end)
     for row in leads.values("channel").annotate(n=Count("id")):
         key = row["channel"] if row["channel"] in rows else "other"
         rows[key]["leads"] += row["n"]
@@ -189,7 +213,7 @@ def _trunc(group, tz):
     return func("created_at", output_field=DateField(), tzinfo=tz)
 
 
-def series(cards, window, group, by_source=False):
+def series(cards, window, group, by_source=False, lead_cards=None):
     """Views, saves, taps, button clicks and leads per bucket (day, week or month) in the window's time zone."""
     from .periods import bucket_dates
 
@@ -211,7 +235,7 @@ def series(cards, window, group, by_source=False):
             slot = out.get(row["d"])
             if slot:
                 slot[row["source"] if row["source"] in SOURCE_KEYS else "other"] += row["n"]
-    leads = Lead.objects.filter(card__in=cards, created_at__gte=window.start, created_at__lt=window.end)
+    leads = lead_scope(cards, lead_cards).filter(created_at__gte=window.start, created_at__lt=window.end)
     for row in leads.annotate(d=_trunc(group, window.tz)).values("d").annotate(n=Count("id")):
         slot = out.get(row["d"])
         if slot:

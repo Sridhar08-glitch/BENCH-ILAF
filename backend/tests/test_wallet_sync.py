@@ -145,7 +145,7 @@ class SaveLinkTests(RestCase):
         _, claims, valid = decode(res.data["save_url"])
         self.assertTrue(valid)
         oid = f"{ISSUER}.{self.card['public_code']}"
-        self.assertEqual(claims["payload"], {"genericClasses": [{"id": f"{ISSUER}.bench_card"}], "genericObjects": [{"id": oid}]})
+        self.assertEqual(claims["payload"], {"genericObjects": [{"id": oid}]})
         self.assertLess(len(res.data["save_url"]), 900)
         self.assertEqual([c["kind"] for c in self.google.calls], ["token", "class", "class", "object"])
         self.assertEqual(self.google.calls[2]["json"], {"id": f"{ISSUER}.bench_card"})

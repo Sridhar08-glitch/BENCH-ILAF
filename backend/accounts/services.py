@@ -98,9 +98,13 @@ def sign_in_blocker(user):
 
 def google_required_for(user):
     """True when a company that requires Google sign-in has this person on a non-owner seat."""
-    return Member.objects.filter(
+    from billing.services import enterprise_allowed
+
+    rows = Member.objects.filter(
         user=user, status="active", workspace__require_google_signin=True, workspace__deleted_at__isnull=True,
-    ).exclude(role="owner").exists()
+    ).exclude(role="owner").select_related("workspace")
+    # The rule is an Enterprise feature: a company that is no longer on that plan does not hold people to it.
+    return any(enterprise_allowed(m.workspace) for m in rows)
 
 
 def require_recent_auth(request, data=None):
@@ -129,9 +133,12 @@ def email_domain(email):
 
 
 def domain_allowed(workspace, email):
-    """The company's e-mail domain rule: an empty list means everyone is welcome."""
+    """The company's e-mail domain rule: an empty list means everyone is welcome. The rule is an Enterprise feature, so a
+    company that is not on that plan has no rule."""
+    from billing.services import enterprise_allowed
+
     domains = workspace.allowed_email_domains or []
-    return not domains or email_domain(email) in domains
+    return not domains or email_domain(email) in domains or not enterprise_allowed(workspace)
 
 
 RECENT_GOOGLE_SECONDS = 5 * 60

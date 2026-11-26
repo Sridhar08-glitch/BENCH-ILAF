@@ -48,15 +48,22 @@ class PlanTests(ApiTestCase):
         res = APIClient().get(API + "plans")
         self.assertEqual(res.status_code, 200)
         codes = {p["code"]: p for p in res.data}
-        self.assertEqual(set(codes), {"personal", "business", "company"})
+        self.assertEqual(set(codes), {"free", "personal", "business", "company", "enterprise"})
         self.assertEqual(codes["personal"]["price_minor"], 4900)
         self.assertEqual(codes["business"]["max_cards"], 5)
         self.assertTrue(codes["company"]["per_seat"])
         self.assertEqual(codes["company"]["min_seats"], 5)
         self.assertEqual(
             set(codes["personal"]),
-            {"code", "name", "kind", "interval", "price_minor", "currency", "max_cards", "per_seat", "min_seats", "features"},
+            {"code", "name", "kind", "interval", "price_minor", "currency", "max_cards", "per_seat", "min_seats", "features", "purchasable", "by_quote"},
         )
+        # Enterprise has no price: it is asked for, not bought.
+        self.assertEqual(codes["enterprise"]["price_minor"], 0)
+        self.assertFalse(codes["enterprise"]["purchasable"])
+        self.assertTrue(codes["enterprise"]["by_quote"])
+        self.assertEqual(codes["enterprise"]["kind"], "company")
+        self.assertTrue(codes["personal"]["purchasable"])
+        self.assertFalse(codes["personal"]["by_quote"])
 
     def test_seed_plans_does_not_overwrite_edited_prices(self):
         Plan.objects.filter(code="personal").update(price_minor=1234)
@@ -109,14 +116,32 @@ class CheckoutTests(ApiTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["checkout_url"], fake.url)
         kwargs = create.call_args.kwargs
-        self.assertEqual(kwargs["mode"], "payment")
-        line = kwargs["line_items"][0]["price_data"]
+        self.assertEqual(kwargs["mode"], "subscription")
+        item = kwargs["line_items"][0]
+        self.assertEqual(item["quantity"], 1)
+        line = item["price_data"]
         self.assertEqual(line["unit_amount"], 4900)
         self.assertEqual(line["currency"], "qar")
+        self.assertEqual(line["recurring"], {"interval": "year"})
         self.assertIn(settings.PRODUCT_NAME, line["product_data"]["name"])
-        self.assertEqual(kwargs["payment_intent_data"]["statement_descriptor_suffix"], settings.STATEMENT_DESCRIPTOR_SUFFIX)
         self.assertEqual(kwargs["metadata"]["workspace_id"], person.ws)
+        self.assertEqual(kwargs["subscription_data"]["metadata"]["plan_code"], "personal")
+        self.assertEqual(kwargs["customer_email"], person.email)
+        self.assertNotIn("payment_intent_data", kwargs)
         self.assertFalse(Subscription.objects.exists())  # nothing is granted until the webhook arrives
+
+    @override_settings(CARDS_DEV_ACTIVATE=False, STRIPE_SECRET_KEY="sk_test_123", STRIPE_RECURRING=False)
+    def test_one_off_payment_is_the_fallback_when_recurring_is_off(self):
+        person = self.signup()
+        fake = SimpleNamespace(url="https://checkout.stripe.test/pay/cs_1")
+        with mock.patch.object(stripe.checkout.Session, "create", return_value=fake) as create:
+            res = person.client.post(f"{API}workspaces/{person.ws}/checkout", {"plan_code": "personal"}, format="json")
+        self.assertEqual(res.status_code, 200)
+        kwargs = create.call_args.kwargs
+        self.assertEqual(kwargs["mode"], "payment")
+        self.assertEqual(kwargs["line_items"][0]["price_data"]["unit_amount"], 4900)
+        self.assertNotIn("recurring", kwargs["line_items"][0]["price_data"])
+        self.assertEqual(kwargs["payment_intent_data"]["statement_descriptor_suffix"], settings.STATEMENT_DESCRIPTOR_SUFFIX)
 
     @override_settings(CARDS_DEV_ACTIVATE=False, STRIPE_SECRET_KEY="sk_test_123")
     def test_company_amount_is_per_seat(self):
@@ -125,11 +150,15 @@ class CheckoutTests(ApiTestCase):
         fake = SimpleNamespace(url="https://checkout.stripe.test/x")
         with mock.patch.object(stripe.checkout.Session, "create", return_value=fake) as create:
             owner.client.post(f"{API}workspaces/{ws}/checkout", {"plan_code": "company", "seats": 8}, format="json")
-        self.assertEqual(create.call_args.kwargs["line_items"][0]["price_data"]["unit_amount"], 3900 * 8)
+        item = create.call_args.kwargs["line_items"][0]
+        self.assertEqual(item["price_data"]["unit_amount"], 3900)  # per seat, Stripe multiplies by the quantity
+        self.assertEqual(item["quantity"], 8)
+        self.assertEqual(item["price_data"]["recurring"], {"interval": "year"})
+        self.assertEqual(create.call_args.kwargs["mode"], "subscription")
 
     def test_company_seats_have_a_minimum(self):
         owner = self.signup()
-        ws = self.company(owner, seats=2)
+        ws = self.company(owner, seats=2, plan="company")
         sub = owner.client.get(f"{API}workspaces/{ws}/subscription").data
         self.assertEqual(sub["seats_total"], 5)
 

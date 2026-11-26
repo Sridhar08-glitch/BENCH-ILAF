@@ -4,6 +4,7 @@ from designs import staff_views as d
 
 from . import public_views as pub
 from . import views_look as look
+from . import views_enterprise as ent
 from . import views, views_customers as c, views_frame as fr, views_growth as g, views_overview as o, views_safety as sf, views_staffadmin as sa, views_supportview as sv, views_system as sy
 
 urlpatterns = [
@@ -14,6 +15,9 @@ urlpatterns = [
     path("staff/recovery-codes", views.RecoveryCodesView.as_view()),
     path("staff/logout", views.LogoutView.as_view()),
     path("staff/audit", views.AuditView.as_view()),
+    path("staff/enterprise-requests", ent.EnterpriseRequestsView.as_view()),
+    path("staff/enterprise-requests/<uuid:request_id>/quote", ent.EnterpriseQuoteView.as_view()),
+    path("staff/enterprise-requests/<uuid:request_id>/decline", ent.EnterpriseDeclineView.as_view()),
     path("staff/members", views.MembersView.as_view()),
     path("staff/members/<uuid:user_id>", views.MemberDetailView.as_view()),
     path("staff/members/<uuid:user_id>/reset-totp", views.ResetTotpView.as_view()),

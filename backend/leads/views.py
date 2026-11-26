@@ -15,10 +15,11 @@ from ilaf.errors import ApiError, validation_error
 from ilaf.i18n import localise_message
 from ilaf.utils import clean_line, clean_multiline, iso, sane_date
 from cards.features import validate_lead_settings
-from workspaces.access import MANAGER_ROLES, active_membership, get_workspace_and_member, refuse_if_pending_deletion, visible_cards
+from workspaces.access import MANAGER_ROLES, active_membership, commerce_cards, get_workspace_and_member, refuse_if_pending_deletion
 
 from operations import audit
 from workspaces.models import Member
+from workspaces.sharing import card_shares_with_company
 
 from . import workflow
 from .models import Lead, LeadNote
@@ -50,6 +51,7 @@ def lead_json(lead):
         "assigned_at": iso(lead.assigned_at),
         "consented_at": iso(lead.consented_at),
         "note_count": lead.note_count if hasattr(lead, "note_count") else lead.notes.count(),
+        "shared_with_company": bool(lead.shared_with_company),
         "created_at": iso(lead.created_at),
     }
 
@@ -187,13 +189,13 @@ class WorkspaceLeadsView(APIView):
         card_id = data.get("card_id")
         if card_id:
             try:
-                card = visible_cards(member).filter(pk=card_id).first()
+                card = commerce_cards(member).filter(pk=card_id).first()
             except (ValueError, DjangoValidationError):
                 card = None
             if card is None:
                 raise validation_error({"card_id": ["Choose one of your cards."]})
         elif member.role == "employee":
-            card = visible_cards(member).first()
+            card = commerce_cards(member).first()
             if card is None:
                 raise validation_error({"card_id": ["You have no card to attach this contact to."]})
         if client_ref:
@@ -203,7 +205,8 @@ class WorkspaceLeadsView(APIView):
                 return Response(lead_json(existing), status=200)
         lead = Lead.objects.create(
             card=card, workspace=workspace, card_name=(card.name if card else "")[:120], source=source,
-            tag=tag, event_name=event_name, client_ref=client_ref, **values,
+            tag=tag, event_name=event_name, client_ref=client_ref,
+            shared_with_company=card_shares_with_company(card), **values,
         )
         workflow.note_created(lead, request.user)
         return Response(lead_json(lead), status=201)
@@ -252,7 +255,8 @@ class LeadsCsvView(APIView):
         audit.log(
             request, workspace, "lead.exported", "leads", "", "",
             {"rows": min(total, cap), "notes": with_notes, "truncated": total > cap,
-             "filters": {k: v for k, v in request.query_params.items() if k in ("card_id", "status", "source", "assignee", "q", "from", "to")}},
+             # An employee's search words may be a person's name: only managers' filters are written to the log.
+             "filters": {k: v for k, v in request.query_params.items() if k in ("card_id", "status", "source", "assignee", "q", "from", "to")} if member.role in MANAGER_ROLES else {}},
         )
         writer = csv.writer(_Echo())
 

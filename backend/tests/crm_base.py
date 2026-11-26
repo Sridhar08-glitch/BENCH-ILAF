@@ -11,6 +11,7 @@ from leads import workflow
 from leads.models import Lead
 from workspaces.models import Workspace
 
+from .base import API
 from .ops_base import OpsTestCase
 
 CRM_SETTINGS = dict(
@@ -85,7 +86,10 @@ class CrmTestCase(OpsTestCase):
         values.update(kw)
         from cards.models import Card
 
-        card = Card.objects.get(pk=self.card["id"])
+        # A contact is sent to the company's CRM only when it belongs to the company: the company card's. An employee's is the employee's.
+        card = Card.objects.filter(workspace=self.workspace, is_company=True).first()
+        if card is None:
+            card = Card.objects.get(pk=self.owner.client.post(f"{API}workspaces/{self.ws}/company-card").data["id"])
         lead = Lead.objects.create(workspace=self.workspace, card=card, card_name=card.name, source="exchange", **values)
         workflow.note_created(lead)
         return lead

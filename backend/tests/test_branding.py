@@ -43,6 +43,8 @@ class BrandDefaultsAndPaletteTests(BrandingBase):
         self.assertEqual(brand["logo_placement"], "both")
         self.assertEqual(brand["logo_corner"], "auto")
         self.assertEqual(brand["logo_chip"], "auto")
+        self.assertEqual(brand["logo_size"], 100)
+        self.assertEqual(brand["logo_free"], {})
         self.assertIs(brand["show_company_name"], True)
         self.assertEqual(brand["artwork"]["mode"], "none")
         self.assertEqual(brand["artwork"]["background"], {"kind": "none", "sample": None, "strength": 60})
@@ -415,7 +417,7 @@ class PublicBrandTests(BrandingBase):
         self.assertEqual(set(brand), {
             "company_name", "logo_url", "symbol_url", "palette", "logo_display", "logo_placement", "logo_corner",
             "logo_chip", "show_company_name", "artwork", "background_url", "template_front_url", "template_back_url",
-            "verified_domain",
+            "verified_domain", "logo_size", "logo_free",
         })
         self.assertEqual(brand["palette"], PALETTE)
         self.assertEqual(brand["logo_display"], "symbol_name")
@@ -434,3 +436,58 @@ class PublicBrandTests(BrandingBase):
         self.buy(person)
         mine = self.published_card(person)
         self.assertIsNone(self.client_for().get(f"{API}public/cards/{mine['public_code']}").data["card"]["brand"])
+
+
+class LogoSizePlaceAndTextColourTests(BrandingBase):
+    def test_logo_size_takes_a_whole_number_from_50_to_150(self):
+        for good in (50, 100, 150):
+            res = self.patch_brand({"logo_size": good})
+            self.assertEqual(res.status_code, 200, good)
+            self.assertEqual(res.data["brand"]["logo_size"], good)
+        for bad in (49, 151, "100", 99.5, True, None):
+            res = self.patch_brand({"logo_size": bad})
+            self.assertEqual(res.status_code, 400, bad)
+            self.assertIn("brand.logo_size", res.data["error"]["fields"])
+
+    def test_the_owner_can_place_the_logo_on_a_design(self):
+        res = self.patch_brand({"logo_free": {"f12": {"x": 6, "y": 8.5, "w": 28}, "t3": {"x": 70, "y": 4, "w": 40}}})
+        self.assertEqual(res.status_code, 200)
+        free = res.data["brand"]["logo_free"]
+        self.assertEqual(free["f12"], {"x": 6.0, "y": 8.5, "w": 28.0})
+        # a logo that would run off the right edge is moved back inside the card
+        self.assertEqual(free["t3"], {"x": 60.0, "y": 4.0, "w": 40.0})
+        self.assertEqual(self.patch_brand({"logo_free": {}}).data["brand"]["logo_free"], {})
+
+    def test_a_bad_logo_place_is_refused(self):
+        for bad in (
+            {"face12": {"x": 1, "y": 1, "w": 20}},
+            {"f12": {"x": -1, "y": 1, "w": 20}},
+            {"f12": {"x": 1, "y": 101, "w": 20}},
+            {"f12": {"x": 1, "y": 1, "w": 5}},
+            {"f12": {"x": 1, "y": 1, "w": 70}},
+            {"f12": {"x": 1, "y": 1}},
+            {"f12": {"x": 1, "y": 1, "w": 20, "z": 1}},
+            {"f12": "top left"},
+            ["f12"],
+        ):
+            res = self.patch_brand({"logo_free": bad})
+            self.assertEqual(res.status_code, 400, bad)
+
+    def test_at_most_sixty_designs_have_their_own_place(self):
+        many = {f"f{n}": {"x": 5, "y": 5, "w": 20} for n in range(1, 62)}
+        self.assertEqual(self.patch_brand({"logo_free": many}).status_code, 400)
+
+    def test_company_colours_may_carry_the_owners_text_colour(self):
+        res = self.patch_brand({"colours": {"primary": "#0b3a66", "accent": "#f5a623", "mode": "brand", "text": "#FFFFFF"}})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["brand"]["colours"]["text"], "#ffffff")
+        res = self.patch_brand({"colours": {"primary": "#0b3a66", "accent": "#f5a623", "mode": "brand", "text": "blue"}})
+        self.assertEqual(res.status_code, 400)
+        self.assertIn("brand.colours.text", res.data["error"]["fields"])
+
+    def test_the_public_card_carries_the_logo_size_and_places(self):
+        from ilaf.branding import normalize_branding
+
+        out = normalize_branding({"logo_size": 80, "logo_free": {"f1": {"x": 1, "y": 2, "w": 30}}})
+        self.assertEqual(out["logo_size"], 80)
+        self.assertEqual(out["logo_free"]["f1"]["w"], 30)

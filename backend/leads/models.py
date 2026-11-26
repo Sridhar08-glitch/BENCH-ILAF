@@ -39,6 +39,9 @@ class Lead(models.Model):
         "workspaces.Member", null=True, blank=True, on_delete=models.SET_NULL, related_name="assigned_leads"
     )
     assigned_at = models.DateTimeField(null=True, blank=True)
+    # Snapshot taken when the lead arrives: True when the holder of the card had "share my new contacts with the company" on at that
+    # moment. It never changes afterwards (see workspaces/sharing.py).
+    shared_with_company = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -144,3 +147,21 @@ class LeadSeen(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["user", "workspace"], name="one_lead_seen_per_person_and_workspace")]
+
+
+def company_owned_leads(workspace):
+    """The contacts that belong to the company itself: those of the company's own card, those saved by hand with no card, and those an
+    employee shared (their switch was on when the contact arrived). The other contacts of an employee's card belong to that employee. Everything that sends contacts out of the product for the company (webhooks, CRM
+    connectors, the developer API, the company data export) is limited to these."""
+    from django.db.models import Q
+
+    return Lead.objects.filter(
+        Q(workspace=workspace, card__isnull=True) | Q(card__workspace=workspace, card__is_company=True) | Q(card__workspace=workspace, card__member__isnull=True)
+        | Q(workspace=workspace, shared_with_company=True)
+    )
+
+
+def is_company_owned(lead):
+    """True for the company card's contacts, those of a card nobody holds, and those the holder shared (the employee's switch was on
+    when they arrived). The one definition every channel uses: webhooks, CRM, the developer API, the exports, the activity log."""
+    return not lead.card_id or bool(lead.card.is_company) or lead.card.member_id is None or bool(lead.shared_with_company)

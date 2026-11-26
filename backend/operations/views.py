@@ -11,6 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from billing.services import require_enterprise
 from cards.models import Card
 from cards.services import public_url
 from ilaf.branding import normalize_branding
@@ -21,6 +22,7 @@ from ilaf.utils import clean_line, file_url, iso, sane_date
 from rest_framework.exceptions import ValidationError
 from workspaces.access import MANAGER_ROLES, card_for_user, get_workspace_and_member
 from workspaces.models import Member
+from workspaces import domains
 from workspaces.services import verified_domain
 
 from . import actions, audit, changes, departments as dept_logic, directory, rules
@@ -32,6 +34,13 @@ def _company(request, workspace_id):
     ws, member = get_workspace_and_member(request.user, workspace_id, MANAGER_ROLES)
     if ws.kind != "company":
         raise validation_error({"workspace": ["This is only available on company workspaces."]})
+    return ws, member
+
+
+def _enterprise(request, workspace_id):
+    """(workspace, member) for an owner or admin of a company on a plan that has the Enterprise-only features."""
+    ws, member = _company(request, workspace_id)
+    require_enterprise(ws)
     return ws, member
 
 
@@ -106,7 +115,7 @@ def filtered_events(ws, params):
 
 class AuditView(APIView):
     def get(self, request, workspace_id):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise(request, workspace_id)
         qs = filtered_events(ws, request.query_params)
         size = _int(request.query_params, "page_size", 50, 1, 200)
         count = qs.count()
@@ -135,7 +144,7 @@ class AuditCsvView(APIView):
     MAX_ROWS = 20000
 
     def get(self, request, workspace_id):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise(request, workspace_id)
         qs = filtered_events(ws, request.query_params)[: self.MAX_ROWS]
         response = HttpResponse(content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = 'attachment; filename="activity.csv"'
@@ -178,11 +187,13 @@ def _clean_name(ws, raw, ignore=None):
 class DepartmentsView(APIView):
     def get(self, request, workspace_id):
         ws, _ = _company(request, workspace_id)
-        rows = ws.departments.annotate(n=Count("members"))
+        # Explicit: Django ignores Meta.ordering on a query with a count annotation, so without this the order was
+        # whatever the database returned (a renamed department jumped to the end).
+        rows = ws.departments.annotate(n=Count("members")).order_by("name")
         return Response([dept_logic.department_json(d, d.n) for d in rows])
 
     def post(self, request, workspace_id):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise(request, workspace_id)
         data = request.data if isinstance(request.data, dict) else {}
         name = _clean_name(ws, data.get("name"))
         design = dept_logic.clean_design(data.get("design"), ws)
@@ -203,7 +214,7 @@ class DepartmentDetailView(APIView):
         return Response(dept_logic.department_json(_department_or_404(ws, department_id)))
 
     def patch(self, request, workspace_id, department_id):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise(request, workspace_id)
         dept = _department_or_404(ws, department_id)
         data = request.data if isinstance(request.data, dict) else {}
         changed = []
@@ -229,7 +240,7 @@ class DepartmentDetailView(APIView):
         return Response(dept_logic.department_json(dept))
 
     def delete(self, request, workspace_id, department_id):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise(request, workspace_id)
         dept = _department_or_404(ws, department_id)
         count = dept.members.count()
         audit.log(request, ws, "department.deleted", "department", dept.id, dept.name, {"members": count})
@@ -241,7 +252,7 @@ class DepartmentAssignView(APIView):
     """Put members into a department (up to 200). Per-item results, like the other bulk actions."""
 
     def post(self, request, workspace_id, department_id):
-        ws, actor = _company(request, workspace_id)
+        ws, actor = _enterprise(request, workspace_id)
         dept = _department_or_404(ws, department_id)
         data = request.data if isinstance(request.data, dict) else {}
         body = {"action": "department", "ids": data.get("member_ids"), "department_id": str(dept.id)}
@@ -255,7 +266,7 @@ class FieldRulesView(APIView):
         return Response(rules.normalize_rules(ws.field_rules))
 
     def patch(self, request, workspace_id):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise(request, workspace_id)
         before = rules.normalize_rules(ws.field_rules)
         merged = rules.validate_rules(request.data, ws.field_rules)
         ws.field_rules = merged
@@ -300,7 +311,7 @@ class ChangeDecisionView(APIView):
     approve = True
 
     def post(self, request, workspace_id, change_id):
-        ws, member = _company(request, workspace_id)
+        ws, member = _enterprise(request, workspace_id)
         change = _change_or_404(ws, change_id)
         data = request.data if isinstance(request.data, dict) else {}
         change = changes.decide(request, change, self.approve, request.user, str(data.get("reason") or ""))
@@ -318,7 +329,7 @@ class ChangeRejectView(ChangeDecisionView):
 
 class ChangeBulkView(APIView):
     def post(self, request, workspace_id):
-        ws, member = _company(request, workspace_id)
+        ws, member = _enterprise(request, workspace_id)
         data = request.data if isinstance(request.data, dict) else {}
         action = data.get("action")
         if action not in ("approve", "reject"):
@@ -404,6 +415,12 @@ class PublicDirectoryView(APIView):
         ws = Workspace.objects.filter(directory_slug=(slug or "").lower(), directory_enabled=True, kind="company").first()
         if ws is None:
             raise Http404
+        host = request.query_params.get("host")
+        if host:
+            # Asked on a company's own domain: only that company's directory is shown there.
+            row, state = domains.host_state(host)
+            if state != "active" or row.workspace_id != ws.id:
+                raise Http404
         from staff.flags import flag_enabled
 
         if not flag_enabled("directory", ws):
@@ -437,6 +454,8 @@ class PublicDirectoryView(APIView):
                 "logo_display": branding["logo_display"],
                 "show_company_name": branding["show_company_name"],
                 "verified_domain": verified_domain(ws),
+                # Where the directory lives: the company's domain root once verified, else /d/<slug> on the Bench host.
+                "url": domains.directory_url(ws),
             },
             "total": listed_total,
             "count": count,

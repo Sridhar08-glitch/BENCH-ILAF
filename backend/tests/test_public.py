@@ -182,7 +182,7 @@ class LeadTests(ApiTestCase):
         self.assertEqual(lead["card_id"], self.card["id"])
         self.assertEqual(lead["card_name"], "Alice Anderson")
         self.assertEqual(lead["status"], "new")
-        self.assertEqual(set(lead), {"id", "card_id", "card_name", "name", "email", "phone", "company", "note", "source", "channel", "meeting_times", "status", "created_at", "assignee", "assigned_at", "consented_at", "note_count", "tag", "event_name"})
+        self.assertEqual(set(lead), {"id", "card_id", "card_name", "name", "email", "phone", "company", "note", "source", "channel", "meeting_times", "status", "created_at", "assignee", "assigned_at", "consented_at", "note_count", "tag", "event_name", "shared_with_company"})
 
     def test_honeypot_is_dropped_silently(self):
         res = self.anon.post(self.url, {"consent": True, "name": "Bot", "email": "bot@example.com", "website_url": "http://spam.example"}, format="json")
@@ -304,7 +304,7 @@ class EventAndAnalyticsTests(ApiTestCase):
         self.assertEqual(sum(data["hours"]), 6)
         self.assertEqual(data["top_buttons"][0], {"kind": "Instagram", "count": 2})
         by_card = {c["card_id"]: c for c in data["cards"]}
-        self.assertEqual(by_card[self.card["id"]], {"card_id": self.card["id"], "name": "Alice Anderson", "views": 5, "saves": 1, "leads": 1})
+        self.assertEqual(by_card[self.card["id"]], {"card_id": self.card["id"], "name": "Alice Anderson", "views": 5, "saves": 1, "leads": 1, "leads_visible": True})
         self.assertEqual(by_card[self.other["id"]]["views"], 1)
         # Single-card filter.
         res = self.person.client.get(f"{API}workspaces/{self.person.ws}/analytics", {"card_id": self.other["id"]})

@@ -105,7 +105,8 @@ class PeopleListTests(StaffTestCase):
     def test_plan_filter(self):
         self.seed()
         self.assertEqual(self.emails(plan="personal"), ["alice@example.com"])
-        self.assertEqual(self.emails(plan="company"), ["owner@acme.test"])
+        self.assertEqual(self.emails(plan="enterprise"), ["owner@acme.test"])
+        self.assertEqual(self.emails(plan="company"), [])
         none = set(self.emails(plan="none"))
         self.assertIn("free@example.com", none)
         self.assertNotIn("alice@example.com", none)

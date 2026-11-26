@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 from cards.models import CardItem
 from designs.services import custom_face_checker
 from ilaf.branding import has_palette
-from ilaf.design import LOCKED_KEYS, require_pack2_face, validate_design
+from ilaf.design import LOCKED_KEYS, require_pack2_face, require_page_styles, validate_design
 from ilaf.errors import validation_error
 from ilaf.items import MAX_ITEMS
 
@@ -14,15 +14,16 @@ MAX_TEMPLATE_BUTTONS = 20
 
 
 def clean_design(raw, workspace):
-    """A partial design (face, colour, below, intro). Anything else is refused. Returns only the keys given."""
+    """A partial design (face, colour, below, intro, top, font, size). Anything else is refused. Returns only the keys given."""
     if raw in (None, {}):
         return {}
     if not isinstance(raw, dict):
         raise validation_error({"design": ["Send the design as an object."]})
     extra = [k for k in raw if k not in LOCKED_KEYS]
     if extra:
-        raise validation_error({"design": [f"A department can set only the face, colour, layout below, opening, font and text size, not {extra[0]}."]})
+        raise validation_error({"design": [f"A department can set only the face, colour, layout below, opening, top of the page, font and text size, not {extra[0]}."]})
     require_pack2_face(raw, workspace)
+    require_page_styles(raw, workspace)
     try:
         validate_design(raw, company_colour_ok=has_palette(workspace), custom_face_ok=custom_face_checker(workspace))
     except ValidationError as exc:

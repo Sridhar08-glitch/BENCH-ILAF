@@ -8,11 +8,14 @@ from urllib.parse import urlparse
 
 from rest_framework.exceptions import ValidationError
 
+from billing.services import enterprise_allowed
 from ilaf.errors import ApiError, validation_error
 from ilaf.items import KINDS, item_href, validate_value
 
 PERMISSIONS = ("free", "approval", "locked")
-SCALAR_FIELDS = ("name", "title", "company", "address")
+# The bio has no rule of its own: the company's address rule guards it too.
+SCALAR_FIELDS = ("name", "title", "company", "address", "bio")
+RULE_OF = {"bio": "address"}
 FIELD_KEYS = (
     "name", "title", "photo", "company", "address", "button_add", "button_edit", "button_remove",
     "slug", "features", "vcard",
@@ -22,8 +25,11 @@ FIELD_KEYS = (
 SETTING_RULES = {"slug": ("slug",), "features": ("features",), "vcard": ("vc", "save_contact")}
 FIELD_LABELS = {
     "name": "the name", "title": "the job title", "photo": "the photo", "company": "the company line",
-    "address": "the address", "buttons": "the buttons",
+    "address": "the address", "bio": "the bio", "buttons": "the buttons",
 }
+# The extras under a card (video, shop, hours, booking, team, gallery, event, map). The same names as cards.sections.KINDS.
+EXTRA_KINDS = ("video", "products", "hours", "booking", "team", "gallery", "event", "map")
+EXTRAS_MODES = ("all", "some", "none")
 MAX_BANNED = 100
 MAX_MANDATORY = 10
 _DOMAIN_RE = re.compile(r"^(?=.{3,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$")
@@ -31,7 +37,7 @@ _DOMAIN_RE = re.compile(r"^(?=.{3,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\
 
 def default_rules():
     data = {key: "free" for key in FIELD_KEYS}
-    data.update(allowed_kinds=None, banned_domains=[], mandatory_buttons=[])
+    data.update(allowed_kinds=None, banned_domains=[], mandatory_buttons=[], extras="all", extra_kinds=list(EXTRA_KINDS))
     return data
 
 
@@ -48,6 +54,10 @@ def normalize_rules(raw):
             data["banned_domains"] = [d for d in raw["banned_domains"] if isinstance(d, str)]
         if isinstance(raw.get("mandatory_buttons"), list):
             data["mandatory_buttons"] = [m for m in raw["mandatory_buttons"] if isinstance(m, dict)]
+        if raw.get("extras") in EXTRAS_MODES:
+            data["extras"] = raw["extras"]
+        if isinstance(raw.get("extra_kinds"), list):
+            data["extra_kinds"] = [k for k in EXTRA_KINDS if k in raw["extra_kinds"]]
     return data
 
 
@@ -92,6 +102,17 @@ def validate_rules(incoming, base):
                 merged[key] = incoming[key]
             else:
                 errors[key] = ["Choose free, approval or locked."]
+    if "extras" in incoming:
+        if incoming["extras"] in EXTRAS_MODES:
+            merged["extras"] = incoming["extras"]
+        else:
+            errors["extras"] = ["Choose all, some or none."]
+    if "extra_kinds" in incoming:
+        value = incoming["extra_kinds"]
+        if isinstance(value, list) and all(isinstance(k, str) and k in EXTRA_KINDS for k in value):
+            merged["extra_kinds"] = [k for k in EXTRA_KINDS if k in value]
+        else:
+            errors["extra_kinds"] = ["Choose extras from the list."]
     if "allowed_kinds" in incoming:
         value = incoming["allowed_kinds"]
         if value is None:
@@ -173,11 +194,17 @@ def is_shown(item):
 
 
 # ---------------------------------------------------------------- what applies to whom
+def workspace_rules(workspace):
+    """The company's rules as they apply now. Field rules are an Enterprise feature: a company that is not on that plan
+    keeps what it saved, but nothing is enforced (everything is free) until it is on it again."""
+    return normalize_rules(workspace.field_rules if enterprise_allowed(workspace) else {})
+
+
 def mandatory_for(workspace, member):
     """Company mandatory buttons plus those of the member's department."""
-    out = list(normalize_rules(workspace.field_rules)["mandatory_buttons"])
+    out = list(workspace_rules(workspace)["mandatory_buttons"])
     department = getattr(member, "department", None) if member is not None else None
-    if department is not None:
+    if department is not None and enterprise_allowed(workspace):
         for entry in department.mandatory_items or []:
             if not any(same_button(entry, m) for m in out):
                 out.append(entry)
@@ -185,27 +212,41 @@ def mandatory_for(workspace, member):
 
 
 def effective_rules(workspace, member):
-    rules = normalize_rules(workspace.field_rules)
+    rules = workspace_rules(workspace)
     rules["mandatory_buttons"] = mandatory_for(workspace, member)
     return rules
+
+
+def extras_for(workspace, member):
+    """The extras this person may add to their card, in the order of EXTRA_KINDS. Only an employee of a company is limited by the
+    company's rule; owners, admins and personal accounts may add any."""
+    if workspace.kind != "company" or member is None or member.role != "employee":
+        return list(EXTRA_KINDS)
+    rules = workspace_rules(workspace)
+    if rules["extras"] == "none":
+        return []
+    if rules["extras"] == "some":
+        return list(rules["extra_kinds"])
+    return list(EXTRA_KINDS)
 
 
 def access_for(workspace, member):
     """What the card editor needs to show per field: the permission of each, plus the button rules."""
     if workspace.kind != "company" or member is None or member.role != "employee":
         return {
-            **{k: "free" for k in ("name", "title", "photo", "company", "address", "slug", "features", "vcard")},
+            **{k: "free" for k in ("name", "title", "photo", "company", "address", "bio", "slug", "features", "vcard")},
             "buttons": {"add": "free", "edit": "free", "remove": "free"},
-            "allowed_kinds": None, "banned_domains": [], "mandatory_buttons": [],
+            "allowed_kinds": None, "banned_domains": [], "mandatory_buttons": [], "extras": list(EXTRA_KINDS),
         }
     rules = effective_rules(workspace, member)
     return {
-        **{k: rules[k] for k in ("name", "title", "photo", "company", "address")},
+        **{k: rules[RULE_OF.get(k, k)] for k in ("name", "title", "photo", "company", "address", "bio")},
         **{k: ("free" if rules[k] == "free" else "locked") for k in SETTING_RULES},
         "buttons": {"add": rules["button_add"], "edit": rules["button_edit"], "remove": rules["button_remove"]},
         "allowed_kinds": rules["allowed_kinds"],
         "banned_domains": rules["banned_domains"],
         "mandatory_buttons": rules["mandatory_buttons"],
+        "extras": extras_for(workspace, member),
     }
 
 
@@ -268,7 +309,7 @@ def enforce_card_write(card, data, member, creating=False):
     for field in SCALAR_FIELDS:
         if field not in data or data[field] == getattr(card, field):
             continue
-        perm = rules[field]
+        perm = rules[RULE_OF.get(field, field)]
         if creating and perm != "free":
             if field == "name":
                 data[field] = member.full_name or ""

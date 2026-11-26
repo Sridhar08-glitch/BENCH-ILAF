@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("workspaces/<uuid:workspace_id>/cards", views.WorkspaceCardsView.as_view()),
     path("workspaces/<uuid:workspace_id>/cards/reorder", views.ReorderCardsView.as_view()),
+    path("workspaces/<uuid:workspace_id>/company-card", views.CompanyCardView.as_view()),
     path("cards/<uuid:card_id>/make-default", views.MakeDefaultView.as_view()),
     path("cards/<uuid:card_id>", views.CardDetailView.as_view()),
     path("cards/<uuid:card_id>/photo", views.CardPhotoView.as_view()),
@@ -16,6 +17,14 @@ urlpatterns = [
     path("cards/<uuid:card_id>/suspend", views.SuspendView.as_view()),
     path("cards/<uuid:card_id>/restore", views.RestoreView.as_view()),
     path("cards/<uuid:card_id>/duplicate", views.DuplicateView.as_view()),
+    path("cards/<uuid:card_id>/video", views.CardVideoView.as_view()),
+    path("cards/<uuid:card_id>/video-poster", views.CardVideoPosterView.as_view()),
+    path("cards/<uuid:card_id>/sections", views.CardSectionsView.as_view()),
+    path("cards/<uuid:card_id>/sections/reorder", views.ReorderSectionsView.as_view()),
+    path("cards/<uuid:card_id>/sections/<uuid:section_id>", views.CardSectionDetailView.as_view()),
+    path("cards/<uuid:card_id>/gallery", views.CardGalleryView.as_view()),
+    path("cards/<uuid:card_id>/gallery/reorder", views.ReorderGalleryView.as_view()),
+    path("cards/<uuid:card_id>/gallery/<uuid:image_id>", views.CardGalleryImageView.as_view()),
     path("slugs/check", views.SlugCheckView.as_view()),
     path("tools/resolve-link", views.ResolveLinkView.as_view()),
 ]

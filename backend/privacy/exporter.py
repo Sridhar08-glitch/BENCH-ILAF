@@ -19,12 +19,18 @@ from django.utils import timezone
 from analytics.models import Event, event_count
 from cards.models import Card
 from cards.services import public_url
-from leads.models import Lead
+from leads.models import Lead, company_owned_leads
 from operations.models import AuditEvent
-from workspaces.models import Member
+from workspaces.models import CustomDomain, Member
 
 SECRET_FIELDS = {"password", "invite_token", "ip_hash", "visitor_hash"}
 MAX_MEDIA_BYTES = 25 * 1024 * 1024
+
+
+def _domain_dump(workspace):
+    """(the company's claimed custom domain, its status) for the export; the verification token is not exported."""
+    row = CustomDomain.objects.filter(workspace=workspace).first()
+    return (row.domain, row.status) if row else (None, None)
 
 
 def _plain(value):
@@ -227,11 +233,12 @@ def build_workspace_export(workspace):
     members = list(workspace.members.select_related("user", "department"))
     cards = list(Card.objects.filter(workspace=workspace).prefetch_related("items", "old_slugs"))
     card_ids = [c.id for c in cards]
-    leads = list(Lead.objects.filter(Q(workspace=workspace) | Q(card_id__in=card_ids)).distinct().order_by("created_at"))
+    # The company's own contacts only: an employee's contacts are theirs, and come out in their own export.
+    leads = list(company_owned_leads(workspace).distinct().order_by("created_at"))
 
     writer.json("company.json", {
         "id": str(workspace.id), "name": workspace.name, "created_at": workspace.created_at.isoformat(),
-        "brand": workspace.brand, "custom_domain": workspace.custom_domain,
+        "brand": workspace.brand, "custom_domain": _domain_dump(workspace)[0], "custom_domain_status": _domain_dump(workspace)[1],
         "directory_enabled": workspace.directory_enabled, "directory_slug": workspace.directory_slug,
         "allowed_email_domains": workspace.allowed_email_domains,
         "require_google_signin": workspace.require_google_signin,
@@ -262,7 +269,7 @@ def estimate_size(user=None, workspace=None):
     """(cards, leads) counts used to decide between exporting now and exporting in the background."""
     if workspace is not None:
         cards = Card.objects.filter(workspace=workspace)
-        leads = Lead.objects.filter(workspace=workspace)
+        leads = company_owned_leads(workspace)
     else:
         cards = Card.objects.filter(owner=user)
         leads = Lead.objects.filter(card__owner=user)

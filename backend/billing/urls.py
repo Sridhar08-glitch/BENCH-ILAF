@@ -7,5 +7,8 @@ urlpatterns = [
     path("workspaces/<uuid:workspace_id>/checkout", views.CheckoutView.as_view()),
     path("workspaces/<uuid:workspace_id>/subscription", views.SubscriptionView.as_view()),
     path("workspaces/<uuid:workspace_id>/invoices", views.InvoicesView.as_view()),
+    path("workspaces/<uuid:workspace_id>/billing-portal", views.BillingPortalView.as_view()),
+    path("workspaces/<uuid:workspace_id>/enterprise-request", views.EnterpriseRequestView.as_view()),
+    path("workspaces/<uuid:workspace_id>/enterprise-request/accept", views.EnterpriseAcceptView.as_view()),
     path("stripe/webhook", views.StripeWebhookView.as_view()),
 ]

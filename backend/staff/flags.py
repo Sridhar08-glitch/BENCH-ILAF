@@ -17,6 +17,7 @@ KNOWN = {
     "custom_designs": "Custom card design requests and company faces",
     "support_chat": "Live chat with the support team",
     "pack2_faces": "Design Pack 2: card faces 401 to 500 in the design picker",
+    "page_styles": "Page styles: photo headers, the page button sets 401 to 427 and the content blocks under the card",
 }
 CACHE_KEY = "staff:flags:v1"
 CACHE_SECONDS = 60

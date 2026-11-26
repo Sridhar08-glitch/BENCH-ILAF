@@ -9,8 +9,13 @@ from .utils import clean_multiline
 # Faces 401 to 500 are Design Pack 2, behind the "pack2_faces" feature switch (see require_pack2_face).
 FACE_COUNT = 500
 PACK1_FACE_COUNT = 400
-BELOW_COUNT = 400
-INTRO_COUNT = 400  # 0 means no opening animation
+# The top of the page: 0 is Classic (the face card), 1 to 27 are the photo headers of the page styles.
+# Layouts 401 to 527 below the card are the button sets of those same 127 pages (27 first styles, then 100 hand-made ones). Both sit behind the
+# "page_styles" switch (see require_page_styles) and belong to the paid plans.
+TOP_COUNT = 127
+BELOW_COUNT = 527
+PACK1_BELOW_COUNT = 400
+INTRO_COUNT = 406  # 1 to 400 animate the flip card, 401 to 406 are made for the page styles (headers); 0 means no opening animation
 COLOURWAYS = 4
 # Colour 4 means "company colours": the palette of the card's company workspace. It is only accepted when
 # that workspace has a palette, and a card that has it falls back to colourway 0 when the palette is removed.
@@ -20,7 +25,10 @@ NUMBER_KEYS = {
     "colour": (0, COMPANY_COLOUR),
     "below": (1, BELOW_COUNT),
     "intro": (0, INTRO_COUNT),
+    "top": (0, TOP_COUNT),
 }
+# The keys every design stored in the current format carries ("top" came later and reads as 0 when it is missing).
+CURRENT_KEYS = ("face", "colour", "below", "intro")
 BOOL_KEYS = ("photo", "brand_colors", "foot")
 # The typeface of the name, title and contact lines. "face" keeps the fonts each face was drawn with; the other keys are
 # the curated list the web app shows in its font picker (the last three are the Arabic choices). The list lives in the
@@ -37,7 +45,7 @@ SIZE_MIN = 60
 SIZE_MAX = 150
 SIZE_DEFAULT = 100
 # What a company design lock controls. The card's own photo switch stays free.
-LOCKED_KEYS = ("face", "custom_face", "colour", "below", "intro", "font", "size")
+LOCKED_KEYS = ("face", "custom_face", "colour", "below", "intro", "top", "font", "size")
 
 DEFAULT_DESIGN = {
     "face": 1,
@@ -46,6 +54,7 @@ DEFAULT_DESIGN = {
     "colour": 0,
     "below": 1,
     "intro": 1,
+    "top": 0,
     "font": FONT_FACE,
     "size": SIZE_DEFAULT,
     "photo": True,
@@ -67,7 +76,7 @@ def default_vc():
 
 
 def is_current(design):
-    return isinstance(design, dict) and all(isinstance(design.get(k), int) and not isinstance(design.get(k), bool) for k in NUMBER_KEYS)
+    return isinstance(design, dict) and all(isinstance(design.get(k), int) and not isinstance(design.get(k), bool) for k in CURRENT_KEYS)
 
 
 def _whole(value):
@@ -84,6 +93,50 @@ def require_pack2_face(data, workspace):
         from staff.flags import require_flag
 
         require_flag("pack2_faces", workspace)
+
+
+def uses_page_style(data):
+    """True when a design write picks a photo header (top above 0) or one of the page button sets (below above 400)."""
+    if not isinstance(data, dict):
+        return False
+    top, below = data.get("top"), data.get("below")
+    return (_whole(top) and top > 0) or (_whole(below) and below > PACK1_BELOW_COUNT)
+
+
+def require_page_styles(data, workspace):
+    """A design write that uses a page style needs the switch on for this company (403 feature_unavailable) and a
+    paid plan (403 plan_limit). Classic designs pass without any check, and stored designs are never re-checked."""
+    if uses_page_style(data):
+        from cards.features import require_rich_pages
+        from staff.flags import require_flag
+
+        require_flag("page_styles", workspace)
+        require_rich_pages(workspace)
+
+
+# What the free plan (the 7-day trial) may pick: the first 50 faces, the first 50 below-card layouts and the first 50 opening
+# animations, and no page style. A paid personal plan has all of them.
+FREE_LIMITS = {"face": 50, "below": 50, "intro": 50}
+
+
+def require_free_limits(data, workspace):
+    """A design write on a free personal workspace may only pick from the free set (403 plan_limit otherwise).
+    Stored designs are never re-checked."""
+    if not isinstance(data, dict):
+        return
+    from billing.services import is_free_plan
+
+    if not is_free_plan(workspace):
+        return
+    over = [k for k, cap in FREE_LIMITS.items() if _whole(data.get(k)) and data[k] > cap]
+    if over or (_whole(data.get("top")) and data["top"] > 0):
+        from .errors import ApiError
+
+        raise ApiError(
+            "plan_limit",
+            "The free plan includes 50 faces, 50 below-card layouts and 50 animations, and no page styles. Upgrade to a paid plan to use the rest.",
+            403,
+        )
 
 
 def validate_design(data, base=None, company_colour_ok=None, custom_face_ok=None):

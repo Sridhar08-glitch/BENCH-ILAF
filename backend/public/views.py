@@ -15,6 +15,7 @@ from workspaces.services import brand_public_json
 from billing.services import is_live
 from ilaf.branding import normalize_branding
 from cards.features import exchange_settings, public_features
+from cards.sections import public_sections
 from cards.services import effective_design, public_item_json, public_url
 from cards.slugs import resolve_card
 from cards.vcard import build_vcard
@@ -57,10 +58,26 @@ def _brand_names(card):
     return (brand.get("company_name") or ws.name or None), (brand.get("website") or None)
 
 
-def _live_card_or_404(key):
+def scope_to_host(request, card):
+    """A page served on a company's own domain asks with ?host=<that domain>: the card must belong to that company, and the
+    domain must be verified and Enterprise-live. Anything else is "not found", so one company's card is never shown under
+    another company's name. Without ?host= (the normal Bench address) nothing changes."""
+    host = request.query_params.get("host")
+    if not host:
+        return
+    from workspaces import domains
+
+    row, state = domains.host_state(host)
+    if state != "active" or row.workspace_id != card.workspace_id:
+        raise Http404
+
+
+def _live_card_or_404(key, request=None):
     card = resolve_card(key)
     if card is None or card_state(card) != "live":
         raise Http404
+    if request is not None:
+        scope_to_host(request, card)
     return card
 
 
@@ -69,6 +86,7 @@ class PublicCardView(PublicBase):
         card = resolve_card(key)
         if card is None:
             raise Http404
+        scope_to_host(request, card)
         state = card_state(card)
         if state == "hidden":
             raise Http404
@@ -103,7 +121,10 @@ class PublicCardView(PublicBase):
             "canonical": canonical,
             "card": {
                 "name": card.name, "title": card.title, "company": card.company, "address": card.address,
+                "bio": card.bio,
                 "photo_url": photo, "cover_url": file_url(request, card.cover), "items": items, "save_contact": card.save_contact,
+                "video_url": file_url(request, card.video), "video_poster_url": file_url(request, card.video_poster),
+                "sections": public_sections(card, request),
                 "language": card.language,
                 "seo_indexable": card.seo_indexable,
                 "features": public_features(card),
@@ -205,7 +226,7 @@ class PublicMeetingRequestView(PublicBase):
 
 class PublicVcardView(PublicBase):
     def get(self, request, key):
-        card = _live_card_or_404(key)
+        card = _live_card_or_404(key, request)
         response = HttpResponse(build_vcard(card), content_type="text/vcard; charset=utf-8")
         filename = "".join(c for c in (card.slug or card.public_code) if c.isalnum() or c in "-_") or "card"
         response["Content-Disposition"] = f'attachment; filename="{filename}.vcf"'
@@ -219,6 +240,7 @@ class PublicQrPngView(PublicBase):
         card = resolve_card(key)
         if card is None:
             raise Http404
+        scope_to_host(request, card)
         try:
             size = max(128, min(int(request.query_params.get("size", 512)), 1024))
         except ValueError:
@@ -237,6 +259,7 @@ class PublicQrView(PublicBase):
         card = resolve_card(key)
         if card is None:
             raise Http404
+        scope_to_host(request, card)
         try:
             size = max(128, min(int(request.query_params.get("size", 512)), 2048))
         except ValueError:

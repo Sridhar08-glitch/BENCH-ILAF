@@ -12,29 +12,30 @@ from rest_framework.views import APIView
 
 from accounts.models import User
 from accounts.services import check_login_password, domain_allowed, tokens_for
-from billing.services import is_live
+from billing.services import enterprise_allowed, is_live, require_enterprise
 from cards.models import Card
 from ilaf.branding import merge_branding, normalize_branding
 from designs.services import custom_face_checker
-from ilaf.design import require_pack2_face, validate_design
+from ilaf.design import require_pack2_face, require_page_styles, validate_design
 from ilaf.countries import country_or_none
 from ilaf.errors import ApiError, validation_error
 from ilaf.i18n import localise_message
 from ilaf.images import process_brand_picture, process_brand_symbol, process_logo_png
 from ilaf.items import has_unsafe_scheme, scheme_of
 from ilaf.throttles import InviteAcceptThrottle, PublicReadThrottle
-from ilaf.utils import clean_line, file_url
+from ilaf.utils import clean_line, file_url, iso
 
 from operations import actions, audit
 from security import services as security_services
 from operations.directory import directory_slug_problem
 from operations.models import Department
 
+from . import domains
 from .access import MANAGER_ROLES, get_workspace_and_member
 from .models import Member, Workspace, default_brand
 from .services import (
     RESEND_GAP, invite_is_valid, invite_member, member_json, resend_available_at, seats_left,
-    send_invite_email, subscription_json, workspace_json, accept_member,
+    send_invite_email, subscription_for_member, subscription_json, workspace_json, accept_member,
 )
 
 DOMAIN_RE = re.compile(r"^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$")
@@ -56,7 +57,7 @@ class MyWorkspacesView(APIView):
                 cards = cards.filter(member=member)
             data.append({
                 "id": str(ws.id), "kind": ws.kind, "name": ws.name, "role": member.role,
-                "card_count": cards.count(), "subscription": subscription_json(ws),
+                "card_count": cards.count(), "subscription": subscription_for_member(ws, member),
             })
         return Response(data)
 
@@ -101,6 +102,8 @@ class BrandSerializer(serializers.Serializer):
     logo_chip = serializers.JSONField(required=False)
     show_company_name = serializers.JSONField(required=False)
     artwork = serializers.JSONField(required=False)
+    logo_size = serializers.JSONField(required=False)
+    logo_free = serializers.JSONField(required=False, allow_null=True)
 
     def validate_company_name(self, value):
         return clean_line(value, 120)
@@ -153,14 +156,6 @@ class WorkspacePatchSerializer(serializers.Serializer):
             raise ValidationError("Enter a name.")
         return value
 
-    def validate_custom_domain(self, value):
-        value = (value or "").strip().lower()
-        if not value:
-            return None
-        if not DOMAIN_RE.match(value):
-            raise ValidationError("Enter a domain name such as cards.example.com.")
-        return value
-
 
 class WorkspacesView(APIView):
     def post(self, request):
@@ -192,7 +187,7 @@ class WorkspaceDetailView(APIView):
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
         security_before = (list(ws.allowed_email_domains or []), ws.require_google_signin)
-        before = {"name": ws.name, "country": ws.country, "brand": dict(ws.brand or {}), "custom_domain": ws.custom_domain,
+        before = {"name": ws.name, "country": ws.country, "brand": dict(ws.brand or {}),
                   "directory_enabled": ws.directory_enabled, "directory_slug": ws.directory_slug}
         if "name" in data:
             ws.name = data["name"]
@@ -213,6 +208,7 @@ class WorkspaceDetailView(APIView):
             if "design" in incoming:
                 allowed = bool(brand.get("palette")) and ws.kind == "company"
                 require_pack2_face(incoming["design"], ws)
+                require_page_styles(incoming["design"], ws)
                 try:
                     brand["design"] = validate_design(
                         incoming["design"], base=brand.get("design"), company_colour_ok=allowed,
@@ -227,19 +223,28 @@ class WorkspaceDetailView(APIView):
             if member.role != "owner":
                 raise ApiError("forbidden", "Only the owner can change the company sign-in rules.", 403)
             security = data["security"]
+            # Sign-in rules (allowed e-mail domains, Google sign-in) are an Enterprise feature; switching them off stays possible.
+            tightens = (
+                bool(security.get("allowed_email_domains"))
+                and security["allowed_email_domains"] != list(ws.allowed_email_domains or [])
+            ) or (security.get("require_google_signin") is True and not ws.require_google_signin)
+            if tightens:
+                require_enterprise(ws)
             if "allowed_email_domains" in security:
                 ws.allowed_email_domains = security["allowed_email_domains"]
             if "require_google_signin" in security:
                 ws.require_google_signin = security["require_google_signin"]
             if "require_2fa" in security:
                 security_services.set_require_2fa(request, ws, security["require_2fa"])
+        with transaction.atomic():
+            ws.save()
         if "custom_domain" in data:
-            ws.custom_domain = data["custom_domain"]
-        try:
-            with transaction.atomic():
-                ws.save()
-        except IntegrityError:
-            raise validation_error({"custom_domain": ["This domain is already in use."]})
+            # The old free-text field now goes through the same rules as PUT/DELETE workspaces/{id}/domain: Enterprise only to set
+            # (clearing stays possible), a claim that starts as pending until DNS proves it, nobody else's verified name.
+            if (data["custom_domain"] or "").strip():
+                domains.set_domain(request, ws, data["custom_domain"])
+            else:
+                domains.remove_domain(request, ws)
         self._audit_changes(request, ws, before)
         if security_before != (list(ws.allowed_email_domains or []), ws.require_google_signin):
             audit.log(
@@ -260,6 +265,8 @@ class WorkspaceDetailView(APIView):
             raise validation_error({"directory_enabled": ["The directory is only available on company workspaces."]})
         if member.role != "owner":
             raise ApiError("forbidden", "Only the owner can change the company directory.", 403)
+        if wants_enabled or (slug != ws.directory_slug and slug is not None):
+            require_enterprise(ws)  # the directory is an Enterprise feature; switching it off stays possible
         if slug != ws.directory_slug and slug is not None:
             problem = directory_slug_problem(slug, ws)
             if problem:
@@ -286,8 +293,6 @@ class WorkspaceDetailView(APIView):
         others = sorted(k for k in changed if k not in ("lock_design", "lock_allows_departments", "design"))
         if before["name"] != ws.name:
             others.append("name")
-        if before["custom_domain"] != ws.custom_domain:
-            others.append("custom_domain")
         if before["country"] != ws.country:
             others.append("country")
         if others:
@@ -391,6 +396,45 @@ class TemplateBackView(BrandFileView):
 
 
 # ---------------------------------------------------------------- team
+def my_membership_json(workspace, member):
+    return {
+        "member_id": str(member.id), "role": member.role,
+        # Only an employee of a company has the switch; everyone else gets can_share_contacts false and share_contacts false.
+        "can_share_contacts": workspace.kind == "company" and member.role == "employee",
+        "share_contacts": bool(member.share_contacts) and member.role == "employee",
+        "share_contacts_changed_at": iso(member.share_contacts_changed_at),
+    }
+
+
+class MyMembershipView(APIView):
+    """The caller's own place in the company: read it, and (employees only) switch "share my new contacts with the company".
+
+    Nobody can switch it for somebody else: there is no member id in the route and an owner or admin gets 403."""
+
+    def get(self, request, workspace_id):
+        ws, member = get_workspace_and_member(request.user, workspace_id)
+        return Response(my_membership_json(ws, member))
+
+    def patch(self, request, workspace_id):
+        ws, member = get_workspace_and_member(request.user, workspace_id)
+        if ws.kind != "company" or member.role != "employee":
+            raise ApiError("forbidden", "Only an employee of a company can share contacts with the company.", 403)
+        data = request.data if isinstance(request.data, dict) else {}
+        value = data.get("share_contacts")
+        if not isinstance(value, bool):
+            raise validation_error({"share_contacts": ["Choose on or off."]})
+        if value != member.share_contacts:
+            member.share_contacts = value
+            member.share_contacts_changed_at = timezone.now()
+            member.save(update_fields=["share_contacts", "share_contacts_changed_at"])
+            # The log shows the switch and who flipped it; it never carries a contact's name.
+            audit.log(
+                request, ws, "member.share_contacts_changed", "member", member.id, member.full_name or member.email,
+                {"share_contacts": value},
+            )
+        return Response(my_membership_json(ws, member))
+
+
 class MembersView(APIView):
     def get(self, request, workspace_id):
         ws, _ = get_workspace_and_member(request.user, workspace_id, MANAGER_ROLES)
@@ -431,6 +475,8 @@ class InvitesView(APIView):
         ser.is_valid(raise_exception=True)
         entries = ser.validated_data["invites"]
         _require_team_workspace(ws, member)
+        if any(e["department_id"] for e in entries):
+            require_enterprise(ws)  # departments are an Enterprise feature
         if member.role != "owner" and any(e["role"] == "admin" for e in entries):
             raise ApiError("forbidden", "Only the owner can invite admins.", 403)
         emails = [e["email"].strip().lower() for e in entries]
@@ -615,6 +661,8 @@ class MembersImportView(APIView):
                 reason = "Duplicate email in this file."
             elif email in existing:
                 reason = "Already in the team."
+            elif dept_name and not enterprise_allowed(ws):
+                reason = "Departments are part of the Enterprise plan. Ask us for a quote."
             elif dept_name and (department := dept_by_name.get(dept_name.lower())) is None:
                 reason = f"Unknown department {dept_name}. Create it first under Departments."
             else:
@@ -675,7 +723,7 @@ class InviteAcceptView(APIView):
         from django.core.exceptions import ValidationError as DjangoValidationError
 
         member = InviteLookupView.get_member(token or _body_token(request))
-        if member.workspace.require_google_signin:
+        if member.workspace.require_google_signin and enterprise_allowed(member.workspace):
             raise ApiError(
                 "google_signin_required",
                 "This company requires Google sign-in. Use the Continue with Google button.", 403,
