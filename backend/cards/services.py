@@ -11,7 +11,10 @@ from rest_framework.exceptions import ValidationError
 from billing.services import get_subscription, is_live
 from designs.services import custom_face_checker, resolve_design
 from ilaf.branding import has_palette
-from ilaf.design import COMPANY_COLOUR, LOCKED_KEYS, default_design, default_vc, require_pack2_face, validate_design, validate_vc
+from ilaf.design import (
+    COMPANY_COLOUR, LOCKED_KEYS, default_design, default_vc, require_free_limits, require_pack2_face, require_page_styles, validate_design,
+    validate_vc,
+)
 from ilaf.errors import ApiError, validation_error
 from ilaf.items import DOWNLOAD_KIND, item_href
 from ilaf.utils import file_url, iso
@@ -46,11 +49,18 @@ def effective_design(card):
 
 
 def public_url(card):
-    return f"{settings.WEB_BASE_URL}/c/{card.slug or card.public_code}"
+    """The card's public address: on the company's own domain once that is verified and the company is Enterprise-live
+    (https://cards.northgate.com/ahmed), else the Bench address (<web>/c/ahmed)."""
+    from workspaces.domains import card_address
+
+    base, path = card_address(card)
+    return f"{base}{path}"
 
 
-def stats_for(card_ids):
-    """All-time {card_id: {views, scans, saves, leads}} for the given cards in two queries."""
+def stats_for(card_ids, lead_ids=None):
+    """All-time {card_id: {views, scans, saves, leads}} for the given cards in two queries. With `lead_ids` (the cards whose contacts the
+    reader may see), the number of contacts of any other card is None, not zero: an owner or admin does not learn how many contacts an
+    employee's card got."""
     from analytics.models import Event, event_count
     from leads.models import Lead
 
@@ -68,6 +78,15 @@ def stats_for(card_ids):
         stats[row["card_id"]].update(views=row["views"], scans=row["scans"], saves=row["saves"])
     for row in Lead.objects.filter(card_id__in=card_ids).values("card_id").annotate(n=Count("id")):
         stats[row["card_id"]]["leads"] = row["n"]
+    if lead_ids is not None:
+        # Another person's card: only the contacts that person shared with the company are counted (None when there are none).
+        shared = {
+            r["card_id"]: r["n"]
+            for r in Lead.objects.filter(card_id__in=card_ids, shared_with_company=True).values("card_id").annotate(n=Count("id"))
+        }
+        for cid in stats:
+            if cid not in lead_ids:
+                stats[cid]["leads"] = shared.get(cid)
     return stats
 
 
@@ -93,12 +112,16 @@ def card_json(card, request, stats=None):
         "label": card.label,
         "sort_order": card.sort_order,
         "is_default": card.is_default,
+        "is_company": card.is_company,
         "name": card.name,
         "title": card.title,
         "company": card.company,
         "address": card.address,
+        "bio": card.bio,
         "photo_url": file_url(request, card.photo),
         "cover_url": file_url(request, card.cover),
+        "video_url": file_url(request, card.video),
+        "video_poster_url": file_url(request, card.video_poster),
         "save_contact": card.save_contact,
         "language": card.language,
         "hide_from_directory": card.hide_from_directory,
@@ -123,21 +146,40 @@ def public_item_json(item):
     return out
 
 
+# ---------------------------------------------------------------- uploads
+def check_video_upload(upload):
+    """A card video: judged by its first bytes (an MP4 container carries `ftyp` at offset 4), never by its name or
+    content type, and capped at VIDEO_MAX_UPLOAD_BYTES. Returns the upload rewound, ready to be streamed into storage."""
+    if upload is None:
+        raise validation_error({"file": ["Choose a video file."]})
+    limit = int(getattr(settings, "VIDEO_MAX_UPLOAD_BYTES", 100 * 1024 * 1024))
+    if upload.size > limit:
+        limit_mb = limit // (1024 * 1024) or 1
+        raise validation_error({"file": [f"The video must be under {limit_mb} MB."]})
+    upload.seek(0)
+    head = upload.read(12)
+    upload.seek(0)
+    if len(head) < 12 or head[4:8] != b"ftyp":
+        raise validation_error({"file": ["Upload an MP4 video."]})
+    return upload
+
+
 # ---------------------------------------------------------------- limits
 def check_can_create(workspace, member):
-    """Raise 402 without a live subscription, 403 plan_limit when the plan's card limit is reached."""
-    if not is_live(workspace):
-        raise ApiError("subscription_required", "An active plan is required to create cards.", 402)
-    sub = get_subscription(workspace)
+    """403 plan_limit when the card limit is reached. A person can build a first card before paying (the page says so): it stays a draft,
+    and publishing is what needs a live plan (PublishView, publish_card)."""
+    live = is_live(workspace)
     if workspace.kind == "company":
         # One card per seat: a member who already has a card cannot make another.
         if member.cards.exists():
             raise ApiError("plan_limit", "Each team member can have one card.", 403)
     else:
-        if workspace.cards.count() >= sub.plan.max_cards:
+        sub = get_subscription(workspace)
+        limit = sub.plan.max_cards if live and sub is not None else 1
+        if workspace.cards.count() >= limit:
             raise ApiError(
                 "plan_limit",
-                f"Your plan allows {sub.plan.max_cards} card(s). Upgrade to add more.",
+                f"Your plan allows {limit} card(s). Upgrade to add more.",
                 403,
             )
 
@@ -219,7 +261,7 @@ def apply_card_data(card, data, role="owner", member=None, enforce=False, creati
         card.hide_from_directory = bool(data["hide_from_directory"])
     if "seo_indexable" in data:
         card.seo_indexable = bool(data["seo_indexable"])
-    for field in ("name", "title", "company", "address", "save_contact", "language", "label"):
+    for field in ("name", "title", "company", "address", "bio", "save_contact", "language", "label"):
         if field in data:
             setattr(card, field, data[field])
     if data.get("is_default"):
@@ -237,7 +279,9 @@ def apply_card_data(card, data, role="owner", member=None, enforce=False, creati
         incoming = data["design"]
         if is_design_locked(card.workspace) and role != "owner":
             incoming = {k: v for k, v in incoming.items() if k not in LOCKED_KEYS}
+        require_free_limits(incoming, card.workspace)
         require_pack2_face(incoming, card.workspace)
+        require_page_styles(incoming, card.workspace)
         try:
             card.design = validate_design(
                 incoming, base=card.design, company_colour_ok=has_palette(card.workspace),

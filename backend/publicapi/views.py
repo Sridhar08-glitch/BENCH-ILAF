@@ -21,7 +21,7 @@ from cards.services import apply_card_data, card_json, new_card, stats_for
 from ilaf.errors import ApiError, validation_error
 from ilaf.utils import iso
 from leads import webhooks, workflow
-from leads.models import Lead
+from leads.models import Lead, company_owned_leads
 from operations import audit
 from operations import actions as ops
 from operations.departments import apply_template
@@ -86,7 +86,8 @@ def company_cards(workspace):
 
 
 def company_leads(workspace):
-    return Lead.objects.filter(Q(workspace=workspace) | Q(card__workspace=workspace)).select_related("card", "assignee")
+    # Only the company's own contacts: those of an employee's card are the employee's.
+    return company_owned_leads(workspace).select_related("card", "assignee")
 
 
 # ---------------------------------------------------------------- who am I

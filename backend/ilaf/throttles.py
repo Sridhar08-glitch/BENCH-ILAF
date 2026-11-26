@@ -94,6 +94,7 @@ class DataDownloadThrottle(IpThrottle):
 # Rates live in settings.ILAF_THROTTLE_RATES (override with THROTTLE_RATES_JSON); a scope with no rate is not limited.
 _ROUTE_SCOPES = [
     ("GET", r"workspaces/[^/]+/(leads|audit)\.csv$", "user_heavy"),
+    ("GET", r"workspaces/[^/]+/orders/export$", "user_heavy"),
     ("POST", r"workspaces/[^/]+/(members/import|bulk/members|bulk/cards|leads/bulk|change-requests/bulk)$", "user_heavy"),
     ("POST", r"privacy/export$", "user_heavy"),
     ("POST", r"workspaces/[^/]+/reports/weekly/preview$", "user_heavy"),
@@ -151,3 +152,11 @@ class PublicReportThrottle(IpThrottle):
 
 class PublicCompanyLeadThrottle(IpThrottle):
     scope = "public_company_lead"
+
+
+class DomainResolveThrottle(IpThrottle):
+    scope = "domain_resolve"
+
+
+class DomainCheckThrottle(IpThrottle):
+    scope = "domain_check"

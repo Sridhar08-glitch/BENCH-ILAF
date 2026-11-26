@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 
 from billing.services import grant_period
 
-from .models import Member, Workspace
+from .models import CustomDomain, Member, Workspace
 
 
 class MemberInline(admin.TabularInline):
@@ -29,3 +29,11 @@ class WorkspaceAdmin(admin.ModelAdmin):
     search_fields = ("name", "created_by__email")
     inlines = [MemberInline]
     actions = [grant_default_plan]
+
+
+@admin.register(CustomDomain)
+class CustomDomainAdmin(admin.ModelAdmin):
+    list_display = ("domain", "status", "workspace", "verified_at", "last_checked_at", "last_error")
+    list_filter = ("status",)
+    search_fields = ("domain", "workspace__name")
+    readonly_fields = ("token", "workspace", "created_by", "created_at")

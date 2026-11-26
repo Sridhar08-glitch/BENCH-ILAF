@@ -9,11 +9,15 @@ from .base import API, ApiTestCase, png_upload
 
 
 class CardCrudTests(ApiTestCase):
-    def test_create_requires_live_subscription(self):
+    def test_a_first_card_can_be_built_before_paying_but_not_published(self):
         person = self.signup()
         res = person.client.post(f"{API}workspaces/{person.ws}/cards", {"name": "A"}, format="json")
-        self.assertEqual(res.status_code, 402)
-        self.assertEqual(res.data["error"]["code"], "subscription_required")
+        self.assertEqual(res.status_code, 201, res.content)
+        self.assertEqual(res.data["status"], "draft")
+        # the first publish starts the 7 free days (see FreeTrialTests); once they have ended, publishing needs a paid plan
+        # without a plan there is room for one draft only
+        second = person.client.post(f"{API}workspaces/{person.ws}/cards", {"name": "B"}, format="json")
+        self.assertEqual((second.status_code, second.data["error"]["code"]), (403, "plan_limit"))
 
     def test_create_returns_full_card_shape(self):
         person = self.signup()
@@ -22,15 +26,16 @@ class CardCrudTests(ApiTestCase):
         self.assertEqual(
             set(card),
             {"id", "workspace_id", "owner", "public_code", "public_url", "slug", "status", "name", "title", "company",
-             "address", "photo_url", "cover_url", "save_contact", "language", "hide_from_directory", "seo_indexable", "vc", "features", "design", "items", "created_at",
-             "updated_at", "stats", "field_access", "pending_changes", "submitted_for_approval", "label", "sort_order", "is_default"},
+             "address", "bio", "photo_url", "cover_url", "video_url", "video_poster_url", "save_contact", "language",
+             "hide_from_directory", "seo_indexable", "vc", "features", "design", "items", "created_at",
+             "updated_at", "stats", "field_access", "pending_changes", "submitted_for_approval", "label", "sort_order", "is_default", "is_company"},
         )
         self.assertEqual(card["status"], "draft")
         self.assertEqual(card["owner"]["email"], person.email)
         self.assertEqual(card["stats"], {"views": 0, "scans": 0, "saves": 0, "leads": 0})
         self.assertEqual(card["public_url"], f"https://web.test/c/{card['public_code']}")
         self.assertEqual(card["design"], {
-            "face": 1, "custom_face": None, "colour": 0, "below": 1, "intro": 1, "font": "face", "size": 100, "photo": True, "brand_colors": False, "foot": True,
+            "face": 1, "custom_face": None, "colour": 0, "below": 1, "intro": 1, "top": 0, "font": "face", "size": 100, "photo": True, "brand_colors": False, "foot": True,
         })
         self.assertIsNone(card["cover_url"])
         self.assertEqual(card["vc"]["note"], "Saved from my BENCH card")
@@ -193,9 +198,9 @@ class DesignTests(ApiTestCase):
     def test_every_face_below_and_intro_number_passes_with_design_pack_2_making_500_faces(self):
         from ilaf.design import BELOW_COUNT, FACE_COUNT, INTRO_COUNT, PACK1_FACE_COUNT
 
-        self.assertEqual((FACE_COUNT, PACK1_FACE_COUNT, BELOW_COUNT, INTRO_COUNT), (500, 400, 400, 400))
-        for key, values in (("face", (1, 25, 26, 200, 201, 400, 401, 437, 500)), ("below", (1, 12, 200, 400)),
-                            ("intro", (0, 1, 22, 400)), ("colour", (0, 1, 2, 3))):
+        self.assertEqual((FACE_COUNT, PACK1_FACE_COUNT, BELOW_COUNT, INTRO_COUNT), (500, 400, 527, 406))
+        for key, values in (("face", (1, 25, 26, 200, 201, 400, 401, 437, 500)), ("below", (1, 12, 200, 400, 401, 427, 428, 477, 478, 527)),
+                            ("intro", (0, 1, 22, 400, 401, 406)), ("colour", (0, 1, 2, 3)), ("top", (0, 1, 27, 28, 77, 78, 127))):
             for value in values:
                 res = self.patch({"design": {key: value}})
                 self.assertEqual(res.status_code, 200, (key, value))
@@ -226,7 +231,8 @@ class DesignTests(ApiTestCase):
     def test_invalid_design_values_rejected(self):
         for bad in (
             {"face": 0}, {"face": 501}, {"face": "classic"}, {"face": True}, {"colour": 4}, {"colour": -1},
-            {"below": 0}, {"below": 401}, {"intro": -1}, {"intro": 401}, {"intro": "fade-up"}, {"face": 1.5},
+            {"below": 0}, {"below": 528}, {"intro": -1}, {"intro": 407}, {"intro": "fade-up"}, {"face": 1.5},
+            {"top": -1}, {"top": 128}, {"top": "popl"}, {"top": True},
             {"photo": "yes"}, {"brand_colors": 1}, {"foot": None},
         ):
             res = self.patch({"design": bad})
@@ -563,3 +569,67 @@ class ItemValidationTests(ApiTestCase):
         ):
             res = self.put({"kind": "Custom", "value": "a.com", "icon": bad})
             self.assertEqual(res.status_code, 400, bad)
+
+
+class FreeTrialTests(ApiTestCase):
+    def make(self, person, name="A"):
+        res = person.client.post(f"{API}workspaces/{person.ws}/cards", {"name": name}, format="json")
+        self.assertEqual(res.status_code, 201, res.content)
+        return res.data
+
+    def test_first_publish_starts_seven_free_days(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from billing.models import Subscription
+
+        person = self.signup()
+        card = self.make(person)
+        self.assertFalse(Subscription.objects.filter(workspace_id=person.ws).exists())
+        res = person.client.post(f"{API}cards/{card['id']}/publish")
+        self.assertEqual(res.status_code, 200, res.content)
+        sub = Subscription.objects.get(workspace_id=person.ws)
+        self.assertEqual(sub.plan_id, "free")
+        self.assertAlmostEqual((sub.ends_at - timezone.now()).total_seconds(), 7 * 86400, delta=60)
+        ws = person.client.get(f"{API}workspaces/{person.ws}").data
+        self.assertEqual((ws["subscription"]["plan_code"], ws["subscription"]["live"]), ("free", True))
+        # after the seven days the card goes offline with no grace days
+        Subscription.objects.update(ends_at=timezone.now() - timedelta(minutes=1))
+        self.assertFalse(person.client.get(f"{API}workspaces/{person.ws}").data["subscription"]["live"])
+        again = person.client.post(f"{API}cards/{card['id']}/publish")
+        self.assertEqual((again.status_code, again.data["error"]["code"]), (402, "subscription_required"))  # no second trial
+        public = self.anon_get_card(card)
+        self.assertEqual(public.data.get("state"), "paused")
+
+    def anon_get_card(self, card):
+        from rest_framework.test import APIClient
+        return APIClient().get(f"{API}public/cards/{card['public_code']}")
+
+    def test_free_plan_sees_only_the_first_fifty_designs_and_no_page_styles(self):
+        person = self.signup()
+        card = self.make(person)
+        url = f"{API}cards/{card['id']}"
+        for design in ({"face": 51}, {"below": 51}, {"intro": 51}, {"top": 3}, {"below": 410}):
+            res = person.client.patch(url, {"design": design}, format="json")
+            self.assertEqual((res.status_code, res.data["error"]["code"]), (403, "plan_limit"), design)
+        for design in ({"face": 50}, {"below": 50}, {"intro": 50}, {"intro": 0}):
+            self.assertEqual(person.client.patch(url, {"design": design}, format="json").status_code, 200, design)
+
+    def test_a_paid_personal_plan_unlocks_everything_and_the_trial_days_are_not_added(self):
+        from billing.models import Subscription
+
+        person = self.signup()
+        card = self.make(person)
+        person.client.post(f"{API}cards/{card['id']}/publish")
+        self.buy(person, "personal")
+        sub = Subscription.objects.get(workspace_id=person.ws)
+        self.assertEqual(sub.plan_id, "personal")
+        self.assertGreater((sub.ends_at - sub.starts_at).days, 360)
+        self.assertAlmostEqual((sub.starts_at - __import__("django.utils.timezone", fromlist=["now"]).now()).total_seconds(), 0, delta=60)
+        res = person.client.patch(f"{API}cards/{card['id']}", {"design": {"face": 400, "below": 300, "intro": 300}}, format="json")
+        self.assertEqual(res.status_code, 200, res.content)
+
+    def test_the_free_and_retired_plans_are_not_for_sale(self):
+        person = self.signup()
+        listed = {p["code"]: p["purchasable"] for p in person.client.get(f"{API}plans").data}
+        self.assertEqual((listed["personal"], listed["company"]), (True, True))
+        self.assertEqual(listed["business"], False)

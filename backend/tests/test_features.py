@@ -214,7 +214,16 @@ class CompanyNotifyTests(OpsTestCase):
         mail.outbox.clear()
         res = self.owner.client.patch(self.url("lead-settings"), {"notify_admins": True}, format="json")
         self.assertEqual(res.status_code, 200)
+        # an admin's own card still tells only its holder: other people's contacts are not for the other admins
         APIClient().post(url, body, format="json")
+        self.assertEqual(sorted(a for m in mail.outbox for a in m.to), ["admin@example.com"])
+        mail.outbox.clear()
+        # the company's own card tells the admins too
+        company = self.owner.client.post(self.url("company-card"))
+        self.assertIn(company.status_code, (200, 201), company.content)
+        published = self.owner.client.post(f"{API}cards/{company.data['id']}/publish")
+        self.assertEqual(published.status_code, 200, published.content)
+        APIClient().post(f"{API}public/cards/{published.data['public_code']}/leads", body, format="json")
         got = sorted(a for m in mail.outbox for a in m.to)
         self.assertEqual(got, ["admin@example.com", "owner@example.com"])
 

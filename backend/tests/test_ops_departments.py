@@ -184,7 +184,7 @@ class DepartmentDesignAndLockTests(OpsTestCase):
     def test_lock_on_wins_over_the_department_design(self):
         brand = self.set_lock(True, False)
         self.assertFalse(brand["lock_allows_departments"])
-        self.assertEqual(self.design_of(self.bob), {**self.company_design, "custom_face": None, "font": "face", "size": 100, "photo": True, "brand_colors": False, "foot": True})
+        self.assertEqual(self.design_of(self.bob), {**self.company_design, "custom_face": None, "top": 0, "font": "face", "size": 100, "photo": True, "brand_colors": False, "foot": True})
 
     def test_lock_on_with_departments_allowed_uses_the_department_keys_only(self):
         brand = self.set_lock(True, True)

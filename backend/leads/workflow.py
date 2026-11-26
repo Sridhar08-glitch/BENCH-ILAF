@@ -12,11 +12,11 @@ from ilaf.emails import send_brand_email
 from ilaf.errors import validation_error
 from ilaf.i18n import member_language, tr
 from operations import audit
-from workspaces.access import visible_cards
+from workspaces.access import commerce_cards
 from workspaces.models import Member
 
 from . import webhooks
-from .models import Lead, LeadActivity, LeadNote
+from .models import Lead, LeadActivity, LeadNote, is_company_owned
 
 STATUS_NAMES = {
     "new": "New", "contacted": "Contacted", "qualified": "Qualified", "won": "Won", "lost": "Lost",
@@ -40,20 +40,29 @@ def record(lead, kind, actor=None, **details):
 
 
 def can_see(member, lead):
-    """Managers see every lead of the company; an employee sees leads of their own card and leads given to them."""
+    """The same rule as visible_leads for one lead: your own cards' leads, those given to you, and (owners and admins) the company
+    card's and those of a deleted card. An employee's contact is never shown to an owner or admin."""
     if lead.workspace_id != member.workspace_id and not (lead.card_id and lead.card.workspace_id == member.workspace_id):
         return False
-    if member.role != "employee":
+    if lead.assignee_id == member.id:
         return True
-    return lead.assignee_id == member.id or bool(lead.card_id and lead.card.member_id == member.id)
+    if not lead.card_id:
+        return member.role != "employee"
+    card = lead.card
+    if card.is_company or card.member_id is None:
+        return member.role != "employee"
+    if lead.shared_with_company and member.role != "employee":
+        return True
+    return card.member_id == member.id or (bool(member.user_id) and card.owner_id == member.user_id)
 
 
 def visible_leads(member):
-    """Leads this member may see (company leads of deleted cards stay visible to managers)."""
-    own = Q(card__in=visible_cards(member))
-    if member.role == "employee":
-        return Lead.objects.filter(own | Q(workspace_id=member.workspace_id, assignee_id=member.id))
-    return Lead.objects.filter(own | Q(card__isnull=True, workspace_id=member.workspace_id))
+    """Leads this member may see: those that came in on their own cards, and those assigned to them. Owners and admins also see those of the
+    company's own card and those an employee shared (their switch was on when the contact arrived), never the other contacts of an employee's card. A lead whose card was deleted has no person behind it, so owners and admins keep it."""
+    q = Q(card__in=commerce_cards(member)) | Q(workspace_id=member.workspace_id, assignee_id=member.id)
+    if member.role != "employee":
+        q |= Q(card__isnull=True, workspace_id=member.workspace_id) | Q(shared_with_company=True, workspace_id=member.workspace_id)
+    return Lead.objects.filter(q)
 
 
 def is_company(lead):
@@ -84,7 +93,9 @@ def set_status(request, lead, status, actor, audit_each=True):
     lead.status = status
     lead.save(update_fields=["status"])
     record(lead, "status_changed", actor, old=old, new=status)
-    if audit_each and is_company(lead):
+    # The company's activity log shows what happens to the company's own contacts. What an employee does with their own contacts is not
+    # written there: the log carries the contact's name, and the admins are not meant to see it.
+    if audit_each and is_company(lead) and is_company_owned(lead):
         audit.log(
             request, lead.workspace, "lead.status_changed", "lead", lead.id, lead.name,
             {"old": old, "new": status}, actor=actor,
@@ -117,7 +128,9 @@ def assign(request, lead, assignee, actor, audit_each=True, notify=True):
         lead, "assigned", actor,
         to=_who(assignee), to_id=str(assignee.id) if assignee else None, previous=_who(old),
     )
-    if audit_each and is_company(lead):
+    # The company's activity log shows what happens to the company's own contacts. What an employee does with their own contacts is not
+    # written there: the log carries the contact's name, and the admins are not meant to see it.
+    if audit_each and is_company(lead) and is_company_owned(lead):
         audit.log(
             request, lead.workspace, "lead.assigned", "lead", lead.id, lead.name,
             {"to": _who(assignee), "previous": _who(old)}, actor=actor,

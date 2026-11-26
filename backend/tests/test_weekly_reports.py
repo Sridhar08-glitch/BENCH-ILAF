@@ -165,8 +165,11 @@ class ContentTests(ReportCase):
             self.event()
         for _ in range(2):
             self.event(card=Card.objects.get(pk=self.sam.card_id))
+        # The report counts the contacts its reader may see: the company card's, never an employee's.
+        company = Card.objects.get(pk=self.owner.client.post(f"{API}workspaces/{self.ws}/company-card").data["id"])
         for status in ("new", "new", "won"):
-            Lead.objects.create(card=self.card, workspace_id=self.ws, name="L", status=status)
+            Lead.objects.create(card=company, workspace_id=self.ws, name="L", status=status)
+        Lead.objects.create(card=self.card, workspace_id=self.ws, name="Employee private", status="new")
         ChangeRequest.objects.create(workspace_id=self.ws, card=self.card, field="title", new_value="x", status="pending")
         data = weekly.company_data(self.owner_member, self.week)
         self.assertEqual([p["name"] for p in data["top_people"]], ["Eve Employee", "Sam Seller"])

@@ -38,8 +38,14 @@ PALETTE_CHECKS = (
 # Every key of the new branding set that a company can write.
 BRANDING_KEYS = (
     "colours", "palette", "logo_display", "logo_placement", "logo_corner", "logo_chip",
-    "show_company_name", "artwork",
+    "show_company_name", "artwork", "logo_size", "logo_free",
 )
+
+# The logo can be made smaller or larger (a percentage of its automatic size), and on a design it can be placed by the owner:
+# logo_free maps a design ("f12" for card face 12, "t3" for page style 3) to the logo's left, top and width in percent of the card.
+LOGO_SIZE_RANGE = (50, 150)
+LOGO_FREE_WIDTH = (10, 60)
+MAX_LOGO_FREE = 60
 
 
 def default_artwork():
@@ -64,6 +70,8 @@ def default_branding():
         "logo_chip": "auto",
         "show_company_name": True,
         "artwork": default_artwork(),
+        "logo_size": 100,
+        "logo_free": {},
     }
 
 
@@ -132,7 +140,7 @@ def _check_colours(value, errors):
     if not isinstance(value, dict):
         _fail(errors, "colours", "Colours must be an object or null.")
         return None
-    unknown = set(value) - {"primary", "accent", "mode"}
+    unknown = set(value) - {"primary", "accent", "mode", "text"}
     if unknown:
         _fail(errors, "colours", "Unknown setting: " + ", ".join(sorted(unknown)) + ".")
     out = {}
@@ -142,6 +150,12 @@ def _check_colours(value, errors):
         else:
             _fail(errors, f"colours.{key}", "Use a colour like #1a2b3c.")
     out["mode"] = _choice(errors, "colours.mode", value.get("mode", "brand"), COLOUR_MODES)
+    # An optional text colour of the owner's own. The palette check still has to find it readable on the card colours.
+    if value.get("text") not in (None, ""):
+        if _is_hex(value["text"]):
+            out["text"] = value["text"].lower()
+        else:
+            _fail(errors, "colours.text", "Use a colour like #1a2b3c.")
     return out
 
 
@@ -224,6 +238,40 @@ def _text_colour(errors, key, value):
     return None
 
 
+_DESIGN_KEY = re.compile(r"^[ft][0-9]{1,3}$")
+
+
+def _check_logo_free(value, errors):
+    """The places the owner gave the logo on some designs: {"f12": {"x": 6, "y": 6, "w": 28}}."""
+    if value is None or value == {}:
+        return {}
+    if not isinstance(value, dict):
+        _fail(errors, "logo_free", "Must be an object.")
+        return None
+    if len(value) > MAX_LOGO_FREE:
+        _fail(errors, "logo_free", f"At most {MAX_LOGO_FREE} designs can have their own logo place.")
+        return None
+    out = {}
+    for key, spot in value.items():
+        if not isinstance(key, str) or not _DESIGN_KEY.match(key) or not isinstance(spot, dict):
+            _fail(errors, "logo_free", "Each place needs a design such as f12 or t3 and an object with x, y and w.")
+            return None
+        if set(spot) - {"x", "y", "w"}:
+            _fail(errors, f"logo_free.{key}", "Only x, y and w are allowed.")
+            return None
+        clean = {}
+        for part, (low, high) in (("x", (0, 100)), ("y", (0, 100)), ("w", LOGO_FREE_WIDTH)):
+            n = spot.get(part)
+            if isinstance(n, bool) or not isinstance(n, (int, float)) or not (low <= n <= high):
+                _fail(errors, f"logo_free.{key}.{part}", f"Use a number from {low} to {high}.")
+                return None
+            clean[part] = round(float(n), 1)
+        if clean["x"] + clean["w"] > 100.0001:
+            clean["x"] = round(100 - clean["w"], 1)
+        out[key] = clean
+    return out
+
+
 def _check_artwork(value, current, errors, has_background_file, has_template_file):
     if not isinstance(value, dict):
         _fail(errors, "artwork", "Artwork must be an object.")
@@ -290,6 +338,10 @@ def merge_branding(workspace, brand, incoming, files):
             out[key] = _choice(errors, key, incoming[key], allowed)
     if "show_company_name" in incoming:
         out["show_company_name"] = _bool(errors, "show_company_name", incoming["show_company_name"])
+    if "logo_size" in incoming:
+        out["logo_size"] = _int_range(*LOGO_SIZE_RANGE)(errors, "logo_size", incoming["logo_size"])
+    if "logo_free" in incoming:
+        out["logo_free"] = _check_logo_free(incoming["logo_free"], errors)
     if "artwork" in incoming:
         out["artwork"] = _check_artwork(
             incoming["artwork"], current["artwork"], errors, files.get("background"), files.get("template_front"),

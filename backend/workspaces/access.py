@@ -75,3 +75,45 @@ def visible_cards(member):
     if member.role == "employee":
         qs = qs.filter(member_id=member.id)
     return qs
+
+
+def commerce_cards(member):
+    """The cards whose orders and bookings this member may see: their own cards, and the company's own card for owners and
+    admins. Nobody sees what came in on another person's card, an admin included."""
+    from django.db.models import Q
+
+    from cards.models import Card
+
+    mine = Q(member_id=member.id)
+    if member.user_id:
+        mine |= Q(owner_id=member.user_id, is_company=False)
+    if member.role in MANAGER_ROLES:
+        # The company card, and a card that no person holds any more (its holder was removed and the card was kept): both are the company's.
+        mine |= Q(is_company=True) | Q(member__isnull=True)
+    return Card.objects.filter(workspace_id=member.workspace_id).filter(mine)
+
+
+def commerce_orders(member):
+    """The orders this member may see: those of their own cards (and the company card for owners and admins), and, for owners and admins,
+    those an employee shared. When the card an order came in on has been deleted, nobody owns it any more, so owners and admins keep it."""
+    from django.db.models import Q
+
+    from orders.models import Order
+
+    q = Q(card__in=commerce_cards(member))
+    if member.role in MANAGER_ROLES:
+        # Also the orders an employee shared with the company (their switch was on when the order came in; see workspaces/sharing.py).
+        q |= Q(card__isnull=True, workspace_id=member.workspace_id) | Q(shared_with_company=True, workspace_id=member.workspace_id)
+    return Order.objects.filter(q)
+
+
+def commerce_bookings(member):
+    """The bookings this member may see: the same rule as the orders."""
+    from django.db.models import Q
+
+    from cards.models import Booking
+
+    q = Q(card__in=commerce_cards(member))
+    if member.role in MANAGER_ROLES:
+        q |= Q(shared_with_company=True, card__workspace_id=member.workspace_id)
+    return Booking.objects.filter(q)

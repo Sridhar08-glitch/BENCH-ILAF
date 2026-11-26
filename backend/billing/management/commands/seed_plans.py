@@ -5,6 +5,13 @@ from billing.models import Plan
 # Starting plans with placeholder prices (minor units, QAR). Edit prices in the admin afterwards.
 PLANS = [
     {
+        # Not sold: a personal workspace gets it for 7 days when it first publishes (billing.services.ensure_trial).
+        "code": "free", "name": "Free", "kind": "personal", "interval": "month",
+        "price_minor": 0, "currency": "QAR", "max_cards": 1, "per_seat": False, "min_seats": 1,
+        "features": ["1 digital card for 7 days", "QR code and NFC link", "50 faces, 50 below-card layouts, 50 animations"],
+        "sort_order": 0,
+    },
+    {
         "code": "personal", "name": "Personal", "kind": "personal", "interval": "year",
         "price_minor": 4900, "currency": "QAR", "max_cards": 1, "per_seat": False, "min_seats": 1,
         "features": ["1 digital card", "QR code and NFC link", "Contact saving and leads", "Basic analytics"],
@@ -22,6 +29,15 @@ PLANS = [
         "features": ["One card per team member", "Locked brand design", "Team management and CSV import",
                      "Company-wide analytics and leads"],
         "sort_order": 3,
+    },
+    {
+        # Sold by quote only: price 0 means "no list price". Staff set the seats and the price per customer
+        # (billing.enterprise); the customer accepts and pays, and the plan renews like the others.
+        "code": "enterprise", "name": "Enterprise", "kind": "company", "interval": "year",
+        "price_minor": 0, "currency": "QAR", "max_cards": 1, "per_seat": True, "min_seats": 1,
+        "features": ["Everything in Company", "Departments, teams and the company directory", "Field rules and approvals",
+                     "Activity log", "Webhooks, API keys and CRM connectors", "Custom domain and sign-in rules"],
+        "sort_order": 4,
     },
 ]
 

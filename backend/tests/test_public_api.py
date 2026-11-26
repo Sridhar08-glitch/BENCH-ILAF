@@ -269,7 +269,7 @@ class IsolationTests(PublicApiBase):
     def setUp(self):
         super().setUp()
         self.anna = self.add("anna@acme.test", "Anna Acme")
-        self.mine_lead = self.lead(card=Card.objects.get(pk=self.anna.card_id), name="Mine")
+        self.mine_lead = self.lead(name="Mine")  # a contact of the company itself
         self.other_owner, self.other_ws, self.other_member, self.other_card, self.other_lead = self.other_company()
         Event.objects.create(card=self.other_card, type="view")
 
@@ -677,7 +677,9 @@ class LeadTests(PublicApiBase):
 
     def test_patch_status_and_assignee_and_audit(self):
         sam = self.add("sam@acme.test", "Sam Doe")
-        lead = self.lead(card=Card.objects.get(pk=sam.card_id))
+        lead = self.lead()  # a contact of the company itself; an employee's contact is the employee's, and is not reachable through the company's API key
+        employees = self.lead(card=Card.objects.get(pk=sam.card_id), name="Sam's own")
+        self.assertEqual(self.api.get(PUB + f"leads/{employees.id}").status_code, 404)
         res = self.api.patch(PUB + f"leads/{lead.id}", {"status": "qualified", "assignee_email": "sam@acme.test"}, format="json")
         self.assertEqual(res.status_code, 200, res.content)
         self.assertEqual((res.data["status"], res.data["assignee"]["email"]), ("qualified", "sam@acme.test"))

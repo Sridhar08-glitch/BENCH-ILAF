@@ -4,7 +4,7 @@ from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from billing.services import is_live
+from billing.services import is_live, require_enterprise
 from ilaf.errors import ApiError, validation_error
 from ilaf.utils import iso
 from operations import audit
@@ -88,9 +88,10 @@ def _endpoint(request, workspace_id, endpoint_id):
 
 
 def _require_plan(workspace):
-    """Webhooks are part of a live company plan."""
+    """Webhooks are part of a live Enterprise plan."""
     if not is_live(workspace):
         raise ApiError("subscription_required", "Webhooks need an active company plan.", 402)
+    require_enterprise(workspace)
 
 
 def _delivery_log_access(request, workspace_id, endpoint_id):

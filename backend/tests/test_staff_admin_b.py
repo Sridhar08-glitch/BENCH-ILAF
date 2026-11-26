@@ -165,8 +165,15 @@ class CompanyPageTests(BackOfficeCase):
         self.assertEqual(self.detail()["public_address"], "")
         Workspace.objects.filter(pk=self.ws).update(directory_enabled=True, directory_slug="acme")
         self.assertTrue(self.detail()["public_address"].endswith("/d/acme"))
-        Workspace.objects.filter(pk=self.ws).update(custom_domain="cards.acme.test")
+        from workspaces.models import CustomDomain
+
+        self.enterprise(self.ws)
+        CustomDomain.objects.create(workspace_id=self.ws, domain="cards.acme.test", token="t" * 24)
+        self.assertTrue(self.detail()["public_address"].endswith("/d/acme"))  # a claim that is not verified is not an address
+        CustomDomain.objects.filter(workspace_id=self.ws).update(status="verified")
         self.assertEqual(self.detail()["public_address"], "https://cards.acme.test")
+        brand = self.ro.client.get(self.url(f"companies/{self.ws}/brand")).data
+        self.assertEqual((brand["custom_domain"], brand["custom_domain_info"]["status"]), ("cards.acme.test", "verified"))
         self.assertNotIn("industry", self.detail())
         self.assertNotIn("size", self.detail())
 

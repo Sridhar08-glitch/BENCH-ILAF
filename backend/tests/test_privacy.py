@@ -250,7 +250,11 @@ class ExportTests(PrivacyBase):
         eve = self.join(self.invite(owner, ws, "eve@acme.com", role="admin"))
         emp = self.join(self.invite(owner, ws, "emp@acme.com"))
         card = self.published_card(owner, ws=ws, name="Olive")
-        self.lead(card["public_code"], "Lead Larry", "larry@example.com")
+        # the export holds the company's own contacts (the company card's); the contacts of a person's card are that person's
+        company = owner.client.post(f"{API}workspaces/{ws}/company-card")
+        company_code = owner.client.post(f"{API}cards/{company.data['id']}/publish").data["public_code"]
+        self.lead(company_code, "Lead Larry", "larry@example.com")
+        self.lead(card["public_code"], "Private Pat", "pat@example.com")
         for person in (eve, emp):
             res = person.client.post(API + "privacy/export", {"workspace_id": ws}, format="json")
             self.assertEqual(res.status_code, 403)
@@ -263,7 +267,8 @@ class ExportTests(PrivacyBase):
         team = json.loads(archive.read("team.json"))
         self.assertEqual({m["email"] for m in team}, {"owner@acme.com", "eve@acme.com", "emp@acme.com"})
         self.assertTrue(all("invite_token" not in m for m in team))
-        self.assertEqual(json.loads(archive.read("leads.json"))[0]["email"], "larry@example.com")
+        leads = json.loads(archive.read("leads.json"))
+        self.assertEqual([l["email"] for l in leads], ["larry@example.com"])
         self.assertTrue(len(json.loads(archive.read("activity_log.json"))) >= 2)
         # Personal workspaces cannot be exported through the company route.
         res = owner.client.post(API + "privacy/export", {"workspace_id": owner.ws}, format="json")

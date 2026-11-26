@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     "support",
     "security",
     "notify",
+    "orders",
 ]
 
 MIDDLEWARE = [
@@ -108,6 +109,8 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     # Opens CORS for the public endpoints before the stricter global CORS rules run.
     "ilaf.middleware.PublicCorsMiddleware",
+    # Remembers each company's custom domain for the length of one request (the card address is built many times in a list).
+    "workspaces.domains.RequestMemoMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -223,6 +226,10 @@ ILAF_THROTTLE_RATES = {
     "public_lead": "10/min",
     "slug_check": "60/min",
     "public_directory": "60/min",
+    # Custom domains: the web server asks which company a host belongs to (one caller for all visitors, so a high ceiling;
+    # the web server caches answers for a few seconds), and owners press "Check now".
+    "domain_resolve": "1200/min",
+    "domain_check": "6/min",
     "resolve_link": "20/min",
     "auth_google": "20/min",
     "data_download": "30/min",
@@ -275,9 +282,33 @@ WEB_BASE_URL = env("WEB_BASE_URL", "http://localhost:3100").rstrip("/")
 # Absolute URL of this API, used to build links to media and public files. Empty means "use the request host".
 API_BASE_URL = env("API_BASE_URL", "").rstrip("/")
 
+# ---------------------------------------------------------------- custom domains (Enterprise)
+# A company may serve its cards on its own domain (cards.northgate.com). The owner adds two DNS records: a TXT record at
+# _bench-verify.<domain> (proof of ownership) and a CNAME <domain> -> CARD_DOMAIN_CNAME_TARGET (traffic). See deploy/CUSTOM_DOMAINS.md.
+from urllib.parse import urlsplit as _urlsplit
+
+_WEB_HOST = (_urlsplit(WEB_BASE_URL).hostname or "localhost").lower()
+_API_HOST = (_urlsplit(API_BASE_URL).hostname or "").lower() if API_BASE_URL else ""
+# The host customers point their CNAME at. Default: the web host of this installation.
+CARD_DOMAIN_CNAME_TARGET = env("CARD_DOMAIN_CNAME_TARGET", _WEB_HOST).strip().lower().rstrip(".")
+# Fixed server addresses for an apex domain, where a CNAME is not allowed (comma separated; empty = apex not offered).
+CARD_DOMAIN_A_RECORDS = env_list("CARD_DOMAIN_A_RECORDS")
+# Hosts a customer may never claim (besides the web and API hosts above and the CNAME target).
+CARD_DOMAIN_RESERVED_HOSTS = env_list("CARD_DOMAIN_RESERVED_HOSTS")
+CARD_DOMAIN_PENDING_DAYS = int(env("CARD_DOMAIN_PENDING_DAYS", "7"))      # a pending claim is re-checked this long, then expires
+CARD_DOMAIN_BROKEN_DAYS = int(env("CARD_DOMAIN_BROKEN_DAYS", "3"))        # verified domain whose DNS is missing this long -> dns_broken + e-mail
+CARD_DOMAIN_GRACE_DAYS = int(env("CARD_DOMAIN_GRACE_DAYS", "14"))        # a dns_broken domain keeps serving this long, then it is released
+CARD_DOMAIN_RECHECK_HOURS = int(env("CARD_DOMAIN_RECHECK_HOURS", "20"))   # how often check_custom_domains re-verifies verified domains
+CARD_DOMAIN_DNS_TIMEOUT = float(env("CARD_DOMAIN_DNS_TIMEOUT", "4"))      # seconds per DNS question
+CARD_DOMAIN_DNS_SERVERS = env_list("CARD_DOMAIN_DNS_SERVERS")             # optional resolver addresses (default: the system's)
+# Protects GET domains/allowed (the "ask" URL of Caddy's on-demand TLS). Empty = only a caller on this machine without a proxy header.
+DOMAIN_ASK_TOKEN = env("DOMAIN_ASK_TOKEN")
+
 # ---------------------------------------------------------------- billing
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET")
+# Plans are bought as yearly Stripe subscriptions that renew by themselves. Off = a one-off payment per period (fallback).
+STRIPE_RECURRING = env_bool("STRIPE_RECURRING", True)
 CARDS_GRACE_DAYS = int(env("CARDS_GRACE_DAYS", "7"))
 CARDS_DEV_ACTIVATE = env_bool("CARDS_DEV_ACTIVATE", False)
 
@@ -330,6 +361,9 @@ PASSWORD_RESET_LIFETIME_HOURS = 2
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 # Largest accepted picture in pixels (width x height); bigger files are refused before they are decoded.
 IMAGE_MAX_PIXELS = int(env("IMAGE_MAX_PIXELS", "40000000"))
+# A card video (MP4, stored as uploaded). Django streams uploads above FILE_UPLOAD_MAX_MEMORY_SIZE to a temporary
+# file and the view copies that into storage in chunks, so this limit never means a 100 MB request held in memory.
+VIDEO_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
@@ -374,7 +408,8 @@ if HTTPS_ONLY:
     if not env("REDIS_URL") and not env_bool("ALLOW_LOCAL_THROTTLE_CACHE", False):
         raise ImproperlyConfigured("Set REDIS_URL so rate limits are shared by all workers (or ALLOW_LOCAL_THROTTLE_CACHE=true for a single process).")
     SECURE_SSL_REDIRECT = True
-    SECURE_REDIRECT_EXEMPT = [r"^health/?$"]  # the local health check talks plain http to gunicorn
+    # The local health check and the proxy's "may I get a certificate for this domain?" question talk plain http to gunicorn.
+    SECURE_REDIRECT_EXEMPT = [r"^health/?$", r"^api/v1/domains/allowed/?$"]
     SECURE_HSTS_SECONDS = int(env("SECURE_HSTS_SECONDS", "31536000"))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
     SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)

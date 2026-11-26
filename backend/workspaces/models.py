@@ -2,6 +2,8 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 
 from cards.features import default_lead_settings
 from ilaf.design import default_design
@@ -34,7 +36,6 @@ class Workspace(models.Model):
     template_front = models.ImageField(upload_to="brand/", blank=True, null=True)
     template_back = models.ImageField(upload_to="brand/", blank=True, null=True)
     legacy_brand_design = models.JSONField(null=True, blank=True, editable=False)
-    custom_domain = models.CharField(max_length=253, unique=True, null=True, blank=True)
     # Which parts of a card employees may change (see operations.rules). Empty means everything is free.
     field_rules = models.JSONField(default=dict, blank=True)
     # The public company directory at /d/<directory_slug>. Off until the owner switches it on.
@@ -85,6 +86,9 @@ class Member(models.Model):
     department = models.ForeignKey(
         "operations.Department", null=True, blank=True, on_delete=models.SET_NULL, related_name="members"
     )
+    # An employee's own switch: "share my new contacts with the company". Off by default; see workspaces/sharing.py.
+    share_contacts = models.BooleanField(default=False)
+    share_contacts_changed_at = models.DateTimeField(null=True, blank=True)
     invited_at = models.DateTimeField(auto_now_add=True)
     joined_at = models.DateTimeField(null=True, blank=True)
 
@@ -94,3 +98,42 @@ class Member(models.Model):
 
     def __str__(self):
         return f"{self.email} in {self.workspace_id}"
+
+
+class CustomDomain(models.Model):
+    """A company's claim on its own web address (Enterprise). One per company for now.
+
+    A claim starts `pending` with a random token the owner publishes in DNS (TXT at _bench-verify.<domain>) next to a CNAME to
+    the card host. Many companies may hold a pending claim on the same name; the first whose DNS checks out becomes `verified`
+    and from then on nobody else can claim it (the partial unique constraint). `dns_broken` still serves, for a grace period,
+    after the records went missing; `failed` (last check failed, still being retried) and `expired` (7 days without success)
+    never serve. See workspaces/domains.py."""
+
+    PENDING, VERIFIED, FAILED, EXPIRED, DNS_BROKEN = "pending", "verified", "failed", "expired", "dns_broken"
+    STATUSES = [(x, x) for x in (PENDING, VERIFIED, FAILED, EXPIRED, DNS_BROKEN)]
+    HOLDING = (VERIFIED, DNS_BROKEN)  # the statuses that own the name
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    workspace = models.OneToOneField(Workspace, on_delete=models.CASCADE, related_name="custom_domain_record")
+    domain = models.CharField(max_length=253, db_index=True)  # normalised: lower case, ASCII (punycode), no trailing dot
+    token = models.CharField(max_length=64)
+    status = models.CharField(max_length=12, choices=STATUSES, default=PENDING)
+    requested_at = models.DateTimeField(default=timezone.now)  # the 7-day window of a pending claim starts here
+    verified_at = models.DateTimeField(null=True, blank=True)
+    last_checked_at = models.DateTimeField(null=True, blank=True)
+    # A short code of the last failed check (txt_missing, txt_mismatch, cname_missing, cname_wrong, dns_error, domain_taken, ...).
+    last_error = models.CharField(max_length=40, blank=True, default="")
+    failing_since = models.DateTimeField(null=True, blank=True)  # a verified domain whose records are missing: since when
+    broken_at = models.DateTimeField(null=True, blank=True)       # when it was marked dns_broken (the grace period runs from here)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["domain"], condition=Q(status__in=["verified", "dns_broken"]), name="custom_domain_unique_when_verified",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.domain} ({self.status})"

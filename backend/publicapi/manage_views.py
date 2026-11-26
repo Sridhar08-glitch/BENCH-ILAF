@@ -8,7 +8,7 @@ from datetime import timedelta
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from billing.services import is_live
+from billing.services import is_live, require_enterprise
 from ilaf.errors import ApiError, validation_error
 from staff.flags import require_flag
 from ilaf.utils import clean_line, iso
@@ -68,6 +68,7 @@ class ApiKeysView(APIView):
         require_flag("api_keys", ws)
         if not is_live(ws):
             raise ApiError("subscription_required", "API keys need an active company plan.", 402)
+        require_enterprise(ws)  # API keys are an Enterprise feature; listing and revoking stay possible
         data = request.data if isinstance(request.data, dict) else {}
         name = data.get("name")
         if not isinstance(name, str) or not name.strip():
@@ -115,6 +116,7 @@ class ApiKeyRotateView(APIView):
 
     def post(self, request, workspace_id, key_id):
         ws, _ = _workspace(request, workspace_id)
+        require_enterprise(ws)
         old = _key(ws, key_id)
         if old.revoked_at is not None or (old.expires_at and old.expires_at <= timezone.now()):
             raise validation_error({"key": ["This key is no longer active."]})

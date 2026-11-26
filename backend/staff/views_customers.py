@@ -27,6 +27,7 @@ from leads.models import Lead
 from operations import audit as company_audit
 from operations.actions import suspend_card
 from operations.models import AuditEvent
+from workspaces import domains
 from workspaces.models import Member, Workspace
 
 from . import services
@@ -106,8 +107,9 @@ def views_series(ws, days=14, now=None):
 
 def public_address(ws):
     """The web address the company is found at: its own domain, else its directory page, else nothing."""
-    if ws.custom_domain:
-        return f"https://{ws.custom_domain}"
+    host = domains.domain_for(ws)
+    if host:
+        return f"https://{host}"
     if ws.directory_enabled and ws.directory_slug:
         return f"{settings.WEB_BASE_URL}/d/{ws.directory_slug}"
     return ""
@@ -125,18 +127,32 @@ from security import company as security_company  # noqa: E402
 
 
 def brand_json(ws, request):
+    from ilaf.branding import normalize_branding
+    from operations.rules import normalize_rules
+    from cards.models import Card
+
     brand = ws.brand or {}
+    look = normalize_branding(brand)
+    rules = normalize_rules(ws.field_rules)
     return {
         "company_name": brand.get("company_name") or ws.name, "website": brand.get("website") or "",
         "design": brand.get("design"), "lock_design": bool(brand.get("lock_design")), "show_footer": bool(brand.get("show_footer", True)),
         "logo_url": file_url(request, ws.logo), "symbol_url": file_url(request, ws.symbol),
         "background_url": file_url(request, ws.background),
         "require_google_signin": ws.require_google_signin, "allowed_email_domains": ws.allowed_email_domains,
-        "directory_enabled": ws.directory_enabled, "directory_slug": ws.directory_slug, "custom_domain": ws.custom_domain,
+        "directory_enabled": ws.directory_enabled, "directory_slug": ws.directory_slug, "custom_domain": domains.verified_domain_name(ws), "custom_domain_info": domains.info_json(ws),
         "verified_domains": security_company.verified_domains(ws),
         # The two brand colours (primary, accent, mode) and the card font ("face" keeps each face's own fonts).
         "colours": brand.get("colours"), "palette": brand.get("palette"),
         "font": (brand.get("design") or {}).get("font") or "face",
+        # How the logo is shown, its size and the places the owner gave it, the artwork, and what employees may add and change.
+        "logo_display": look["logo_display"], "logo_placement": look["logo_placement"], "logo_corner": look["logo_corner"],
+        "logo_chip": look["logo_chip"], "show_company_name": look["show_company_name"], "logo_size": look["logo_size"],
+        "logo_free": look["logo_free"], "artwork_mode": look["artwork"]["mode"],
+        "template_front_url": file_url(request, ws.template_front),
+        "extras": {"mode": rules["extras"], "kinds": rules["extra_kinds"]},
+        "rights": {k: rules[k] for k in ("name", "title", "photo", "company", "address", "button_add", "button_edit", "button_remove", "slug", "features", "vcard")},
+        "company_card": Card.objects.filter(workspace=ws, is_company=True).values_list("public_code", flat=True).first(),
     }
 
 

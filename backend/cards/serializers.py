@@ -10,6 +10,8 @@ from ilaf.utils import absolute_url, clean_line, clean_multiline
 
 from .slugs import normalise_slug
 
+MAX_BIO = 300
+
 
 def media_prefixes(request):
     """URL prefixes under which our own uploaded icons live (an icon must point at one of them)."""
@@ -60,6 +62,7 @@ class CardWriteSerializer(serializers.Serializer):
     title = serializers.CharField(required=False, allow_blank=True)
     company = serializers.CharField(required=False, allow_blank=True)
     address = serializers.CharField(required=False, allow_blank=True)
+    bio = serializers.CharField(required=False, allow_blank=True)
     label = serializers.CharField(required=False, allow_blank=True)
     is_default = serializers.BooleanField(required=False)
     save_contact = serializers.BooleanField(required=False)
@@ -86,6 +89,9 @@ class CardWriteSerializer(serializers.Serializer):
 
     def validate_address(self, value):
         return clean_multiline(value, 300)
+
+    def validate_bio(self, value):
+        return clean_multiline(value, MAX_BIO)
 
     def validate_slug(self, value):
         return normalise_slug(value) or None

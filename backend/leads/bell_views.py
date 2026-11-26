@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ilaf.utils import iso
+from orders.alerts import alert_counts
 
 from . import workflow
 from .models import LeadSeen
@@ -19,7 +20,8 @@ def bell_kind(lead):
 
 
 class LeadBellView(APIView):
-    """New contacts this person has not looked at yet. Contacts the person saved by hand are not news to them."""
+    """New contacts this person has not looked at yet, plus the new orders and bookings since the same moment.
+    Contacts the person saved by hand are not news to them."""
 
     def get(self, request, workspace_id):
         workspace, member = lead_access(request.user, workspace_id)
@@ -31,8 +33,11 @@ class LeadBellView(APIView):
         latest = list(qs.select_related("card").order_by("-created_at", "-id")[:BELL_LATEST])
         # The list is short only when nothing else is waiting, so the count needs its own query only past the cap.
         unread = len(latest) if len(latest) < BELL_LATEST else qs.count()
+        counts = alert_counts(member, since)
         return Response({
             "unread": unread,
+            "orders": counts["orders"],
+            "bookings": counts["bookings"],
             "latest": [
                 {
                     "id": str(l.id),

@@ -8,7 +8,7 @@ OPEN_PREFIXES = (
     "/api/v1/invites/",
     "/api/v1/slugs/check",
     # Uploaded pictures are public; the open header lets the browser draw a company logo onto a canvas
-    # (the call-background maker) and still save the result.
+    # (the signature and scan tools) and still save the result.
     "/media/",
 )
 

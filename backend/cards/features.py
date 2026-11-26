@@ -1,4 +1,4 @@
-"""Per-card feature settings (the exchange-contact form) and company lead settings.
+"""Per-card feature settings (the exchange-contact form), company lead settings, and the plan rule for rich pages.
 
 Card.features holds `exchange`: whether visitors may share their details, which fields the form asks
 for, and an optional custom consent sentence. Workspace.lead_settings holds the company privacy link
@@ -8,11 +8,27 @@ from urllib.parse import urlsplit
 
 from rest_framework.exceptions import ValidationError
 
+from ilaf.errors import ApiError
 from ilaf.utils import ANY_CONTROL_RE, clean_line
 
 FIELD_MODES = ("off", "optional", "required")
 EXCHANGE_FIELDS = ("email", "phone", "company", "note")
 MAX_CONSENT = 300
+
+
+def rich_pages_allowed(workspace):
+    """Page styles and rich content (photo headers, page button sets, sections, products, booking, video, gallery)
+    belong to the paid plans: true when the workspace holds a subscription to a plan with a price, false on a free
+    plan or without a subscription. Only writes ask; a card that already holds a rich setting keeps rendering it."""
+    from billing.services import get_subscription, plan_is_paid
+
+    sub = get_subscription(workspace)
+    return sub is not None and plan_is_paid(sub.plan)
+
+
+def require_rich_pages(workspace):
+    if not rich_pages_allowed(workspace):
+        raise ApiError("plan_limit", "Page styles and rich content are part of the paid plans. Upgrade to use them.", 403)
 
 
 def default_features():

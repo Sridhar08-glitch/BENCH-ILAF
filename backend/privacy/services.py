@@ -29,7 +29,7 @@ from ilaf.utils import iso
 from leads.models import Lead
 from operations import audit
 from operations.models import AuditEvent
-from workspaces.models import Member, Workspace
+from workspaces.models import CustomDomain, Member, Workspace
 
 from . import exporter
 from .models import DataRequest
@@ -463,7 +463,7 @@ def purge_workspace(workspace):
             setattr(workspace, field, None)
         workspace.name = "Deleted company" if workspace.kind == "company" else "Deleted account"
         workspace.brand = {}
-        workspace.custom_domain = None
+        CustomDomain.objects.filter(workspace=workspace).delete()
         workspace.directory_slug = None
         workspace.directory_enabled = False
         workspace.field_rules = {}

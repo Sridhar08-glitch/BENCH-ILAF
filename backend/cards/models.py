@@ -20,6 +20,9 @@ class Card(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="cards"
     )
     member = models.ForeignKey(Member, null=True, blank=True, on_delete=models.SET_NULL, related_name="cards")
+    # The company's own card: it belongs to the company, not to a person. Only owners and admins reach it, and its shop, bookings and
+    # other extras are the company's. At most one per company.
+    is_company = models.BooleanField(default=False)
     # Random and permanent: printed on QR codes and NFC tags, so it must never change.
     public_code = models.CharField(max_length=10, unique=True, editable=False)
     slug = models.SlugField(max_length=40, unique=True, null=True, blank=True)
@@ -37,8 +40,13 @@ class Card(models.Model):
     title = models.CharField(max_length=120, blank=True)
     company = models.CharField(max_length=120, blank=True)
     address = models.CharField(max_length=300, blank=True)
+    # A short introduction shown by the photo headers (page styles); guarded by the company's address rule.
+    bio = models.TextField(blank=True, default="")
     photo = models.ImageField(upload_to="cards/", blank=True, null=True)
     cover = models.ImageField(upload_to="covers/", blank=True, null=True)
+    # An uploaded MP4 played by the video section, with an optional still shown before it plays.
+    video = models.FileField(upload_to="videos/", blank=True, null=True)
+    video_poster = models.ImageField(upload_to="videos/", blank=True, null=True)
     save_contact = models.BooleanField(default=True)
     # Language and direction of the public page: "en", "ar", or "auto" (the visitor's own language).
     language = models.CharField(max_length=5, default="auto")
@@ -58,6 +66,9 @@ class Card(models.Model):
     class Meta:
         ordering = ["sort_order", "created_at"]
         indexes = [models.Index(fields=["workspace", "created_at"])]
+        constraints = [
+            models.UniqueConstraint(fields=["workspace"], condition=models.Q(is_company=True), name="one_company_card_per_workspace"),
+        ]
 
     def __str__(self):
         return f"{self.name or 'Card'} ({self.public_code})"
@@ -83,3 +94,46 @@ class SlugHistory(models.Model):
     slug = models.SlugField(max_length=40, unique=True)
     card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="old_slugs")
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class CardSection(models.Model):
+    """A rich block drawn under the card: video, products, hours, booking, team, gallery, event or map.
+
+    `data` is the block's settings, checked per kind in cards.sections. Switched-off blocks stay saved but are
+    left out of the public page."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="sections")
+    kind = models.CharField(max_length=20)
+    order = models.PositiveIntegerField(default=0)
+    on = models.BooleanField(default=True)
+    data = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+
+    def __str__(self):
+        return f"{self.kind} on {self.card_id}"
+
+
+class CardGalleryImage(models.Model):
+    """One picture of a card's gallery section (up to nine per card)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="gallery_images")
+    image = models.ImageField(upload_to="gallery/")
+    caption = models.CharField(max_length=80, blank=True, default="")
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+
+
+# Selling and booking models live in their own file and are part of this app.
+try:
+    from .models_commerce import *  # noqa: E402,F401,F403
+except ImportError:  # pragma: no cover - the file ships with the app
+    pass

@@ -1,0 +1,93 @@
+# BENCH custom domains: the recommended edge (Caddy gets a certificate for each customer domain by itself).
+#
+# What it does
+#   - https://<anything> : Caddy asks the BENCH API "may I get a certificate for this name?" the first time a name is seen
+#     (http://127.0.0.1:8101/api/v1/domains/allowed?domain=<name>). The API answers 200 ONLY for a domain that a company
+#     verified in DNS and whose company is Enterprise-live; everything else is 404 and Caddy refuses the handshake.
+#     So an attacker cannot make Caddy burn Let's Encrypt rate limits on random names.
+#   - Allowed names are proxied to the Next.js web app (127.0.0.1:3101). The web app decides what to show from the Host header
+#     (cards of that company only; the dashboard is never served on a customer domain).
+#   - Caddy renews certificates by itself. State lives in /var/lib/caddy (back it up with the server).
+#
+# This file is for a Caddy that owns ports 80 and 443 on the address customers point their DNS at (CARD_DOMAIN_A_RECORDS / the
+# CNAME target). If nginx already owns 80/443 on that address (the shared BENCH server does), do NOT start Caddy there: use a small
+# separate edge server for Caddy, or the nginx alternative in deploy/nginx/bench-customdomains.conf. See deploy/CUSTOM_DOMAINS.md.
+#
+# Install:  sudo cp deploy/caddy/Caddyfile /etc/caddy/Caddyfile
+#           sudo sed -i 's/__ASK_TOKEN__/the-value-of-DOMAIN_ASK_TOKEN/; s/__ACME_EMAIL__/ops@example.com/' /etc/caddy/Caddyfile
+#           sudo systemctl reload caddy
+# Test the ask URL by hand:
+#           curl -i "http://127.0.0.1:8101/api/v1/domains/allowed?token=__ASK_TOKEN__&domain=cards.northgate.com"   # 200 or 404
+#
+# Staging first: uncomment the acme_ca line below, point one test domain at the server, check it loads (the browser will warn about the
+# staging certificate), then comment the line again and reload. Let's Encrypt allows 5 duplicate and 50 new certificates per
+# registered domain per week and 300 new orders per account per 3 hours; the staging endpoint has far higher limits.
+
+{
+	email __ACME_EMAIL__
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+
+	on_demand_tls {
+		# Caddy adds &domain=<name> to this address. The token (DOMAIN_ASK_TOKEN in backend/.env) keeps everyone else out; the API also
+		# refuses a request that came through a proxy header when no token is set.
+		ask http://127.0.0.1:8101/api/v1/domains/allowed?token=__ASK_TOKEN__
+	}
+
+	# One log line per request, json, to journald.
+	log {
+		output stderr
+		format json
+	}
+}
+
+# Every customer domain (and nothing else) lands here. "https://" without a name = any name, certificate on demand.
+https:// {
+	tls {
+		on_demand
+	}
+
+	encode zstd gzip
+
+	header {
+		# HSTS: a card domain is https only. No includeSubDomains/preload: the customer owns the rest of their domain.
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# Same policy as the Bench host (report-only first). The card page calls the API host from the browser (events, leads, vCard).
+		Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://__API_HOST__; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Nothing but the public card pages is meant to be reached here. The web app (src/middleware.ts) already redirects /app, /staff,
+	# /login ... to the Bench host and refuses /api/proxy and /api/session; blocking them here too is a second lock.
+	@dashboard path /app /app/* /staff /staff/* /api/proxy/* /api/session/*
+	handle @dashboard {
+		redir https://__WEB_HOST__{uri} 302
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3101 {
+			# Host is passed unchanged (the web app routes on it). The visitor address is what the API's rate limits and
+			# analytics use, so overwrite it (never append to what a visitor sent).
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			# The two headers only the web app's middleware may set (see src/lib/domains/route.ts): never accept them from outside.
+			header_up -x-bench-custom-host
+			header_up -x-bench-custom-ws
+			header_up -x-bench-custom-root
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 60s
+			}
+		}
+	}
+}
+
+# http://<anything> : redirect to https (Caddy also answers the ACME HTTP challenge itself before this applies).
+http:// {
+	redir https://{host}{uri} permanent
+}

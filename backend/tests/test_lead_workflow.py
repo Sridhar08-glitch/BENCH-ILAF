@@ -19,6 +19,13 @@ class LeadWorkflowCase(OpsTestCase):
             self.assertEqual(res.status_code, 200, res.content)
             person.code = res.data["public_code"]
         self.eve_member = self.eve.member_id
+        # The company's own card: its contacts belong to the company, so owners and admins work them. An employee's contacts are the
+        # employee's own and are never shown to an admin.
+        co = self.owner.client.post(f"{API}workspaces/{self.ws}/company-card")
+        self.assertEqual(co.status_code, 201, co.content)
+        published = self.owner.client.post(f"{API}cards/{co.data['id']}/publish")
+        self.assertEqual(published.status_code, 200, published.content)
+        self.co = type("Co", (), {"code": published.data["public_code"], "card_id": co.data["id"]})()
 
     def lead_for(self, person, name="Visitor One", **extra):
         body = {"name": name, "email": f"{name.split()[0].lower()}@example.com", "consent": True, **extra}
@@ -32,7 +39,7 @@ class LeadWorkflowCase(OpsTestCase):
 
 class AssignmentTests(LeadWorkflowCase):
     def test_new_lead_has_a_timeline_with_created_and_emailed(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         res = self.owner.client.get(f"{API}leads/{lead.id}")
         self.assertEqual(res.status_code, 200)
         kinds = [a["kind"] for a in res.data["activity"]]
@@ -40,7 +47,7 @@ class AssignmentTests(LeadWorkflowCase):
         self.assertIsNone(res.data["assignee"])
 
     def test_owner_assigns_and_the_colleague_is_emailed(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         mail.outbox.clear()
         res = self.patch(self.owner.client, lead, {"assignee_id": self.sam.member_id})
         self.assertEqual(res.status_code, 200, res.content)
@@ -50,7 +57,7 @@ class AssignmentTests(LeadWorkflowCase):
         self.assertIn("assigned", [a["kind"] for a in res.data["activity"]])
 
     def test_assigning_to_yourself_sends_no_mail(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         mail.outbox.clear()
         self.patch(self.owner.client, lead, {"assignee_id": str(self.owner_member.id)})
         self.assertEqual(mail.outbox, [])
@@ -61,7 +68,7 @@ class AssignmentTests(LeadWorkflowCase):
         self.assertEqual(res.status_code, 403)
 
     def test_assignee_must_be_an_active_member_of_this_company(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         pending = self.invited("pending@example.com", "Pat Pending")
         for bad in (pending.member_id, "00000000-0000-0000-0000-000000000000"):
             res = self.patch(self.owner.client, lead, {"assignee_id": bad})
@@ -73,7 +80,7 @@ class AssignmentTests(LeadWorkflowCase):
         self.assertEqual(self.patch(self.owner.client, lead, {"assignee_id": str(foreign.id)}).status_code, 400)
 
     def test_unassign(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         self.patch(self.owner.client, lead, {"assignee_id": self.sam.member_id})
         res = self.patch(self.owner.client, lead, {"assignee_id": None})
         self.assertIsNone(res.data["assignee"])
@@ -81,30 +88,60 @@ class AssignmentTests(LeadWorkflowCase):
     def test_employee_sees_own_card_leads_and_assigned_ones_only(self):
         mine = self.lead_for(self.eve, "Mine Lead")
         theirs = self.lead_for(self.sam, "Theirs Lead")
+        company = self.lead_for(self.co, "Company Lead")
         names = lambda c: {l["name"] for l in c.get(self.url("leads")).data["results"]}
         self.assertEqual(names(self.eve.client), {"Mine Lead"})
-        self.patch(self.owner.client, theirs, {"assignee_id": self.eve.member_id})
-        self.assertEqual(names(self.eve.client), {"Mine Lead", "Theirs Lead"})
-        self.assertEqual(self.eve.client.get(f"{API}leads/{theirs.id}").status_code, 200)
+        # an owner or admin works the company card's contacts and may hand one to a colleague
+        self.patch(self.owner.client, company, {"assignee_id": self.eve.member_id})
+        self.assertEqual(names(self.eve.client), {"Mine Lead", "Company Lead"})
+        self.assertEqual(self.eve.client.get(f"{API}leads/{company.id}").status_code, 200)
         self.assertEqual(names(self.sam.client), {"Theirs Lead"})
         self.assertEqual(self.sam.client.get(f"{API}leads/{mine.id}").status_code, 404)
 
+    def test_an_owner_or_admin_never_sees_an_employees_contacts(self):
+        mine = self.lead_for(self.eve, "Eve Private")
+        company = self.lead_for(self.co, "Company Open")
+        for person in (self.owner, self.admin):
+            res = person.client.get(self.url("leads"))
+            self.assertEqual({l["name"] for l in res.data["results"]}, {"Company Open"})
+            self.assertEqual(person.client.get(f"{API}leads/{mine.id}").status_code, 404)
+            self.assertEqual(person.client.get(f"{API}leads/{company.id}").status_code, 200)
+        self.assertEqual(self.patch(self.owner.client, mine, {"assignee_id": str(self.owner_member.id)}).status_code, 404)
+        self.assertNotIn("Eve Private", body(self.owner.client.get(self.url("leads.csv"))).decode("utf-8-sig"))
+
+    def test_the_employee_alone_is_told_about_their_contact(self):
+        mail.outbox.clear()
+        self.lead_for(self.eve, "Eve Private")
+        recipients = sorted(a for m in mail.outbox for a in m.to)
+        self.assertEqual(recipients, ["eve@example.com"])
+
+    def test_admins_are_told_about_the_company_cards_contacts_when_the_company_asks(self):
+        from workspaces.models import Workspace
+
+        Workspace.objects.filter(pk=self.ws).update(lead_settings={"privacy_url": "", "notify_admins": True})
+        mail.outbox.clear()
+        self.lead_for(self.co, "Company Open")
+        self.assertIn("ada@example.com", {a for m in mail.outbox for a in m.to})
+        mail.outbox.clear()
+        self.lead_for(self.eve, "Eve Private")
+        self.assertEqual(sorted(a for m in mail.outbox for a in m.to), ["eve@example.com"])
+
     def test_assigned_employee_can_change_status_and_add_notes(self):
-        theirs = self.lead_for(self.sam, "Theirs Lead")
+        theirs = self.lead_for(self.co, "Theirs Lead")
         self.patch(self.owner.client, theirs, {"assignee_id": self.eve.member_id})
         self.assertEqual(self.patch(self.eve.client, theirs, {"status": "qualified"}).status_code, 200)
         res = self.eve.client.post(f"{API}leads/{theirs.id}/notes", {"body": "Called, wants a quote"}, format="json")
         self.assertEqual(res.status_code, 201)
 
     def test_audit_log_has_assignment_and_status_entries(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         self.patch(self.owner.client, lead, {"assignee_id": self.sam.member_id, "status": "contacted"})
         actions = self.audit_actions()
         self.assertIn("lead.assigned", actions)
         self.assertIn("lead.status_changed", actions)
 
     def test_same_value_writes_nothing(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         self.patch(self.owner.client, lead, {"status": "new"})
         self.assertNotIn("lead.status_changed", self.audit_actions())
 
@@ -123,7 +160,7 @@ class AssignmentTests(LeadWorkflowCase):
 
 class StatusAndNotesTests(LeadWorkflowCase):
     def test_all_five_statuses_work(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         for status in ("contacted", "qualified", "won", "lost", "new"):
             res = self.patch(self.owner.client, lead, {"status": status})
             self.assertEqual(res.status_code, 200, status)
@@ -132,7 +169,7 @@ class StatusAndNotesTests(LeadWorkflowCase):
         self.assertEqual(self.patch(self.owner.client, lead, {}).status_code, 400)
 
     def test_notes_have_author_and_time_and_show_in_the_timeline(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         res = self.owner.client.post(f"{API}leads/{lead.id}/notes", {"body": "  First call done  "}, format="json")
         self.assertEqual(res.status_code, 201)
         self.assertEqual(res.data["body"], "First call done")
@@ -144,7 +181,7 @@ class StatusAndNotesTests(LeadWorkflowCase):
             self.assertEqual(self.owner.client.post(f"{API}leads/{lead.id}/notes", bad, format="json").status_code, 400)
 
     def test_notes_are_private_to_people_who_can_see_the_lead(self):
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         res = self.sam.client.post(f"{API}leads/{lead.id}/notes", {"body": "snoop"}, format="json")
         self.assertEqual(res.status_code, 404)
 
@@ -152,9 +189,9 @@ class StatusAndNotesTests(LeadWorkflowCase):
 class FilterTests(LeadWorkflowCase):
     def setUp(self):
         super().setUp()
-        self.a = self.lead_for(self.eve, "Alpha One")
-        self.b = self.lead_for(self.sam, "Bravo Two", note="hello")
-        self.c = self.lead_for(self.sam, "Charlie Three")
+        self.a = self.lead_for(self.co, "Alpha One")
+        self.b = self.lead_for(self.co, "Bravo Two", note="hello")
+        self.c = self.lead_for(self.co, "Charlie Three")
         self.patch(self.owner.client, self.b, {"assignee_id": self.eve.member_id, "status": "contacted"})
         self.patch(self.owner.client, self.c, {"status": "won"})
 
@@ -170,7 +207,8 @@ class FilterTests(LeadWorkflowCase):
         self.assertEqual(self.names(status="won,contacted"), {"Bravo Two", "Charlie Three"})
         self.assertEqual(self.names(source="exchange"), {"Alpha One", "Bravo Two", "Charlie Three"})
         self.assertEqual(self.names(source="scanned_card"), set())
-        self.assertEqual(self.names(card_id=self.eve.card_id), {"Alpha One"})
+        self.assertEqual(self.names(card_id=self.co.card_id), {"Alpha One", "Bravo Two", "Charlie Three"})
+        self.assertEqual(self.names(card_id=self.eve.card_id), set())
         self.assertEqual(self.names(q="hello"), {"Bravo Two"})
 
     def test_mine_means_assigned_to_me(self):
@@ -193,7 +231,7 @@ class FilterTests(LeadWorkflowCase):
 class BulkTests(LeadWorkflowCase):
     def setUp(self):
         super().setUp()
-        self.leads = [self.lead_for(self.eve, f"Lead{i} Person") for i in range(4)]
+        self.leads = [self.lead_for(self.co, f"Lead{i} Person") for i in range(4)]
         self.ids = [str(l.id) for l in self.leads]
 
     def bulk(self, client, body):
@@ -216,8 +254,9 @@ class BulkTests(LeadWorkflowCase):
         self.assertEqual(Lead.objects.filter(status="qualified").count(), 4)
 
     def test_employee_bulk_status_only_touches_visible_leads(self):
+        own = [self.lead_for(self.eve, f"Own{i} Person") for i in range(4)]
         other = self.lead_for(self.sam, "Hidden Person")
-        res = self.bulk(self.eve.client, {"action": "status", "ids": self.ids + [str(other.id)], "status": "lost"})
+        res = self.bulk(self.eve.client, {"action": "status", "ids": [str(l.id) for l in own] + [str(other.id)], "status": "lost"})
         self.assertEqual((res.data["ok"], res.data["failed"]), (4, 1))
         other.refresh_from_db()
         self.assertEqual(other.status, "new")
@@ -236,7 +275,7 @@ class BulkTests(LeadWorkflowCase):
 
 class CsvTests(LeadWorkflowCase):
     def test_bom_formula_safety_assignee_and_notes(self):
-        lead = self.lead_for(self.eve, "=cmd Evil", note="+SUM(1)")
+        lead = self.lead_for(self.co, "=cmd Evil", note="+SUM(1)")
         self.patch(self.owner.client, lead, {"assignee_id": self.sam.member_id})
         self.owner.client.post(f"{API}leads/{lead.id}/notes", {"body": "@internal"}, format="json")
         res = self.owner.client.get(self.url("leads.csv"), {"notes": "1", "assignee": self.sam.member_id})
@@ -256,7 +295,7 @@ class CsvTests(LeadWorkflowCase):
 
         from leads.models import Lead
 
-        lead = self.lead_for(self.eve, "Event Person")
+        lead = self.lead_for(self.co, "Event Person")
         Lead.objects.filter(pk=lead.pk).update(tag="hot", event_name="=Expo 2026", client_ref="phone-ref-1", source="event")
         for notes, expected in (({}, ["tag", "event_name"]), ({"notes": "1"}, ["internal_notes", "tag", "event_name"])):
             res = self.owner.client.get(self.url("leads.csv"), notes)
@@ -272,9 +311,9 @@ class CsvTests(LeadWorkflowCase):
             self.assertNotIn("phone-ref-1", ",".join(mine))
 
     def test_notes_column_is_optional_and_filters_apply(self):
-        self.lead_for(self.eve, "Keep Me")
+        self.lead_for(self.co, "Keep Me")
         self.lead_for(self.sam, "Drop Me")
-        res = self.owner.client.get(self.url("leads.csv"), {"card_id": self.eve.card_id})
+        res = self.owner.client.get(self.url("leads.csv"), {"card_id": self.co.card_id})
         text = body(res).decode("utf-8-sig")
         self.assertNotIn("internal_notes", text)
         self.assertIn("Keep Me", text)
@@ -289,7 +328,7 @@ class WebhookEventsFromLeadsTests(LeadWorkflowCase):
         WebhookEndpoint.objects.create(workspace=ws, url="https://a.example.com/h", secret="s1", events=["lead.created", "lead.assigned"])
         WebhookEndpoint.objects.create(workspace=ws, url="https://b.example.com/h", secret="s2", events=["lead.updated"])
         WebhookEndpoint.objects.create(workspace=ws, url="https://c.example.com/h", secret="s3", events=["lead.created"], enabled=False)
-        lead = self.lead_for(self.eve)
+        lead = self.lead_for(self.co)
         self.assertEqual(list(WebhookDelivery.objects.values_list("endpoint__url", "event_type")), [("https://a.example.com/h", "lead.created")])
         self.patch(self.owner.client, lead, {"assignee_id": self.sam.member_id, "status": "won"})
         got = sorted(WebhookDelivery.objects.values_list("endpoint__url", "event_type"))
@@ -300,3 +339,63 @@ class WebhookEventsFromLeadsTests(LeadWorkflowCase):
         payload = WebhookDelivery.objects.get(event_type="lead.assigned").payload
         self.assertEqual(payload["data"]["lead"]["assignee"]["email"], "sam@example.com")
         self.assertNotIn("notes", payload["data"]["lead"])
+
+
+class ContactsLeaveOnlyAsTheCompanysOwnTests(LeadWorkflowCase):
+    """An employee's contact is the employee's: it is not sent to the company's webhooks, and the company card's is."""
+
+    def test_webhooks_get_the_company_cards_contacts_and_not_an_employees(self):
+        from leads.models import WebhookEndpoint
+
+        endpoint = WebhookEndpoint.objects.create(workspace_id=self.ws, url="https://hooks.example.com/in", secret="s", events=["lead.created"])
+        self.lead_for(self.eve, "Eve Private")
+        self.assertEqual(endpoint.deliveries.count(), 0)
+        self.lead_for(self.co, "Company Open")
+        self.assertEqual(endpoint.deliveries.count(), 1)
+
+    def test_the_company_export_and_the_developer_key_see_the_company_cards_contacts_only(self):
+        from leads.models import company_owned_leads
+
+        self.lead_for(self.eve, "Eve Private")
+        self.lead_for(self.co, "Company Open")
+        names = set(company_owned_leads(self.owner_member.workspace).values_list("name", flat=True))
+        self.assertEqual(names, {"Company Open"})
+
+
+class RemovedEmployeeTests(LeadWorkflowCase):
+    def remove(self, policy):
+        res = self.owner.client.delete(self.url(f"members/{self.eve.member_id}"), {"card": policy}, format="json")
+        self.assertEqual(res.status_code, 204, res.content)
+        return res
+
+    def test_a_kept_card_of_a_removed_employee_hands_its_contacts_to_the_company(self):
+        lead = self.lead_for(self.eve, "Eve Old Contact")
+        self.assertEqual(self.owner.client.get(f"{API}leads/{lead.id}").status_code, 404)
+        self.remove("keep")
+        # nobody holds the card now, so its contacts are the company's: owners and admins can work them
+        for person in (self.owner, self.admin):
+            self.assertEqual(person.client.get(f"{API}leads/{lead.id}").status_code, 200)
+            self.assertIn("Eve Old Contact", {l["name"] for l in person.client.get(self.url("leads")).data["results"]})
+
+    def test_a_deleted_card_keeps_its_contacts_with_the_company_too(self):
+        lead = self.lead_for(self.eve, "Eve Gone Contact")
+        self.remove("delete")
+        self.assertEqual(self.owner.client.get(f"{API}leads/{lead.id}").status_code, 200)
+
+
+class ActivityLogDoesNotCarryEmployeeContactsTests(LeadWorkflowCase):
+    def test_what_an_employee_does_with_their_own_contact_is_not_in_the_company_log(self):
+        from operations.models import AuditEvent
+
+        lead = self.lead_for(self.eve, "Eve Private Name")
+        self.assertEqual(self.patch(self.eve.client, lead, {"status": "contacted"}).status_code, 200)
+        labels = " ".join(AuditEvent.objects.filter(workspace_id=self.ws).values_list("target_label", flat=True))
+        self.assertNotIn("Eve Private Name", labels)
+
+    def test_the_company_cards_contact_is_logged_as_before(self):
+        from operations.models import AuditEvent
+
+        lead = self.lead_for(self.co, "Company Open Name")
+        self.assertEqual(self.patch(self.owner.client, lead, {"status": "contacted"}).status_code, 200)
+        labels = " ".join(AuditEvent.objects.filter(workspace_id=self.ws).values_list("target_label", flat=True))
+        self.assertIn("Company Open Name", labels)

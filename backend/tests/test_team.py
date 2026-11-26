@@ -21,6 +21,7 @@ class CompanyBrandTests(ApiTestCase):
         self.assertIsNone(res.data["brand"]["logo_url"])
         self.assertIsNone(res.data["custom_domain"])
         ws = res.data["id"]
+        self.enterprise(ws)  # a custom domain is an Enterprise feature
         res = owner.client.patch(
             f"{API}workspaces/{ws}",
             {"name": "Acme Group", "brand": {"website": "https://acme.test", "lock_design": True,
@@ -33,7 +34,8 @@ class CompanyBrandTests(ApiTestCase):
         self.assertTrue(res.data["brand"]["lock_design"])
         self.assertEqual(res.data["brand"]["design"]["face"], 9)
         self.assertEqual(res.data["brand"]["company_name"], "Acme Ltd")  # partial: untouched fields stay
-        self.assertEqual(res.data["custom_domain"], "cards.acme.test")
+        self.assertIsNone(res.data["custom_domain"])  # pending: only a verified domain shows here
+        self.assertEqual(res.data["custom_domain_info"]["domain"], "cards.acme.test")
 
     def test_brand_validation(self):
         owner = self.signup()

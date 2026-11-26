@@ -94,7 +94,8 @@ class WorkspaceIsolationTests(ApiTestCase):
         mine = eve.client.get(f"{API}workspaces/{ws}/leads").data
         self.assertEqual(mine["count"], 1)
         self.assertEqual(mine["results"][0]["card_id"], eve_card["id"])
-        self.assertEqual(owner.client.get(f"{API}workspaces/{ws}/leads").data["count"], 2)
+        # the owner sees their own card's contact, not the employee's
+        self.assertEqual(owner.client.get(f"{API}workspaces/{ws}/leads").data["count"], 1)
         boss_lead = next(l for l in owner.client.get(f"{API}workspaces/{ws}/leads").data["results"] if l["card_id"] == boss_card["id"])
         res = eve.client.patch(f"{API}leads/{boss_lead['id']}", {"status": "won"}, format="json")
         self.assertEqual(res.status_code, 404)

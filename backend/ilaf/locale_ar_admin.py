@@ -123,6 +123,8 @@ TEXTS = {
     "Ended all staff sessions of someone": "أُنهيت جميع جلسات أحد أعضاء الفريق",
     "Ended one staff session": "أُنهيت جلسة واحدة لأحد أعضاء الفريق",
     "Granted a free plan period": "مُنحت فترة اشتراك مجانية",
+    "Quoted an Enterprise plan": "تم تقديم عرض سعر لباقة Enterprise",
+    "Declined an Enterprise request": "تم رفض طلب Enterprise",
     "Invited someone to the staff": "دُعي شخص للانضمام إلى الفريق",
     "Made a change that was not described (should not happen)": "أُجري تغيير غير موصوف (لا ينبغي أن يحدث)",
     "Marked a data request as done": "تم وضع علامة مكتمل على طلب بيانات",

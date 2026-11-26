@@ -258,9 +258,13 @@ def enqueue(workspace, event_type, lead, extra=None):
     try:
         if workspace is None or workspace.kind != "company":
             return 0
-        from billing.services import is_live
+        from .models import is_company_owned
 
-        if not is_live(workspace):  # webhooks belong to a live plan
+        if not is_company_owned(lead):  # an employee's contact is the employee's: it is not sent to the company's systems
+            return 0
+        from billing.services import enterprise_allowed, is_live
+
+        if not is_live(workspace) or not enterprise_allowed(workspace):  # webhooks and CRM connectors belong to a live Enterprise plan
             return 0
         from crm import sync as crm_sync
 

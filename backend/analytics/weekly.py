@@ -103,12 +103,17 @@ def has_activity(data):
 def company_data(member, week):
     ws = member.workspace
     cards = Card.objects.filter(workspace_id=ws.id)
-    rows = breakdowns.people_rows(cards, week.window)
+    # The report is written for a person: it counts the contacts they may see (the company card's), not an employee's.
+    from leads.workflow import visible_leads
+    from workspaces.access import commerce_cards
+
+    rows = breakdowns.people_rows(cards, week.window, lead_cards=cards.filter(pk__in=commerce_cards(member).values("pk")))
     totals, prev = breakdowns.totals_of(rows), breakdowns.totals_of(rows, "prev")
     by_status = {s: 0 for s in STATUS_ORDER}
-    for r in Lead.objects.filter(workspace_id=ws.id).values("status").annotate(n=Count("id")):
+    mine = visible_leads(member)
+    for r in mine.values("status").annotate(n=Count("id")):
         by_status[r["status"]] = r["n"]
-    open_leads = Lead.objects.filter(workspace_id=ws.id).exclude(status__in=("won", "lost"))
+    open_leads = mine.exclude(status__in=("won", "lost"))
     return {
         "company": ws.name, "cards": cards.count(), "totals": totals, "prev": prev,
         "changes": {k: change(totals[k], prev[k]) for k in ("views", "scans", "saves", "link_clicks", "leads")},

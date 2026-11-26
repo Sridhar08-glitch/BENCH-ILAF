@@ -17,6 +17,7 @@ from ilaf.emails import send_brand_email
 from ilaf.i18n import member_language, tr
 from ilaf.utils import file_url, iso
 
+from . import domains
 from .models import Member
 
 
@@ -61,6 +62,8 @@ def brand_public_json(workspace, request, company_name=None):
         "logo_corner": branding["logo_corner"],
         "logo_chip": branding["logo_chip"],
         "show_company_name": branding["show_company_name"],
+        "logo_size": branding["logo_size"],
+        "logo_free": branding["logo_free"],
         "artwork": branding["artwork"],
         "background_url": file_url(request, workspace.background),
         "template_front_url": file_url(request, workspace.template_front),
@@ -91,6 +94,18 @@ def security_json(workspace):
     }
 
 
+def subscription_for_member(workspace, member):
+    """The plan as this person may see it. An employee needs to know whether the plan is live and which plan it is (what their card may
+    use), not the company's seat count or billing dates."""
+    sub = subscription_json(workspace)
+    if workspace.kind == "company" and member.role == "employee":
+        return {
+            **sub, "seats_total": 0, "seats_used": 0, "starts_at": None, "ends_at": None, "grace_ends_at": None,
+            "renews_at": None, "payment_failed": False, "can_manage_billing": False,
+        }
+    return sub
+
+
 def workspace_json(workspace, member, request):
     return {
         "id": str(workspace.id),
@@ -99,9 +114,11 @@ def workspace_json(workspace, member, request):
         "country": workspace.country or None,
         "role": member.role,
         "brand": brand_json(workspace, request),
-        "custom_domain": workspace.custom_domain,
+        # The verified domain (or null). `custom_domain_info` is the claim with what to add to DNS (owner and admin only).
+        "custom_domain": domains.verified_domain_name(workspace),
+        "custom_domain_info": domains.info_json(workspace) if workspace.kind == "company" and member.role in ("owner", "admin") else None,
         "verified_domain": verified_domain(workspace),
-        "subscription": subscription_json(workspace),
+        "subscription": subscription_for_member(workspace, member),
         "security": security_json(workspace) if workspace.kind == "company" and member.role in ("owner", "admin") else None,
         "deletion_due_at": iso(workspace.deletion_due_at),
     }
@@ -128,6 +145,9 @@ def member_json(member, request):
         "invite_sent_at": iso(member.invite_sent_at or member.invited_at) if member.status == "invited" else None,
         "can_resend_at": iso(resend_available_at(member)) if member.status == "invited" else None,
         "joined_at": iso(member.joined_at),
+        # Whether this employee shares the contacts that arrive from now on with the company (null for owners and admins). Only the
+        # employee can change it, on `workspaces/{id}/me`.
+        "share_contacts": bool(member.share_contacts) if member.role == "employee" else None,
     }
 
 

@@ -213,7 +213,10 @@ def sign_save_jwt(obj, issuer_email, key, now=None):
 
 
 def sign_reference_jwt(object_id, issuer_email, key, now=None):
-    """A short save link token for a pass that is already stored at Google: it names the class and the object only."""
+    """A short save link token for a pass that is already stored at Google: it names the object only.
+
+    The class is left out on purpose: when a class is enclosed, Google expects the pass to be enclosed with it and
+    refuses an id-only pass ("Object must be present ... and must reference the enclosed class")."""
     claims = {
         "iss": issuer_email,
         "aud": "google",
@@ -221,7 +224,6 @@ def sign_reference_jwt(object_id, issuer_email, key, now=None):
         "iat": int(now if now is not None else time.time()),
         "origins": [settings.WEB_BASE_URL],
         "payload": {
-            "genericClasses": [{"id": class_id(settings.GOOGLE_WALLET_ISSUER_ID)}],
             "genericObjects": [{"id": object_id}],
         },
     }

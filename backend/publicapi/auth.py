@@ -13,7 +13,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.permissions import BasePermission
 from rest_framework.throttling import BaseThrottle
 
-from billing.services import is_live
+from billing.services import is_live, require_enterprise
 from ilaf.errors import ApiError
 from ilaf.utils import client_ip, throttle_ident
 
@@ -94,6 +94,7 @@ class ApiKeyAuthentication(BaseAuthentication):
             raise ApiError("ip_not_allowed", "This API key cannot be used from this IP address.", 403)
         if not is_live(key.workspace):
             raise ApiError("subscription_required", "The company needs an active plan to use the API.", 402)
+        require_enterprise(key.workspace)  # the public API is an Enterprise feature
         return ApiKeyPrincipal(key), key
 
 

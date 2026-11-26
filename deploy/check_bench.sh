@@ -83,7 +83,7 @@ if [ -f /etc/bench-backup.env ] && grep -qE '^BACKUP_REMOTE=.+' /etc/bench-backu
 
 head_ "scheduled jobs (last successful run)"
 # name:maximum minutes since the last success
-for spec in deliver_webhooks:10 sync_crm:10 sync_wallet_passes:30 fetch_support_mail:10 support_tick:10 process_data_requests:30 cleanup_data_exports:180 purge_deleted_accounts:2160 expire_subscriptions:2160 flushexpiredtokens:2160 send_renewal_reminders:2160 send_weekly_reports:12960 prune_api_idempotency:2160 send_announcements:30 expire_support_views:30 prune_back_office:2160 send_daily_summary:180 prune_security:2160; do
+for spec in deliver_webhooks:10 sync_crm:10 sync_wallet_passes:30 fetch_support_mail:10 support_tick:10 process_data_requests:30 cleanup_data_exports:180 purge_deleted_accounts:2160 expire_subscriptions:2160 flushexpiredtokens:2160 send_renewal_reminders:2160 send_weekly_reports:12960 prune_api_idempotency:2160 send_announcements:30 expire_support_views:30 prune_back_office:2160 send_daily_summary:180 prune_security:2160 check_custom_domains:180; do
     name=${spec%%:*}; max=${spec##*:}
     if [ -e "$BENCH_STATE/fail-$name" ]; then bad "job $name failed last time: $(cut -c1-200 "$BENCH_STATE/fail-$name")"; continue; fi
     A=$(age_min "$BENCH_STATE/ok-$name")

@@ -117,7 +117,7 @@ def create_photo_request(request, card, user, file_content):
 def _apply(change):
     card = change.card
     new = change.new_value
-    if change.field in ("name", "title", "company", "address"):
+    if change.field in ("name", "title", "company", "address", "bio"):
         setattr(card, change.field, new or "")
         card.save(update_fields=[change.field, "updated_at"])
     elif change.field == "buttons":

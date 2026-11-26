@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from billing.services import is_live
+from billing.services import is_live, require_enterprise
 from ilaf.errors import ApiError, validation_error
 from staff.flags import require_flag
 from ilaf.throttles import PublicReadThrottle
@@ -39,6 +39,13 @@ def _company(request, workspace_id):
     ws, member = get_workspace_and_member(request.user, workspace_id, MANAGER_ROLES)
     if ws.kind != "company":
         raise validation_error({"workspace": ["CRM connectors are for company workspaces."]})
+    return ws, member
+
+
+def _enterprise_company(request, workspace_id):
+    """Connecting, changing, testing and back-filling a CRM are Enterprise features; looking at the page and disconnecting are not."""
+    ws, member = _company(request, workspace_id)
+    require_enterprise(ws)
     return ws, member
 
 
@@ -93,7 +100,7 @@ class CrmConnectView(APIView):
     """Start the OAuth flow: answers with the vendor's sign-in address for the owner's browser to open."""
 
     def post(self, request, workspace_id, vendor_key):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise_company(request, workspace_id)
         require_flag("crm_connectors", ws)
         vendor = _vendor(vendor_key)
         if not vendor.configured():
@@ -177,7 +184,7 @@ def _connection(ws, vendor_key):
 class CrmConnectionView(APIView):
     def patch(self, request, workspace_id, vendor_key):
         """Change the field mapping and the sync rules. Only the parts that are sent change."""
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise_company(request, workspace_id)
         conn = _connection(ws, vendor_key)
         data = request.data if isinstance(request.data, dict) else {}
         changed = []
@@ -220,7 +227,7 @@ class CrmTestView(APIView):
     """Send a made-up lead now and report what the CRM said. The sample contact stays in the CRM (delete it there)."""
 
     def post(self, request, workspace_id, vendor_key):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise_company(request, workspace_id)
         conn = _connection(ws, vendor_key)
         if conn.status != "connected":
             raise ApiError("crm_disabled", "Connect this CRM again first.", 409)
@@ -237,7 +244,7 @@ class CrmTestView(APIView):
 
 class CrmBackfillView(APIView):
     def post(self, request, workspace_id, vendor_key):
-        ws, _ = _company(request, workspace_id)
+        ws, _ = _enterprise_company(request, workspace_id)
         conn = _connection(ws, vendor_key)
         if conn.status != "connected":
             raise ApiError("crm_disabled", "Connect this CRM again first.", 409)

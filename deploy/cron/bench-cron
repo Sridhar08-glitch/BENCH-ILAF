@@ -36,6 +36,10 @@ D=/srv/bench/app/deploy
 # --- every hour: delete export files that were downloaded or whose 24 h link expired
 15 * * * *     bench  $J cleanup_data_exports cleanup_data_exports
 
+# --- every hour: custom domains (Enterprise): re-check pending DNS records (a claim expires after 7 days), re-verify verified domains once a day,
+# mark a domain dns_broken and e-mail the owner when its records stay missing. No DNS write, only reads.
+25 * * * *     bench  QUIET=1 $J check_custom_domains check_custom_domains
+
 # --- daily
 10 3 * * *     bench  $J purge_deleted_accounts purge_deleted_accounts
 20 3 * * *     bench  $J expire_subscriptions expire_subscriptions
@@ -62,3 +66,7 @@ D=/srv/bench/app/deploy
 # --- monitoring: the down-alarm every minute (mails after two failed checks in a row), the full report once a day
 * * * * *      bench  $D/alert_down.sh
 5 6 * * *      bench  $D/check_bench.sh --mail-daily >> /srv/bench/logs/check.log 2>&1
+
+# --- nginx variant of custom domains only (see deploy/CUSTOM_DOMAINS.md, section 4b): certificates for verified customer domains.
+# Not needed with Caddy. Uncomment, set EMAIL, and test with STAGING=1 first.
+# */10 * * * *   root  EMAIL=ops@example.com /srv/bench/app/deploy/custom-domains/issue_certs.sh >> /srv/bench/logs/custom-certs.log 2>&1

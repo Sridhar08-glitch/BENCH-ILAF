@@ -14,7 +14,9 @@ from .test_lead_workflow import LeadWorkflowCase
 class LeadLockTests(LeadWorkflowCase):
     def setUp(self):
         super().setUp()
-        self.lead = self.lead_for(self.eve)
+        # the company card's contact is the owner's and the admins' to read; Eve's own contact is hers alone
+        self.lead = self.lead_for(self.co)
+        self.eve_lead = self.lead_for(self.eve, "Eve Lead")
 
     def lock(self):
         res = self.owner.client.post(
@@ -31,12 +33,13 @@ class LeadLockTests(LeadWorkflowCase):
         self.lock()
         for person in (self.owner, self.admin, self.eve):
             c = person.client
+            lead = self.eve_lead if person is self.eve else self.lead
             self.assertEqual(c.get(f"{API}workspaces/{self.ws}/leads").status_code, 403, person)
-            self.assertEqual(c.get(f"{API}leads/{self.lead.id}").status_code, 403, person)
-            self.assertEqual(c.patch(f"{API}leads/{self.lead.id}", {"status": "won"}, format="json").status_code, 403)
-            self.assertEqual(c.post(f"{API}leads/{self.lead.id}/notes", {"body": "x"}, format="json").status_code, 403)
+            self.assertEqual(c.get(f"{API}leads/{lead.id}").status_code, 403, person)
+            self.assertEqual(c.patch(f"{API}leads/{lead.id}", {"status": "won"}, format="json").status_code, 403)
+            self.assertEqual(c.post(f"{API}leads/{lead.id}/notes", {"body": "x"}, format="json").status_code, 403)
             self.assertEqual(
-                c.post(f"{API}workspaces/{self.ws}/leads/bulk", {"action": "status", "ids": [str(self.lead.id)], "status": "won"}, format="json").status_code,
+                c.post(f"{API}workspaces/{self.ws}/leads/bulk", {"action": "status", "ids": [str(lead.id)], "status": "won"}, format="json").status_code,
                 403,
             )
             self.assertEqual(c.get(f"{API}workspaces/{self.ws}/lead-assignees").status_code, 403)
@@ -57,7 +60,7 @@ class LeadLockTests(LeadWorkflowCase):
         res = self.owner.client.post(f"{API}privacy/workspaces/{self.ws}/restore", {}, format="json")
         self.assertEqual(res.status_code, 200, res.content)
         self.assertEqual(self.admin.client.get(f"{API}workspaces/{self.ws}/leads").status_code, 200)
-        self.assertEqual(self.eve.client.get(f"{API}leads/{self.lead.id}").status_code, 200)
+        self.assertEqual(self.eve.client.get(f"{API}leads/{self.eve_lead.id}").status_code, 200)
 
     def test_webhooks_pause_while_locked_and_resume_after_restore(self):
         endpoint = WebhookEndpoint.objects.create(
