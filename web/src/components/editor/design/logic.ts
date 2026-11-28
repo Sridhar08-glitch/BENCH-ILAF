@@ -42,7 +42,7 @@ export function offeredFaces(pack2: boolean): Item[] {
 }
 
 /** The app patterns the page-style headers follow, in the order of the chips of the Top step. */
-export const TOP_STYLES = ["Popl", "Blinq", "HiHello", "Wave", "Mobilo", "Linq", "Dot", "Arabic", "Editorial", "Objects", "Digital", "Gulf", "Creative", "Business", "Tech and Creative", "Health and Hospitality", "Trades and Industry", "Events and Lifestyle"] as const;
+export const TOP_STYLES = ["Popl", "Blinq", "HiHello", "Wave", "Mobilo", "Linq", "Dot", "Arabic", "Editorial", "Objects", "Digital", "Gulf", "Creative", "Business", "Tech and Creative", "Health and Hospitality", "Trades and Industry", "Events and Lifestyle", "Unique", "Link in bio"] as const;
 export type TopStyle = (typeof TOP_STYLES)[number];
 export const TOP_STYLE_LABELS: Record<TopStyle, MessageKey> = {
   Popl: tk("editor.styPopl"), Blinq: tk("editor.styBlinq"), HiHello: tk("editor.styHiHello"), Wave: tk("editor.styWave"),
@@ -50,6 +50,7 @@ export const TOP_STYLE_LABELS: Record<TopStyle, MessageKey> = {
   Editorial: tk("editor.styEditorial"), Objects: tk("editor.styObjects"), Digital: tk("editor.styDigital"), Gulf: tk("editor.styGulf"), Creative: tk("editor.styCreative"),
   Business: tk("editor.styBusiness"), "Tech and Creative": tk("editor.styTechCreative"), "Health and Hospitality": tk("editor.styHealthHosp"),
   "Trades and Industry": tk("editor.styTrades"), "Events and Lifestyle": tk("editor.styEvents"),
+  Unique: tk("editor.styUnique"), "Link in bio": tk("editor.styLinkInBio"),
 };
 
 /** The steps the picker shows: without the page styles switch there is no Top step. */

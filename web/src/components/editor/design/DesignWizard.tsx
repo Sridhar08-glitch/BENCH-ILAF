@@ -12,7 +12,7 @@ import { Icon } from "@/components/Icon";
 import { ToggleRow } from "@/components/app/Switch";
 import { useToast } from "@/components/app/ui";
 import { CardView } from "@/components/card/CardView";
-import { fontInfo, isFontLocked, FONT_FACE } from "@/lib/library/text";
+import { fontInfo, isFontLocked, usesPageStyle, FONT_FACE } from "@/lib/library/text";
 import { COMPANY_COLOUR, FACE_COUNT, INTRO_COUNT, belowInfo, belowOfTop, defaultDesign, faceInfo, introInfo, normalizeDesign } from "@/lib/library";
 import type { CardPageData } from "@/lib/library/types";
 import type { Design } from "@/lib/types";
@@ -417,7 +417,7 @@ function FinishStep({ ed, d, set, onReset, guided }: { ed: EditorApi; d: Design;
         <dt>{t("editor.sumFace")}</dt><dd>{pad(d.face)} {face.name}</dd>
         <dt>{t("editor.sumColours")}</dt><dd>{d.colour === COMPANY_COLOUR ? t("editor.companyColours") : paletteLabel(face.palettes[d.colour]?.name ?? "", t)}</dd>
         <dt>{t("editor.sumFont")}</dt>
-        <dd>{d.font === FONT_FACE ? t("editor.fontOwn") : (fontInfo(d.font)?.name ?? t("editor.fontOwn"))}{isFontLocked(d.face) ? <> &middot; {t("editor.fontLocked")}</> : null}</dd>
+        <dd>{d.font === FONT_FACE ? t("editor.fontOwn") : (fontInfo(d.font)?.name ?? t("editor.fontOwn"))}{isFontLocked(d.face) && !usesPageStyle(d) ? <> &middot; {t("editor.fontLocked")}</> : null}</dd>
         <dt>{t("editor.sumSize")}</dt><dd>{t("editor.percent", { n: number(d.size) })}</dd>
         <dt>{t("editor.sumBelow")}</dt><dd>{pad(d.below)} {belowInfo(d.below).name}</dd>
         <dt>{t("editor.sumOpening")}</dt><dd>{d.intro === 0 ? t("editor.noAnimation") : `${pad(d.intro)} ${introInfo(d.intro).name}`}</dd>

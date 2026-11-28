@@ -18,6 +18,7 @@ import { ButtonsTab } from "./ButtonsTab";
 import { ContentTab } from "./ContentTab";
 import { DesignWizard } from "./design/DesignWizard";
 import { ProfileTab } from "./ProfileTab";
+import { StyleNeeds } from "./StyleNeeds";
 import { DESIGN_STEPS, GUIDED_LABELS, TOUR_NAMES, guidedSteps, nextOf, prevOf, type GuidedKey } from "./guided";
 import type { EditorApi } from "./types";
 
@@ -54,7 +55,7 @@ export function GuidedFlow({ ed, extras, live, busy, onPublish }: Props) {
   const only = at === "look" ? (pageStyles && kind === "page" ? (["top", "face"] as const) : (["face"] as const)) : DESIGN_STEPS[at];
 
   const nav = (
-    <div className="row" style={{ justifyContent: "space-between", marginBlockStart: 14 }}>
+    <div className="row gnav" style={{ justifyContent: "space-between", marginBlockStart: 14 }}>
       <button type="button" className="btn ghost" disabled={at === steps[0]} onClick={back}>{t("common.back")}</button>
       {at !== steps[steps.length - 1] && <button type="button" className="btn" onClick={next}>{t("common.next")}</button>}
     </div>
@@ -84,6 +85,7 @@ export function GuidedFlow({ ed, extras, live, busy, onPublish }: Props) {
           <button type="button" className={kind === "page" ? "btn sm" : "btn ghost sm"} aria-pressed={kind === "page"} onClick={() => setKind("page")}>{t("editor.gsLookPage")}</button>
         </div>
       )}
+      {!ed.locked && (at === "look" || at === "colour" || at === "details" || at === "buttons") && <StyleNeeds ed={ed} design={design} onGo={go} inline={at === "look" || at === "colour"} />}
       <div data-guide="editor-body">
       {only ? (
         <DesignWizard key={`${at}-${kind}`} ed={ed} only={only} onFinish={next} onBack={at === steps[0] ? undefined : back} />

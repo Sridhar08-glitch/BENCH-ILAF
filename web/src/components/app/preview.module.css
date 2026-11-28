@@ -17,6 +17,8 @@
 }
 .fab:hover { background: var(--blue); }
 .lift { inset-block-end: 156px; }
+/* The floating chat button sits at the same corner just above the phone bar: stack the preview button above it instead of under it. */
+@media (max-width: 900px) { .fab { inset-block-end: calc(152px + env(safe-area-inset-bottom, 0px)); } .lift { inset-block-end: calc(220px + env(safe-area-inset-bottom, 0px)); } }
 .sheet { position: fixed; inset: 0; z-index: 80; background: var(--surface-2); display: flex; flex-direction: column; }
 .sheethead { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-block-end: 1px solid var(--line); }
 .sheethead b { flex: 1; }

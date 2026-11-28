@@ -427,6 +427,21 @@ function condEmpty(n) {
   n.children.forEach(condEmpty);
 }
 
+// ---- the typeface and size of a page style (design.font, design.size, see src/lib/library/text.ts)
+//
+// The rule: the font replaces the face of the text that is the person's own words (name, first and last name, title, company, intro text,
+// address, phone, e-mail, website) and of the label and value of every button. Those elements get the attribute data-fx here, in the markup, so
+// the stylesheet of the text settings (TEXT_CSS) can reach them whatever the designer called them; the designer's own typefaces stay on
+// everything else (fixed words, numbers, monograms, big drawn letters and other artwork). The size setting scales the same elements.
+// (an attribute, not a class: the designers' own class names all become pg-<name>, and one of them is "fx")
+const FX_TEXT = /{(?:name|first|last|title|co|bio|city|phone|email|site)}|@@[lvs]@@/;
+function tagFont(root) {
+  walk(root, (n) => {
+    if (n.tag === "svg" || n.tag === "#root") return;
+    if (n.children.some((c) => c.type === "text" && FX_TEXT.test(c.text)) && !n.attrs.some((a) => a[0] === "data-fx")) n.attrs.push(["data-fx", null]);
+  });
+}
+
 // ---- repeated groups of links become templates filled from the card's buttons
 
 const LABELS = /^(Website|Mobile|Email|E-mail|Phone|Web|Office|Address|LinkedIn|Instagram|WhatsApp|Directions|Calendar|Book.*|Direct line|Work email|Company site|Head office|Mobile · WhatsApp|Website · LinkedIn|Connect|Follow|in)$/i;
@@ -525,6 +540,7 @@ function templateOf(sample, spec, no) {
   t.attrCode.unshift("c.LA(i)");
   if (!label) t.attrCode.push(`' aria-label="'+i.l+'"'`);
   void value;
+  tagFont(t);
   const parts = emit(t, no);
   const expr = toExpr(parts)
     .split('@@num@@').join('"+("0"+(k+1)).slice(-2)+"')
@@ -636,6 +652,7 @@ function convert(page, recipe) {
     card.alt = "c.face";
   }
   condEmpty(inn);
+  tagFont(inn);
 
   const topKids = inn.children.filter((k) => !k.bottom);
   const botKids = inn.children.filter((k) => k.bottom && k.type !== "text");

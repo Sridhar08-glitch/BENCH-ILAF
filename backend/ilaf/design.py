@@ -10,10 +10,10 @@ from .utils import clean_multiline
 FACE_COUNT = 500
 PACK1_FACE_COUNT = 400
 # The top of the page: 0 is Classic (the face card), 1 to 27 are the photo headers of the page styles.
-# Layouts 401 to 527 below the card are the button sets of those same 127 pages (27 first styles, then 100 hand-made ones). Both sit behind the
+# Layouts 401 to 627 below the card are the button sets of those same 227 pages (27 first styles, then 200 hand-made ones). Both sit behind the
 # "page_styles" switch (see require_page_styles) and belong to the paid plans.
-TOP_COUNT = 127
-BELOW_COUNT = 527
+TOP_COUNT = 227
+BELOW_COUNT = 627
 PACK1_BELOW_COUNT = 400
 INTRO_COUNT = 406  # 1 to 400 animate the flip card, 401 to 406 are made for the page styles (headers); 0 means no opening animation
 COLOURWAYS = 4

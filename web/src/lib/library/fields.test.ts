@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FACE_COUNT, TOP_COUNT, defaultDesign } from "./index";
 import { renderCardPage } from "./render";
-import { FACE_FIELDS, TOP_FIELDS } from "./fields";
+import { FACE_FIELDS, TOP_FIELDS, TOP_SLOTS } from "./fields";
 import type { CardPageData } from "./types";
 
 const M = { title: "TITLEMARKQ", company: "COMPANYMARKQ", address: "ADDRMARKQ", bio: "BIOMARKQ", photo: "PHOTOMARKQ", cover: "COVERMARKQ" };
@@ -22,12 +22,21 @@ function mask(raw: string): number {
 }
 const draw = (design: object) => renderCardPage({ ...data, design: { ...defaultDesign(), ...design } as never }, "thumb").html;
 const faces = () => Array.from({ length: FACE_COUNT }, (_, i) => mask(draw({ face: i + 1, top: 0, below: 1 })));
+/** How many different buttons a page style draws (header and layout under it) when the card has twelve. */
+const MANY = ["Mobile", "WhatsApp", "Email", "SMS", "Website", "Location", "Instagram", "LinkedIn", "X", "YouTube", "Calendly", "TikTok"].map((kind) => ({ kind, value: kind === "Email" ? "x@example.test" : kind === "Website" ? "x.example.test" : kind === "Mobile" || kind === "WhatsApp" || kind === "SMS" ? "+974 5512 3344" : "handle" }));
+const slotsOf = (top: number) => {
+  const html = renderCardPage({ ...data, items: MANY, design: { ...defaultDesign(), face: 1, top, below: 400 + top } as never }, "live").html;
+  return new Set(Array.from(html.matchAll(/data-i="(\d+)"/g), (m) => m[1])).size;
+};
+const slots = () => Array.from({ length: TOP_COUNT }, (_, i) => slotsOf(i + 1));
 const tops = () => Array.from({ length: TOP_COUNT }, (_, i) => mask(draw({ face: 1, top: i + 1, below: 401 + i })));
 
 describe("design fields table", () => {
   if (process.env.WRITE_FIELDS) {
     it("writes the table", () => {
-      const src = `// Made by fields.test.ts (WRITE_FIELDS=1). For every face and header: which details it draws.\n// Bits: 1 title, 2 company, 4 address, 8 intro text, 16 photo, 32 cover image.\nexport const FACE_FIELDS: readonly number[] = ${JSON.stringify(faces())};\nexport const TOP_FIELDS: readonly number[] = ${JSON.stringify(tops())};\n`;
+      const src = `// Made by fields.test.ts (WRITE_FIELDS=1). For every face and header: which details it draws.\n// Bits: 1 title, 2 company, 4 address, 8 intro text, 16 photo, 32 cover image.\nexport const FACE_FIELDS: readonly number[] = ${JSON.stringify(faces())};\nexport const TOP_FIELDS: readonly number[] = ${JSON.stringify(tops())};
+// How many different buttons each page style draws when the card has twelve (header and layout below it together).
+export const TOP_SLOTS: readonly number[] = ${JSON.stringify(slots())};\n`;
       fs.writeFileSync(new URL("./fields.ts", import.meta.url), src);
     });
     return;
@@ -35,5 +44,6 @@ describe("design fields table", () => {
   it("matches a fresh render of every face and header", () => {
     expect(FACE_FIELDS).toEqual(faces());
     expect(TOP_FIELDS).toEqual(tops());
+    expect(TOP_SLOTS).toEqual(slots());
   });
 });

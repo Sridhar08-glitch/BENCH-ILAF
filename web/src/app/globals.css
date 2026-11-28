@@ -500,3 +500,6 @@ html[lang="ar"] .btn, html[lang="ar"] input, html[lang="ar"] select, html[lang="
 /* While the company brand page lets the owner place the logo by hand, the logo on the live preview can be dragged. */
 [data-logo-drag] .cfl .colg[data-co="free"] { pointer-events: auto; cursor: grab; touch-action: none; user-select: none; outline: 2px dashed var(--orange); outline-offset: 2px; }
 [data-logo-drag] .cfl .colg[data-co="free"]:active { cursor: grabbing; }
+
+/* Guided editor step buttons: room under them for the floating chat button on a phone. */
+@media (max-width: 900px) { .gnav { padding-block-end: 132px; } }

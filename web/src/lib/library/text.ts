@@ -11,7 +11,14 @@
 // multiply them) and over `transform: scale` (that does not change the space a block takes, so a scaled name would
 // still be laid out for its old size and leave gaps or overlap its neighbour). Where a browser does not know `zoom`
 // the rule is ignored and the text simply stays at 100%.
+//
+// Page styles (the headers 1 to 227 and the button layouts under them) are not faces: their markup comes from scripts/build-pages.mjs,
+// which marks the person's own words (name, title, company, intro text, address, contact values) and the label and value of every button
+// with the attribute `data-fx`. The same two settings reach those elements: the typeface replaces the style's main text face (fixed words, numbers,
+// monograms and other artwork keep the style's own lettering, so the design is not lost), the size scales them with `zoom`, and a block
+// that a wider typeface or a larger size pushes out of its box is shrunk a little (fitPageText in ./enhance sets --fz on it).
 import type { Design } from "@/lib/types";
+import { TOP_META } from "./generated/meta";
 
 export const FONT_FACE = "face";
 export const TEXT_SIZE_MIN = 60;
@@ -129,16 +136,32 @@ export function safeScale(size: number): number {
   return Math.min(normalizeSize(size), TEXT_SIZE_DEFAULT) / 100;
 }
 
-/** Whether the font setting changes anything on this face. */
-export function fontApplies(d: Pick<Design, "face" | "font">): boolean {
-  return normalizeFont(d.font) !== FONT_FACE && !isFontLocked(d.face);
+/** True when a page style (a header above the buttons) is drawn instead of the classic face card. */
+export const usesPageStyle = (d: Pick<Design, "top">): boolean => d.top >= 1 && d.top <= TOP_META.length;
+
+/**
+ * Whether the face the owner sees keeps its own typeface. A classic card shows the chosen face, so a locked face (terminal,
+ * pixel and typewriter faces) locks the font. A page style draws its own text; only the few that show the chosen face inside
+ * them (the Blinq-style headers) still have a face that can be locked, and that locks only the face block, not the page text.
+ */
+export function fontLockedFor(d: Pick<Design, "face" | "top">): boolean {
+  return isFontLocked(d.face) && (!usesPageStyle(d) || TOP_META[d.top - 1].b);
 }
 
-/** Classes for the card wrapper: "tx-font" when the font changes, "tx-size" when the size is not 100%. */
-export function textClasses(d: Pick<Design, "face" | "font" | "size">): string {
+/** Whether the font setting changes anything on this design. */
+export function fontApplies(d: Pick<Design, "face" | "font"> & Partial<Pick<Design, "top">>): boolean {
+  if (normalizeFont(d.font) === FONT_FACE) return false;
+  const top = d.top ?? 0;
+  // a page style has its own text: the face lock does not stop it
+  return top >= 1 && top <= TOP_META.length ? true : !isFontLocked(d.face);
+}
+
+/** Classes for the card wrapper: "tx-font" when the font changes, "tx-size" when the size is not 100%, "tx-flock" when the face inside a page header keeps its own font. */
+export function textClasses(d: Pick<Design, "face" | "font" | "size"> & Partial<Pick<Design, "top">>): string {
   const out: string[] = [];
   if (fontApplies(d)) out.push("tx-font");
   if (normalizeSize(d.size) !== TEXT_SIZE_DEFAULT) out.push("tx-size");
+  if (out.includes("tx-font") && d.top !== undefined && fontLockedFor({ face: d.face, top: d.top })) out.push("tx-flock");
   return out.join(" ");
 }
 
@@ -147,7 +170,7 @@ export function textClasses(d: Pick<Design, "face" | "font" | "size">): string {
  * the page applies now (never above 1 until the browser has measured that the size fits) and --tsr the size that was
  * asked for, in percent, which the browser reads to measure.
  */
-export function textVars(d: Pick<Design, "face" | "font" | "size">): Record<string, string> {
+export function textVars(d: Pick<Design, "face" | "font" | "size"> & Partial<Pick<Design, "top">>): Record<string, string> {
   const vars: Record<string, string> = {};
   if (fontApplies(d)) {
     const key = normalizeFont(d.font);
@@ -163,12 +186,24 @@ export function textVars(d: Pick<Design, "face" | "font" | "size">): Record<stri
 }
 
 const BLOCKS = ".n,.t1,.t2,.co,.cl,.ln";
+/** The text of a page style that the settings reach: build-pages.mjs marks the person's own words and the button labels and values with this attribute. */
+export const PAGE_TEXT = "[data-fx]";
 
-/** The stylesheet of both settings. Scoped under `.cfl` like the library; sent only with a card that uses one of them. */
+/**
+ * The stylesheet of both settings. Scoped under `.cfl` like the library; sent only with a card that uses one of them.
+ *   - Face cards: the blocks `.n .t1 .t2 .co .cl .ln` of the face.
+ *   - Page styles: every `[data-fx]` (name, title, company, intro text, address, contact values, button labels and values). The
+ *     typeface replaces the style's main text face; fixed words, numbers and drawn letters keep the style's own. The size scales
+ *     the same elements; `--fz` (set by fitPageText in ./enhance) shrinks one element that a wider font or a larger size pushed
+ *     out of its box.
+ */
 export const TEXT_CSS = `
-.cfl.tx-font .face:not(.back) :is(${BLOCKS}),.cfl.tx-font .face:not(.back) :is(${BLOCKS}) b{font-family:var(--tf)!important}
-.cfl.tx-font .face:not(.back) :is(${BLOCKS}) .ar{font-family:var(--tfa)!important}
+.cfl.tx-font:not(.tx-flock) .face:not(.back) :is(${BLOCKS}),.cfl.tx-font:not(.tx-flock) .face:not(.back) :is(${BLOCKS}) b{font-family:var(--tf)!important}
+.cfl.tx-font:not(.tx-flock) .face:not(.back) :is(${BLOCKS}) .ar{font-family:var(--tfa)!important}
 .cfl.tx-size .face:not(.back) :is(${BLOCKS}):not(:is(${BLOCKS}) *){zoom:var(--ts,1)}
+.cfl.tx-font ${PAGE_TEXT},.cfl.tx-font ${PAGE_TEXT} :is(b,i,em,strong,small,span,a){font-family:var(--tf)!important}
+.cfl.tx-font ${PAGE_TEXT}.ar,.cfl.tx-font ${PAGE_TEXT} .ar{font-family:var(--tfa)!important}
+.cfl.tx-font ${PAGE_TEXT}:not(${PAGE_TEXT} ${PAGE_TEXT}),.cfl.tx-size ${PAGE_TEXT}:not(${PAGE_TEXT} ${PAGE_TEXT}){zoom:calc(var(--ts,1)*var(--fz,1))}
 `.trim();
 
 // ---- the fit rule (pure: boxes in, numbers out)

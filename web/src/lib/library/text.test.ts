@@ -7,7 +7,7 @@ import { defaultDesign } from "./index";
 import { renderCardPage } from "./render";
 import {
   FONTS, FONT_FACE, FONT_KEYS, FONT_LOCKED_FACES, HOSTED_FAMILIES, TEXT_CSS, TEXT_SIZE_DEFAULT, TEXT_SIZE_MAX, TEXT_SIZE_MIN, addsNoProblem, appliedSize, arabicStack, fontApplies, fontInfo,
-  fontStack, isFontLocked, keepsSize, largestFit, nearestFit, normalizeFont, normalizeSize, problems, safeScale, textClasses, textVars, type Measured, type Rect,
+  fontStack, fontLockedFor, isFontLocked, keepsSize, largestFit, nearestFit, normalizeFont, normalizeSize, problems, safeScale, textClasses, textVars, type Measured, type Rect,
 } from "./text";
 import type { CardPageData } from "./types";
 
@@ -124,6 +124,21 @@ describe("how a design reaches the card", () => {
     expect(textClasses(d({ face: 12, font: "lora" }))).toBe("");
     expect(textClasses(d({ face: 12, font: "lora", size: 120 }))).toBe("tx-size"); // the size still applies
     expect(fontApplies(d({ face: 1, font: "lora" }))).toBe(true);
+  });
+  it("a page style is not held back by the face's fixed typeface (it draws no face), except the face block of a Blinq header", () => {
+    expect(fontApplies(d({ face: 12, top: 30, font: "lora" }))).toBe(true);
+    expect(textClasses(d({ face: 12, top: 30, font: "lora" }))).toBe("tx-font");
+    expect(fontLockedFor({ face: 12, top: 30 })).toBe(false);
+    expect(fontLockedFor({ face: 12, top: 0 })).toBe(true);
+    expect(fontLockedFor({ face: 1, top: 0 })).toBe(false);
+    expect(textClasses(d({ face: 12, top: 4, font: "lora" }))).toBe("tx-font tx-flock"); // a Blinq header draws the chosen face inside it
+    expect(TEXT_CSS).toContain(".tx-font:not(.tx-flock) .face");
+  });
+  it("reaches the marked text of page styles with the font and the size", () => {
+    expect(TEXT_CSS).toContain(".cfl.tx-font [data-fx]");
+    expect(TEXT_CSS).toContain(".cfl.tx-size [data-fx]:not([data-fx] [data-fx])");
+    expect(TEXT_CSS).toContain("font-family:var(--tfa)!important");
+    expect(TEXT_CSS).toContain("calc(var(--ts,1)*var(--fz,1))");
   });
   it("scopes the stylesheet to the card text and uses zoom, once per outermost block", () => {
     expect(TEXT_CSS).toContain("zoom:var(--ts,1)");

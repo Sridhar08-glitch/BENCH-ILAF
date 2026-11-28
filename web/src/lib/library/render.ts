@@ -16,6 +16,7 @@ import { platformOf } from "@/lib/card/catalogue";
 import { KIND_SHORT } from "@/lib/card/label-keys";
 import { cardI18n, cardLabels, localiseChrome } from "@/lib/card/labels";
 import { wrapArabicRuns } from "@/lib/card/bidi";
+import { joinArabicTiles } from "./arabic-tiles";
 import { withoutRepeatedButtons } from "./dedupe";
 import type { TFunction } from "@/lib/i18n";
 
@@ -111,6 +112,8 @@ export function drawPage(input: EngineInput, data: Pick<CardPageData, "brand">, 
   const raw = renderPage(input);
   // A header and the list under it must not both show the same button.
   raw.html = withoutRepeatedButtons(raw.html);
+  // Faces that cut the name into one tile per letter get one tile per Arabic word instead (letters must join).
+  raw.html = joinArabicTiles(raw.html);
   const qr = pageQr(input);
   if (qr) raw.html = raw.html.includes('<div class="foot">') ? raw.html.replace('<div class="foot">', qr + '<div class="foot">') : raw.html + qr;
   // The typeface and size of the name, title and contact lines are a class and a few variables on the card wrapper.

@@ -9,7 +9,10 @@ import {
 /** Things a name, title or contact line must not run into (the photo and the panels some faces draw). */
 const OBSTACLES = ".pw,.ph,.sp,.av,.arch,.im,.st,.rb,.tzp,.tzq,.tzc";
 const TEXT_BLOCKS = [".n", ".t1", ".t2", ".co", ".ln"];
-const BLOCKS = TEXT_BLOCKS.join(",");
+/** A page style draws its own text; the person's words and the button labels carry data-fx (see build-pages.mjs). */
+const PAGE_OBSTACLES = ".pg-ph,.pg-pf,.pic";
+const PAGE_BLOCKS = ["[data-fx]", ...TEXT_BLOCKS];
+const BLOCKS = PAGE_BLOCKS.join(",");
 /** The wrapper width the measuring copy is laid out at, like a phone. */
 const MEASURE_WIDTH = 390;
 
@@ -24,11 +27,11 @@ function visible(el: HTMLElement): boolean {
 }
 
 /** The text blocks and obstacles of a face as they sit right now. */
-export function measureFace(face: HTMLElement): Measured {
+export function measureFace(face: HTMLElement, page = false, tag = ""): Measured {
   const fr = face.getBoundingClientRect();
   const texts: Measured["texts"] = [];
   const els: HTMLElement[] = [];
-  for (const sel of TEXT_BLOCKS) {
+  for (const sel of page ? PAGE_BLOCKS : TEXT_BLOCKS) {
     face.querySelectorAll<HTMLElement>(sel).forEach((el, i) => {
       // a block inside another text block is part of it
       const outer = el.parentElement?.closest(BLOCKS);
@@ -38,17 +41,17 @@ export function measureFace(face: HTMLElement): Measured {
       rg.selectNodeContents(el);
       const r = rg.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) return;
-      texts.push({ id: `${sel.slice(1)}${i}`, rect: rectOf(r) });
+      texts.push({ id: `${tag}${sel.slice(1)}${i}`, rect: rectOf(r) });
       els.push(el);
     });
   }
   const obstacles: Measured["obstacles"] = [];
-  face.querySelectorAll<HTMLElement>(OBSTACLES).forEach((o, i) => {
+  face.querySelectorAll<HTMLElement>(page ? `${OBSTACLES},${PAGE_OBSTACLES}` : OBSTACLES).forEach((o, i) => {
     if (!visible(o)) return;
     if (els.some((t) => t === o || t.contains(o) || o.contains(t))) return;
     const r = o.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) return;
-    obstacles.push({ id: `${o.className.toString().split(/\s+/)[0] || o.tagName.toLowerCase()}${i}`, rect: rectOf(r) });
+    obstacles.push({ id: `${tag}${o.className.toString().split(/\s+/)[0] || o.tagName.toLowerCase()}${i}`, rect: rectOf(r) });
   });
   return { face: rectOf(fr), texts, obstacles };
 }
@@ -62,8 +65,21 @@ function ensureTextCss() {
   document.head.appendChild(style);
 }
 
+/** What is measured of a card: the classic face, or for a page style the header and the buttons under it. */
+interface Subject {
+  host: HTMLElement;
+  /** One box (the face) or two (the page header and the layout below it). */
+  faces: HTMLElement[];
+  page: boolean;
+}
+
+/** The element to copy and measure: the card of a classic design, the whole page of a page style. */
+export function subjectOf(wrapper: HTMLElement): HTMLElement | null {
+  return wrapper.querySelector<HTMLElement>(".pg-top") ? wrapper.querySelector<HTMLElement>(".pg") : wrapper.querySelector<HTMLElement>(".card");
+}
+
 /** A hidden copy of a card (front only, not flipped, without company decoration) laid out at `width` pixels, with the text settings of `wrapper`. */
-function measuringCopy(wrapper: HTMLElement, card: HTMLElement, width: number): { host: HTMLElement; face: HTMLElement } | null {
+function measuringCopy(wrapper: HTMLElement, card: HTMLElement, width: number): Subject | null {
   ensureTextCss();
   const host = document.createElement("div");
   host.className = ["cfl", "mea", ...Array.from(wrapper.classList).filter((c) => c.startsWith("tx-"))].join(" ");
@@ -73,17 +89,19 @@ function measuringCopy(wrapper: HTMLElement, card: HTMLElement, width: number): 
     if (val) host.style.setProperty(v, val);
   }
   const clone = card.cloneNode(true) as HTMLElement;
-  clone.classList.remove("flipped");
+  clone.classList.remove("flipped", "go");
+  clone.querySelectorAll(".go").forEach((e) => e.classList.remove("go"));
   clone.querySelectorAll(".colg,.copatw,.coband").forEach((e) => e.remove());
   clone.querySelectorAll(".cobg").forEach((e) => e.classList.remove("cobg"));
   host.appendChild(clone);
   document.body.appendChild(host);
-  const face = clone.querySelector<HTMLElement>(".face:not(.back)");
-  if (!face) {
+  const page = !!clone.querySelector(".pg-top");
+  const faces = page ? Array.from(clone.querySelectorAll<HTMLElement>(".pg-top,.pg-bt")) : Array.from(clone.querySelectorAll<HTMLElement>(".face:not(.back)")).slice(0, 1);
+  if (!faces.length) {
     host.remove();
     return null;
   }
-  return { host, face };
+  return { host, faces, page };
 }
 
 /** Draw the copy at a size (the text stylesheet scales the blocks with --ts). */
@@ -95,11 +113,21 @@ function setScale(host: HTMLElement, size: number) {
 const fontSizeOf = (el: Element | null) => (el ? parseFloat(getComputedStyle(el).fontSize) : 0);
 
 /** Tells whether a size fits the copy: no problem the face does not have at 100% and no further shrinking of the name or title by the face's own fitting. */
-function fitter(host: HTMLElement, face: HTMLElement, refit: Refit): (size: number) => boolean {
+function fitter(subject: Subject, refit: Refit): (size: number) => boolean {
+  const { host, faces, page } = subject;
+  const face = faces[0];
   const run = (size: number) => {
     setScale(host, size);
     refit(host);
-    return { found: problems(measureFace(face)), n: fontSizeOf(face.querySelector(".n")), t: fontSizeOf(face.querySelector(".t1")) };
+    const found = new Set<string>();
+    faces.forEach((f, i) => problems(measureFace(f, page, page ? `${i}:` : "")).forEach((p) => found.add(p)));
+    // on a page style the face's own fitting is the shrinking of marked text (--fz): a block shrunk more than at 100% counts as a problem
+    if (page) {
+      host.querySelectorAll<HTMLElement>("[data-fx]").forEach((el, i) => {
+        if (parseFloat(el.style.getPropertyValue("--fz") || "1") < 0.97) found.add(`fz${i}`);
+      });
+    }
+    return { found, n: page ? 0 : fontSizeOf(face.querySelector(".n")), t: page ? 0 : fontSizeOf(face.querySelector(".t1")) };
   };
   const base = run(TEXT_SIZE_DEFAULT);
   return (size: number) => {
@@ -121,7 +149,7 @@ function measured(wrapper: HTMLElement, card: HTMLElement, refit: Refit, what: s
   const copy = measuringCopy(wrapper, card, width);
   if (!copy) return null;
   try {
-    const value = compute(fitter(copy.host, copy.face, refit));
+    const value = compute(fitter(copy, refit));
     // an answer measured while a font file is still arriving used the wrong letter widths: it is not kept
     if (!document.fonts || document.fonts.status === "loaded") {
       if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value as string);
@@ -150,7 +178,7 @@ export function clampTextSize(root: HTMLElement, refit: Refit) {
   root.querySelectorAll<HTMLElement>(".cfl").forEach((wrapper) => {
     if (!wrapper.style.getPropertyValue("--tsr")) return;
     const requested = normalizeSize(Number(wrapper.style.getPropertyValue("--tsr")));
-    const card = wrapper.querySelector<HTMLElement>(".card");
+    const card = subjectOf(wrapper);
     let size: number | null = null;
     if (card) {
       if (requested > TEXT_SIZE_DEFAULT) {
@@ -179,7 +207,7 @@ export function maxFitOfHtml(html: string, classes: string, vars: Record<string,
   wrapper.innerHTML = html;
   document.body.appendChild(wrapper);
   try {
-    const card = wrapper.querySelector<HTMLElement>(".card");
+    const card = subjectOf(wrapper);
     return card ? maxFitOfCard(wrapper, card, refit) : null;
   } finally {
     wrapper.remove();

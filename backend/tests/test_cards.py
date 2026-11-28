@@ -198,9 +198,9 @@ class DesignTests(ApiTestCase):
     def test_every_face_below_and_intro_number_passes_with_design_pack_2_making_500_faces(self):
         from ilaf.design import BELOW_COUNT, FACE_COUNT, INTRO_COUNT, PACK1_FACE_COUNT
 
-        self.assertEqual((FACE_COUNT, PACK1_FACE_COUNT, BELOW_COUNT, INTRO_COUNT), (500, 400, 527, 406))
-        for key, values in (("face", (1, 25, 26, 200, 201, 400, 401, 437, 500)), ("below", (1, 12, 200, 400, 401, 427, 428, 477, 478, 527)),
-                            ("intro", (0, 1, 22, 400, 401, 406)), ("colour", (0, 1, 2, 3)), ("top", (0, 1, 27, 28, 77, 78, 127))):
+        self.assertEqual((FACE_COUNT, PACK1_FACE_COUNT, BELOW_COUNT, INTRO_COUNT), (500, 400, 627, 406))
+        for key, values in (("face", (1, 25, 26, 200, 201, 400, 401, 437, 500)), ("below", (1, 12, 200, 400, 401, 427, 428, 477, 478, 527, 528, 627)),
+                            ("intro", (0, 1, 22, 400, 401, 406)), ("colour", (0, 1, 2, 3)), ("top", (0, 1, 27, 28, 77, 78, 127, 128, 177, 178, 227))):
             for value in values:
                 res = self.patch({"design": {key: value}})
                 self.assertEqual(res.status_code, 200, (key, value))
@@ -231,8 +231,8 @@ class DesignTests(ApiTestCase):
     def test_invalid_design_values_rejected(self):
         for bad in (
             {"face": 0}, {"face": 501}, {"face": "classic"}, {"face": True}, {"colour": 4}, {"colour": -1},
-            {"below": 0}, {"below": 528}, {"intro": -1}, {"intro": 407}, {"intro": "fade-up"}, {"face": 1.5},
-            {"top": -1}, {"top": 128}, {"top": "popl"}, {"top": True},
+            {"below": 0}, {"below": 628}, {"intro": -1}, {"intro": 407}, {"intro": "fade-up"}, {"face": 1.5},
+            {"top": -1}, {"top": 228}, {"top": "popl"}, {"top": True},
             {"photo": "yes"}, {"brand_colors": 1}, {"foot": None},
         ):
             res = self.patch({"design": bad})

@@ -13,7 +13,7 @@ import { useI18n } from "@/lib/i18n/client";
 import { refit } from "@/lib/library/enhance";
 import { buildInput, drawPage } from "@/lib/library/render";
 import {
-  FONTS, FONT_FACE, SAMPLE_ARABIC, SAMPLE_LATIN, TEXT_SIZE_DEFAULT, TEXT_SIZE_MAX, TEXT_SIZE_MIN, fontStack, isFontLocked, normalizeFont, type FontGroup, type FontInfo,
+  FONTS, FONT_FACE, SAMPLE_ARABIC, SAMPLE_LATIN, TEXT_SIZE_DEFAULT, TEXT_SIZE_MAX, TEXT_SIZE_MIN, fontStack, isFontLocked, normalizeFont, usesPageStyle, type FontGroup, type FontInfo,
 } from "@/lib/library/text";
 import { maxFitOfHtml } from "@/lib/library/textfit";
 import type { CardPageData } from "@/lib/library/types";
@@ -39,7 +39,7 @@ export function useMaxFit(base: Base, d: Design): number | null {
   const drawn = useMemo(() => {
     const data: CardPageData = { ...base, design: { ...d, size: TEXT_SIZE_DEFAULT } };
     return drawPage(buildInput(data, "preview", false), data, "preview");
-  }, [base, d.face, d.colour, d.below, d.photo, d.brand_colors, d.font]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [base, d.face, d.top, d.colour, d.below, d.photo, d.brand_colors, d.font, d.custom_face]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     let live = true;
     // Wide fonts change what fits. Measuring makes the browser start loading the fonts it has not got yet, so after
@@ -72,7 +72,7 @@ export function TextStep({ base, d, set }: { base: Base; d: Design; set: (p: Par
       </div>
 
       <div className={s.count}>{t("editor.fontHead")}</div>
-      {isFontLocked(d.face) ? (
+      {isFontLocked(d.face) && !usesPageStyle(d) ? (
         <div className="notice" role="status">
           <Icon name="lock" />
           <div className="grow">

@@ -95,8 +95,8 @@ describe("filterItems", () => {
 });
 
 describe("page styles", () => {
-  it("lists the 127 headers with their app pattern or design family as the tag", () => {
-    expect(topItems()).toHaveLength(127);
+  it("lists the 227 headers with their app pattern or design family as the tag", () => {
+    expect(topItems()).toHaveLength(227);
     const styles = new Set(topItems().map((i) => i.tags[0]));
     expect([...styles].sort()).toEqual([...TOP_STYLES].sort());
     expect(filterItems(topItems(), "", "Dot").map((i) => i.n)).toEqual([22, 23, 24, 25]);
@@ -105,14 +105,16 @@ describe("page styles", () => {
     expect(filterItems(topItems(), "", "Gulf").map((i) => i.n)).toEqual(Array.from({ length: 10 }, (_, i) => 58 + i));
     expect(filterItems(topItems(), "", "Business").map((i) => i.n)).toEqual(Array.from({ length: 10 }, (_, i) => 78 + i));
     expect(filterItems(topItems(), "", "Events and Lifestyle").map((i) => i.n)).toEqual(Array.from({ length: 10 }, (_, i) => 118 + i));
-    expect(TOP_STYLES).toHaveLength(18);
+    expect(filterItems(topItems(), "", "Unique").map((i) => i.n)).toEqual(Array.from({ length: 50 }, (_, i) => 128 + i));
+    expect(filterItems(topItems(), "", "Link in bio").map((i) => i.n)).toEqual(Array.from({ length: 50 }, (_, i) => 178 + i));
+    expect(TOP_STYLES).toHaveLength(20);
   });
-  it("offers 527 layouts, or 400 while the switch is off, and marks 401 to 527 as Pack 2", () => {
-    expect(belowItems()).toHaveLength(527);
+  it("offers 627 layouts, or 400 while the switch is off, and marks 401 to 627 as Pack 2", () => {
+    expect(belowItems()).toHaveLength(627);
     expect(belowItems(false)).toHaveLength(400);
-    expect(offeredBelowCount(true)).toBe(527);
+    expect(offeredBelowCount(true)).toBe(627);
     expect(offeredBelowCount(false)).toBe(400);
-    expect(filterItems(belowItems(), "", null, undefined, 2).map((i) => i.n)).toEqual(Array.from({ length: 127 }, (_, i) => 401 + i));
+    expect(filterItems(belowItems(), "", null, undefined, 2).map((i) => i.n)).toEqual(Array.from({ length: 227 }, (_, i) => 401 + i));
     expect(filterItems(belowItems(), "", null, undefined, 1)).toHaveLength(400);
   });
   it("picking a header picks the layout of its own page; Classic keeps a Pack 1 layout", () => {
@@ -120,6 +122,7 @@ describe("page styles", () => {
     expect(belowForTop(27, 1)).toBe(427);
     expect(belowForTop(77, 1)).toBe(477);
     expect(belowForTop(127, 1)).toBe(527);
+    expect(belowForTop(227, 1)).toBe(627);
     expect(belowForTop(0, 250)).toBe(250);
     expect(belowForTop(0, 410)).toBe(1);
     expect(topNumberOf(404)).toBe(4);
@@ -188,9 +191,9 @@ describe("the steps the design picker shows", () => {
     expect(visibleSteps(true, 4).map((x) => x.key)).toContain("face");
   });
 
-  it("lists the 127 headers and offers the 400 classic layouts only without page styles", () => {
-    expect(topItems()).toHaveLength(127);
-    expect(offeredBelowCount(true)).toBe(527);
+  it("lists the 227 headers and offers the 400 classic layouts only without page styles", () => {
+    expect(topItems()).toHaveLength(227);
+    expect(offeredBelowCount(true)).toBe(627);
     expect(offeredBelowCount(false)).toBe(400);
   });
 

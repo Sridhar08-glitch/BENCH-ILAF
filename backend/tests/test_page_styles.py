@@ -55,23 +55,23 @@ class TopDesignTests(ApiTestCase):
         self.assertEqual(self.card["design"]["top"], 0)
         self.assertEqual(self.public_design()["top"], 0)
 
-    def test_top_takes_zero_to_one_hundred_twenty_seven(self):
+    def test_top_takes_zero_to_two_hundred_twenty_seven(self):
         from ilaf.design import TOP_COUNT
 
-        self.assertEqual(TOP_COUNT, 127)
-        for value in (0, 1, 14, 27, 28, 77, 78, 127):
+        self.assertEqual(TOP_COUNT, 227)
+        for value in (0, 1, 14, 27, 28, 77, 78, 127, 128, 177, 178, 227):
             res = self.patch({"design": {"top": value}})
             self.assertEqual(res.status_code, 200, (value, res.content))
             self.assertEqual(res.data["design"]["top"], value)
-        for bad in (-1, 128, 1.5, "popl", True, None):
+        for bad in (-1, 228, 1.5, "popl", True, None):
             res = self.patch({"design": {"top": bad}})
             self.assertEqual(res.status_code, 400, bad)
             self.assertIn("design.top", res.data["error"]["fields"])
 
-    def test_page_button_sets_run_to_527(self):
-        for value in (400, 401, 427, 428, 477, 478, 527):
+    def test_page_button_sets_run_to_627(self):
+        for value in (400, 401, 427, 428, 477, 478, 527, 528, 627):
             self.assertEqual(self.patch({"design": {"below": value}}).status_code, 200, value)
-        res = self.patch({"design": {"below": 528}})
+        res = self.patch({"design": {"below": 628}})
         self.assertEqual(res.status_code, 400)
         self.assertIn("design.below", res.data["error"]["fields"])
 
@@ -110,7 +110,7 @@ class TopDesignTests(ApiTestCase):
 
     def test_a_free_plan_is_told_to_upgrade(self):
         move_to_free_plan(self.person.ws)
-        for rich in ({"top": 3}, {"below": 401}, {"top": 27, "below": 427}, {"top": 77, "below": 477}, {"top": 127, "below": 527}):
+        for rich in ({"top": 3}, {"below": 401}, {"top": 27, "below": 427}, {"top": 77, "below": 477}, {"top": 127, "below": 527}, {"top": 227, "below": 627}):
             res = self.patch({"design": rich})
             self.assertEqual((res.status_code, res.data["error"]["code"]), (403, "plan_limit"), rich)
             self.assertIn("Upgrade", res.data["error"]["message"])
@@ -196,7 +196,7 @@ class CompanyTopTests(OpsTestCase):
         self.assertEqual(self.design_of(self.plain)["top"], 2)
 
     def test_department_top_is_checked_like_any_design_number(self):
-        res = self.owner.client.patch(self.url(f"departments/{self.sales['id']}"), {"design": {"top": 128}}, format="json")
+        res = self.owner.client.patch(self.url(f"departments/{self.sales['id']}"), {"design": {"top": 228}}, format="json")
         self.assertEqual(res.status_code, 400)
         self.assertIn("design.top", res.data["error"]["fields"])
         res = self.owner.client.patch(self.url(f"departments/{self.sales['id']}"), {"design": {"whatever": 1}}, format="json")

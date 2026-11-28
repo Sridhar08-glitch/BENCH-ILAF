@@ -145,7 +145,7 @@ function belowHtml(j, brand) {
   /* every button stays reachable, even in a layout that has no place for it */
   if (h.indexOf('data-tab') < 0) {
     var missing = LIVE.filter(function (i) { return h.indexOf('data-i="' + i.x + '"') < 0; });
-    if (missing.length) out += '<div class="dv k0' + (brand ? '' : ' harm') + ' more">' + rows(missing) + '</div>';
+    if (missing.length) out += '<div class="dv k0' + (brand ? '' : ' harm') + ' more">' + (j >= 400 ? rows(missing).split('<div>').join('<div data-fx>') : rows(missing)) + '</div>';
   }
   return {html: out, leaks: leaks};
 }

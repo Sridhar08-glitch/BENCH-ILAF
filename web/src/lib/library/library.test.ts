@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  BELOW_COUNT, COLOUR_COUNT, FACE_COUNT, INTRO_COUNT, TOP_COUNT, belowInfo, belowOfTop, topInfo, defaultDesign, faceInfo, introInfo, normalizeDesign, resolveColours,
+  BELOW_COUNT, COLOUR_COUNT, FACE_COUNT, INTRO_COUNT, TOP_COUNT, belowInfo, defaultDesign, faceInfo, introInfo, normalizeDesign, resolveColours,
 } from "./index";
 import { iconHtml } from "./icons";
 import { renderCardPage, renderPage, renderTab, buildInput, withoutScriptTabs } from "./render";
@@ -43,10 +43,10 @@ const empty: CardPageData = { ...sample, name: "", title: "", company: "", addre
 const design = (patch: Partial<Design>): Design => ({ ...defaultDesign(), ...patch });
 
 describe("library size", () => {
-  it("has 500 faces (400 plus Design Pack 2), 127 headers, 527 layouts (400 plus the page styles) and 406 openings (400 plus 6 for the page styles)", () => {
+  it("has 500 faces (400 plus Design Pack 2), 227 headers, 627 layouts (400 plus the page styles) and 406 openings (400 plus 6 for the page styles)", () => {
     expect(FACE_COUNT).toBe(500);
-    expect(BELOW_COUNT).toBe(527);
-    expect(TOP_COUNT).toBe(127);
+    expect(BELOW_COUNT).toBe(627);
+    expect(TOP_COUNT).toBe(227);
     expect(INTRO_COUNT).toBe(406);
     expect(COLOUR_COUNT).toBe(4);
   });
@@ -114,7 +114,8 @@ describe("normalizeDesign", () => {
     expect(normalizeDesign({ ...d, top: 27, below: 427 })).toMatchObject({ top: 27, below: 427 });
     expect(normalizeDesign({ ...d, top: 77, below: 477 })).toMatchObject({ top: 77, below: 477 });
     expect(normalizeDesign({ ...d, top: 127, below: 527 })).toMatchObject({ top: 127, below: 527 });
-    expect(normalizeDesign({ ...d, top: 128, below: 528 })).toMatchObject({ top: 0 });
+    expect(normalizeDesign({ ...d, top: 227, below: 627 })).toMatchObject({ top: 227, below: 627 });
+    expect(normalizeDesign({ ...d, top: 228, below: 628 })).toMatchObject({ top: 0 });
   });
   it("converts an old named design to the same positions", () => {
     const d = normalizeDesign({ face: "aurora", bg: "#111111", details: "dock", intro: "curtain", photo: false });
@@ -137,7 +138,7 @@ describe("normalizeDesign", () => {
     expect(normalizeDesign(null)).toEqual(defaultDesign());
     expect(normalizeDesign("x")).toEqual(defaultDesign());
     expect(normalizeDesign({ face: "nope", colour: "2", below: 1.5, intro: -1, photo: "yes" })).toEqual(defaultDesign());
-    expect(normalizeDesign({ face: 0, colour: 5, below: 528, intro: 407, top: 128 })).toEqual(defaultDesign());
+    expect(normalizeDesign({ face: 0, colour: 5, below: 628, intro: 407, top: 228 })).toEqual(defaultDesign());
     expect(normalizeDesign({ top: -1 }).top).toBe(0);
     expect(normalizeDesign({ top: "3" }).top).toBe(0);
     expect(normalizeDesign({ face: 501 })).toEqual(defaultDesign());

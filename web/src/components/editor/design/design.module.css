@@ -65,6 +65,8 @@
 /* Back / Next */
 .nav { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; border-block-start: 1px solid var(--line-soft); padding-block-start: 12px; }
 .nav .right { display: flex; gap: 8px; margin-inline-start: auto; }
+/* On a phone the floating chat button sits above the bottom bar, over the last row of the page: leave room under the step buttons. */
+@media (max-width: 900px) { .nav { padding-block-end: 132px; } }
 
 /* Text step: font list */
 .textPreview { align-self: center; }

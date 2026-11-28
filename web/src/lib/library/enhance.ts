@@ -81,6 +81,65 @@ export function fitFaces(root: HTMLElement) {
   });
 }
 
+// ---- page styles: a wider font or a larger size must not push the person's words out of their box
+
+/** The shrink steps fitPageText may take and the smallest scale it goes to. */
+const PAGE_FIT_STEP = 0.93;
+const PAGE_FIT_FLOOR = 0.55;
+
+/** The outermost marked text blocks of a page container (a block inside another block is part of it). */
+function pageBlocks(box: HTMLElement): HTMLElement[] {
+  return Array.from(box.querySelectorAll<HTMLElement>("[data-fx]")).filter((el) => !el.parentElement?.closest("[data-fx]"));
+}
+
+/** A block leaves its page box or is cut off by its own box. */
+function pageBlockBad(el: HTMLElement, box: DOMRect): boolean {
+  const cs = getComputedStyle(el);
+  if (cs.display === "none" || cs.visibility === "hidden") return false;
+  const rg = document.createRange();
+  rg.selectNodeContents(el);
+  const r = rg.getBoundingClientRect();
+  if (r.width < 1 || r.height < 1) return false;
+  const pad = box.width * 0.02;
+  return r.right > box.right - pad + 0.5 || r.left < box.left + pad - 0.5 || el.scrollWidth > el.clientWidth + 1;
+}
+
+/**
+ * The text settings of a page style: a typeface that is wider than the style's own, or an enlarged size, can push a name past the
+ * edge of its box or into the clipped end of a one-line label. Each marked block that is bad now but was not bad with the settings off
+ * is scaled down (--fz, applied with zoom by TEXT_CSS) in small steps until it fits or reaches the floor. Blocks the style already
+ * draws past an edge on purpose are left alone. Only cards that use a text setting are touched.
+ */
+export function fitPageText(root: HTMLElement) {
+  const wraps = root.matches(".cfl") ? [root] : Array.from(root.querySelectorAll<HTMLElement>(".cfl"));
+  wraps.forEach((wrap) => {
+    const boxes = Array.from(wrap.querySelectorAll<HTMLElement>(".pg-top,.pg-bt"));
+    if (!boxes.length) return;
+    const on = ["tx-font", "tx-size"].filter((c) => wrap.classList.contains(c));
+    boxes.forEach((b) => pageBlocks(b).forEach((el) => el.style.removeProperty("--fz")));
+    if (!on.length) return;
+    // what the style does by itself, with the settings off
+    on.forEach((c) => wrap.classList.remove(c));
+    const baseline = boxes.map((b) => {
+      const br = b.getBoundingClientRect();
+      return new Set(pageBlocks(b).filter((el) => pageBlockBad(el, br)));
+    });
+    on.forEach((c) => wrap.classList.add(c));
+    boxes.forEach((b, i) => {
+      const br = b.getBoundingClientRect();
+      if (!br.width) return;
+      pageBlocks(b).forEach((el) => {
+        if (baseline[i].has(el)) return;
+        let fz = 1;
+        for (let k = 0; k < 12 && fz > PAGE_FIT_FLOOR && pageBlockBad(el, br); k++) {
+          fz = Math.max(PAGE_FIT_FLOOR, fz * PAGE_FIT_STEP);
+          el.style.setProperty("--fz", fz.toFixed(3));
+        }
+      });
+    });
+  });
+}
+
 // ---- company logo: measure the real face and find the corner no text or photo touches
 
 const rgbHex = (m: RegExpMatchArray) => "#" + [0, 1, 2].map((i) => Math.round(+m[i]).toString(16).padStart(2, "0")).join("");
@@ -328,6 +387,7 @@ export function alignArabic(root: HTMLElement) {
 export function refit(root: HTMLElement) {
   alignArabic(root);
   fitFaces(root);
+  fitPageText(root);
 }
 
 export function enhance(root: HTMLElement, o: Options = {}) {
@@ -337,6 +397,7 @@ export function enhance(root: HTMLElement, o: Options = {}) {
   alignArabic(root);
   if (o.measure !== false) refineCompany(root);
   fitFaces(root);
+  fitPageText(root);
 }
 
 /** Run again after the fonts arrive: wide fonts change where text sits. */
@@ -345,6 +406,7 @@ export function settle(root: HTMLElement, o: Options = {}) {
   alignArabic(root);
   if (o.measure !== false) refineCompany(root);
   fitFaces(root);
+  fitPageText(root);
 }
 
 /** How long the longest opening animation (with its delays) takes; afterwards the stage gets "still" and the card sits flat. */

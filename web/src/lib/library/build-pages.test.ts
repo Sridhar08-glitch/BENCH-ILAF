@@ -8,6 +8,8 @@ import { BELOW_COUNT, TOP_COUNT, defaultDesign, belowOfTop, topInfo } from "./in
 import { buildInput, renderCardPage } from "./render";
 import { renderPage } from "./generated/engine";
 import type { CardPageData } from "./types";
+import { reachedText } from "./marked-text";
+import { FONTS, fontStack } from "./text";
 import type { Design } from "@/lib/types";
 
 // The page-style build (scripts/build-pages.mjs) must give the same bytes every time, and the committed outputs
@@ -57,7 +59,7 @@ describe("build-pages", () => {
     }
   }, 90_000);
 
-  it("ships the designer pages for all 127 page styles", () => {
+  it("ships the designer pages for all 227 page styles", () => {
     const numbers = new Set<number>();
     for (const f of fs.readdirSync(path.join(WEB, "scripts", "pages", "lab")).filter((f) => f.endsWith(".html"))) {
       const m = /<section class="page" data-no="(\d+)"/.exec(fs.readFileSync(path.join(WEB, "scripts", "pages", "lab", f), "utf8"));
@@ -65,27 +67,28 @@ describe("build-pages", () => {
       expect(f).toMatch(/^\d{2,3}-[a-z0-9-]+\.html$/);
       numbers.add(Number(m![1]));
     }
-    expect(numbers.size, "100 hand-made designs").toBe(100);
+    expect(numbers.size, "200 hand-made designs").toBe(200);
     for (const f of fs.readdirSync(path.join(WEB, "scripts", "pages")).filter((f) => /^pages_.*\.html$/.test(f))) {
       for (const m of fs.readFileSync(path.join(WEB, "scripts", "pages", f), "utf8").matchAll(/<section class="page" data-no="(\d+)"/g)) numbers.add(Number(m[1]));
     }
     for (const n of [1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 25, 28, 29, 30, 31, 32, 33, 34]) expect(numbers.has(n), `page ${n}`).toBe(true);
   });
 
-  it("counts: 127 headers, layouts 401 to 527, names for every one", () => {
-    expect(TOP_COUNT).toBe(127);
-    expect(BELOW_COUNT).toBe(527);
+  it("counts: 227 headers, layouts 401 to 627, names for every one", () => {
+    expect(TOP_COUNT).toBe(227);
+    expect(BELOW_COUNT).toBe(627);
     expect(belowOfTop(1)).toBe(401);
     expect(belowOfTop(27)).toBe(427);
     expect(belowOfTop(77)).toBe(477);
     expect(belowOfTop(127)).toBe(527);
+    expect(belowOfTop(227)).toBe(627);
     const styles = new Set<string>();
     for (let n = 1; n <= TOP_COUNT; n++) {
       const t = topInfo(n);
       expect(t.name.length, `top ${n}`).toBeGreaterThan(0);
       styles.add(t.style);
     }
-    expect([...styles].sort()).toEqual(["Arabic", "Blinq", "Business", "Creative", "Digital", "Dot", "Editorial", "Events and Lifestyle", "Gulf", "Health and Hospitality", "HiHello", "Linq", "Mobilo", "Objects", "Popl", "Tech and Creative", "Trades and Industry", "Wave"].sort());
+    expect([...styles].sort()).toEqual(["Arabic", "Blinq", "Business", "Creative", "Digital", "Dot", "Editorial", "Events and Lifestyle", "Gulf", "Health and Hospitality", "HiHello", "Linq", "Mobilo", "Objects", "Popl", "Tech and Creative", "Trades and Industry", "Wave", "Unique", "Link in bio"].sort());
     // the hand-made styles have an Arabic name and description as well
     for (let n = 28; n <= TOP_COUNT; n++) {
       const t = topInfo(n);
@@ -200,6 +203,32 @@ describe("build-pages", () => {
     const plain = renderPage(buildInput({ ...sample, design: design({ top: 4, below: 404, face: 12, photo: false }) }, "live")).html;
     expect(plain).not.toContain('class="pg-fc"');
     expect(plain).not.toContain("face d12 ");
+  });
+
+  it("the typeface and the size reach the name, title, company, intro text and button words of sampled styles of every group", () => {
+    // the first style of every group, one of the old hand-made ones, and every tenth of the new ones (all ten batches)
+    const groups = new Map<string, number>();
+    for (let n = 1; n <= TOP_COUNT; n++) if (!groups.has(topInfo(n).style)) groups.set(topInfo(n).style, n);
+    const picks = new Set<number>([...groups.values(), 5, 40, 60, 90, 120]);
+    for (let n = 128; n <= TOP_COUNT; n += 10) picks.add(n);
+    for (const top of picks) {
+      for (const font of ["lora", "bebas", "cairo"]) {
+        const r = renderCardPage({ ...sample, design: design({ top, below: belowOfTop(top), font, size: 120 }) }, "live");
+        const stack = fontStack(font)!;
+        expect(r.wrapClass.split(" "), `top ${top} ${font}`).toEqual(expect.arrayContaining(["tx-font", "tx-size"]));
+        expect(r.pageVars["--tf"], `top ${top} ${font}`).toBe(stack);
+        expect(r.pageVars["--tfa"], `top ${top} ${font}`).toBeTruthy();
+        const words = reachedText(r.html);
+        expect(words, `top ${top} ${font}: name`).toMatch(/Sara|Mansoori/);
+        expect(words, `top ${top} ${font}: a button`).toMatch(/\+974|studionoor|Call|Email|Website|WhatsApp/);
+      }
+    }
+    expect(FONTS.length).toBeGreaterThan(10);
+  });
+
+  it("draws no marked text for a style that never shows the person's words, and adds no class for the face font setting", () => {
+    const html = renderCardPage({ ...sample, design: design({ top: 0, below: 1, font: "lora" }) }, "live").html;
+    expect(html).not.toContain("data-fx");
   });
 
   it("keeps the classic face card when top is 0", () => {
